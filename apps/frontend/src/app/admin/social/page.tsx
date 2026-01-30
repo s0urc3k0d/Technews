@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { 
   Twitter, 
   Facebook, 
@@ -62,7 +61,6 @@ const platformInfo = {
 };
 
 export default function SocialConnectionsPage() {
-  const router = useRouter();
   const [connections, setConnections] = useState<SocialConnection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

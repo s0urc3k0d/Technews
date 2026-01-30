@@ -9,8 +9,11 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import Mistral from '@mistralai/mistralai';
+import * as MistralModule from '@mistralai/mistralai';
 import sharp from 'sharp';
+
+// Handle both ESM and CJS exports
+const Mistral = (MistralModule as any).default || (MistralModule as any).Mistral || MistralModule;
 
 const execAsync = promisify(exec);
 

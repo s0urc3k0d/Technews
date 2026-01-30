@@ -1,6 +1,7 @@
 // ===========================================
 // Service de génération de vidéos Shorts
 // Résumés quotidiens pour TikTok/YouTube Shorts
+// Utilise Sharp pour la génération d'images (pas de canvas)
 // ===========================================
 
 import { PrismaClient, ArticleStatus } from '@technews/database';
@@ -9,21 +10,7 @@ import { promisify } from 'util';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import Mistral from '@mistralai/mistralai';
-
-// Import canvas dynamiquement pour éviter les erreurs de type
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let createCanvas: any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let loadImage: any;
-
-// Charger canvas de manière asynchrone
-async function loadCanvasModule() {
-  if (!createCanvas) {
-    const canvas = await import('canvas');
-    createCanvas = canvas.createCanvas;
-    loadImage = canvas.loadImage;
-  }
-}
+import sharp from 'sharp';
 
 const execAsync = promisify(exec);
 
@@ -35,9 +22,7 @@ const VIDEO_CONFIG = {
   slideDuration: 5, // secondes par slide
   transitionDuration: 0.5, // durée du fade
   fontSize: 48,
-  fontFamily: 'Arial',
   textColor: '#FFFFFF',
-  textShadow: true,
   maxCharsPerLine: 30,
 };
 
@@ -140,83 +125,63 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
   /**
    * Récupère une image de fond aléatoire
    */
-  async function getRandomBackground(): Promise<string> {
+  async function getRandomBackground(): Promise<string | null> {
     try {
       await fs.mkdir(config.backgroundsDir, { recursive: true });
       const files = await fs.readdir(config.backgroundsDir);
       const images = files.filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f));
       
       if (images.length === 0) {
-        // Créer une image de fond par défaut si aucune n'existe
-        return await createDefaultBackground();
+        return null; // Pas d'image, on utilisera un fond gradient
       }
       
       const randomImage = images[Math.floor(Math.random() * images.length)];
       if (!randomImage) {
-        return await createDefaultBackground();
+        return null;
       }
       return path.join(config.backgroundsDir, randomImage);
     } catch (error) {
       console.error('Erreur récupération background:', error);
-      return await createDefaultBackground();
+      return null;
     }
   }
 
   /**
-   * Crée une image de fond par défaut (gradient)
+   * Crée une image de fond gradient par défaut avec Sharp
    */
-  async function createDefaultBackground(): Promise<string> {
-    await loadCanvasModule();
-    const canvas = createCanvas(VIDEO_CONFIG.width, VIDEO_CONFIG.height);
-    const ctx = canvas.getContext('2d');
+  async function createGradientBackground(): Promise<Buffer> {
+    // Créer un gradient SVG
+    const svg = `
+      <svg width="${VIDEO_CONFIG.width}" height="${VIDEO_CONFIG.height}">
+        <defs>
+          <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+            <stop offset="50%" style="stop-color:#1e3a5f;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
+          </linearGradient>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grad)"/>
+        <circle cx="200" cy="400" r="150" fill="#3b82f6" opacity="0.1"/>
+        <circle cx="880" cy="800" r="200" fill="#3b82f6" opacity="0.1"/>
+        <circle cx="540" cy="1400" r="180" fill="#3b82f6" opacity="0.1"/>
+      </svg>
+    `;
 
-    // Gradient bleu tech
-    const gradient = ctx.createLinearGradient(0, 0, VIDEO_CONFIG.width, VIDEO_CONFIG.height);
-    gradient.addColorStop(0, '#0f172a');
-    gradient.addColorStop(0.5, '#1e3a5f');
-    gradient.addColorStop(1, '#0f172a');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, VIDEO_CONFIG.width, VIDEO_CONFIG.height);
-
-    // Ajouter des cercles décoratifs
-    ctx.globalAlpha = 0.1;
-    for (let i = 0; i < 5; i++) {
-      ctx.beginPath();
-      ctx.arc(
-        Math.random() * VIDEO_CONFIG.width,
-        Math.random() * VIDEO_CONFIG.height,
-        Math.random() * 300 + 100,
-        0,
-        Math.PI * 2
-      );
-      ctx.fillStyle = '#3b82f6';
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-
-    const defaultBgPath = path.join(config.backgroundsDir, '_default.png');
-    await fs.mkdir(config.backgroundsDir, { recursive: true });
-    const buffer = canvas.toBuffer('image/png');
-    await fs.writeFile(defaultBgPath, buffer);
-    
-    return defaultBgPath;
+    return Buffer.from(svg);
   }
 
   /**
-   * Découpe le texte en lignes pour l'affichage
+   * Découpe le texte en lignes pour l'affichage SVG
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function wrapText(ctx: any, text: string, maxWidth: number): string[] {
-    if (!ctx) return [text];
+  function wrapText(text: string, maxChars: number): string[] {
     const words = text.split(' ');
     const lines: string[] = [];
     let currentLine = '';
 
     for (const word of words) {
       const testLine = currentLine ? `${currentLine} ${word}` : word;
-      const metrics = ctx.measureText(testLine);
       
-      if (metrics.width > maxWidth && currentLine) {
+      if (testLine.length > maxChars && currentLine) {
         lines.push(currentLine);
         currentLine = word;
       } else {
@@ -232,116 +197,130 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
   }
 
   /**
-   * Crée une image slide avec le texte superposé
+   * Échappe les caractères spéciaux pour SVG
+   */
+  function escapeXml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  }
+
+  /**
+   * Crée une image slide avec le texte superposé en utilisant Sharp
    */
   async function createSlideImage(
-    backgroundPath: string,
+    backgroundPath: string | null,
     summary: string,
     category: string,
     slideNumber: number,
     totalSlides: number
   ): Promise<string> {
-    await loadCanvasModule();
-    const canvas = createCanvas(VIDEO_CONFIG.width, VIDEO_CONFIG.height);
-    const ctx = canvas.getContext('2d');
-
-    // Charger et dessiner le fond
-    try {
-      const background = await loadImage(backgroundPath);
-      // Couvrir tout le canvas en gardant le ratio
-      const scale = Math.max(
-        VIDEO_CONFIG.width / background.width,
-        VIDEO_CONFIG.height / background.height
-      );
-      const x = (VIDEO_CONFIG.width - background.width * scale) / 2;
-      const y = (VIDEO_CONFIG.height - background.height * scale) / 2;
-      ctx.drawImage(background, x, y, background.width * scale, background.height * scale);
-    } catch {
-      // Fallback : fond gradient
-      const gradient = ctx.createLinearGradient(0, 0, VIDEO_CONFIG.width, VIDEO_CONFIG.height);
-      gradient.addColorStop(0, '#0f172a');
-      gradient.addColorStop(1, '#1e3a5f');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, VIDEO_CONFIG.width, VIDEO_CONFIG.height);
-    }
-
-    // Overlay semi-transparent pour lisibilité
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.fillRect(0, 0, VIDEO_CONFIG.width, VIDEO_CONFIG.height);
-
-    // Badge catégorie en haut
-    ctx.font = `bold 32px ${VIDEO_CONFIG.fontFamily}`;
-    const categoryText = `#${category.toUpperCase()}`;
-    const categoryMetrics = ctx.measureText(categoryText);
-    const categoryPadding = 20;
-    const categoryX = (VIDEO_CONFIG.width - categoryMetrics.width) / 2 - categoryPadding;
-    const categoryY = 150;
-
-    // Fond du badge
-    ctx.fillStyle = '#3b82f6';
-    ctx.beginPath();
-    ctx.roundRect(
-      categoryX,
-      categoryY - 35,
-      categoryMetrics.width + categoryPadding * 2,
-      50,
-      10
-    );
-    ctx.fill();
-
-    // Texte catégorie
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillText(categoryText, categoryX + categoryPadding, categoryY);
-
-    // Texte principal centré
-    ctx.font = `bold ${VIDEO_CONFIG.fontSize}px ${VIDEO_CONFIG.fontFamily}`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    const maxTextWidth = VIDEO_CONFIG.width - 120;
-    const lines = wrapText(ctx, summary, maxTextWidth);
+    // Préparer le texte
+    const lines = wrapText(summary, VIDEO_CONFIG.maxCharsPerLine);
     const lineHeight = VIDEO_CONFIG.fontSize * 1.4;
     const totalTextHeight = lines.length * lineHeight;
     const startY = (VIDEO_CONFIG.height - totalTextHeight) / 2;
 
-    lines.forEach((line, index) => {
+    // Générer les lignes de texte SVG
+    const textLines = lines.map((line, index) => {
       const y = startY + index * lineHeight;
-      
-      // Ombre du texte
-      if (VIDEO_CONFIG.textShadow) {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        ctx.fillText(line, VIDEO_CONFIG.width / 2 + 3, y + 3);
-      }
-      
-      // Texte principal
-      ctx.fillStyle = VIDEO_CONFIG.textColor;
-      ctx.fillText(line, VIDEO_CONFIG.width / 2, y);
-    });
+      const escapedLine = escapeXml(line);
+      return `
+        <text x="${VIDEO_CONFIG.width / 2}" y="${y}" 
+              text-anchor="middle" dominant-baseline="middle"
+              font-family="Arial, sans-serif" font-size="${VIDEO_CONFIG.fontSize}" font-weight="bold"
+              fill="black" opacity="0.8">
+          ${escapedLine}
+        </text>
+        <text x="${VIDEO_CONFIG.width / 2 - 2}" y="${y - 2}" 
+              text-anchor="middle" dominant-baseline="middle"
+              font-family="Arial, sans-serif" font-size="${VIDEO_CONFIG.fontSize}" font-weight="bold"
+              fill="${VIDEO_CONFIG.textColor}">
+          ${escapedLine}
+        </text>
+      `;
+    }).join('\n');
 
-    // Indicateur de progression en bas
+    // Générer les points de progression
     const dotRadius = 8;
     const dotSpacing = 30;
     const dotsWidth = (totalSlides - 1) * dotSpacing;
     const dotsStartX = (VIDEO_CONFIG.width - dotsWidth) / 2;
     const dotsY = VIDEO_CONFIG.height - 150;
 
-    for (let i = 0; i < totalSlides; i++) {
-      ctx.beginPath();
-      ctx.arc(dotsStartX + i * dotSpacing, dotsY, dotRadius, 0, Math.PI * 2);
-      ctx.fillStyle = i === slideNumber ? '#3b82f6' : 'rgba(255, 255, 255, 0.5)';
-      ctx.fill();
+    const dots = Array.from({ length: totalSlides }, (_, i) => {
+      const fill = i === slideNumber ? '#3b82f6' : 'rgba(255, 255, 255, 0.5)';
+      return `<circle cx="${dotsStartX + i * dotSpacing}" cy="${dotsY}" r="${dotRadius}" fill="${fill}"/>`;
+    }).join('\n');
+
+    // Créer le SVG overlay
+    const overlaySvg = `
+      <svg width="${VIDEO_CONFIG.width}" height="${VIDEO_CONFIG.height}">
+        <!-- Overlay semi-transparent -->
+        <rect width="100%" height="100%" fill="black" opacity="0.5"/>
+        
+        <!-- Badge catégorie -->
+        <rect x="${VIDEO_CONFIG.width / 2 - 100}" y="115" width="200" height="50" rx="10" fill="#3b82f6"/>
+        <text x="${VIDEO_CONFIG.width / 2}" y="145" 
+              text-anchor="middle" dominant-baseline="middle"
+              font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white">
+          #${escapeXml(category.toUpperCase())}
+        </text>
+        
+        <!-- Texte principal -->
+        ${textLines}
+        
+        <!-- Points de progression -->
+        ${dots}
+        
+        <!-- Watermark -->
+        <text x="${VIDEO_CONFIG.width / 2}" y="${VIDEO_CONFIG.height - 80}" 
+              text-anchor="middle" font-family="Arial, sans-serif" 
+              font-size="28" font-weight="bold" fill="white" opacity="0.7">
+          RevueTech.fr
+        </text>
+      </svg>
+    `;
+
+    let baseImage: sharp.Sharp;
+
+    if (backgroundPath) {
+      // Charger et redimensionner l'image de fond
+      try {
+        baseImage = sharp(backgroundPath)
+          .resize(VIDEO_CONFIG.width, VIDEO_CONFIG.height, {
+            fit: 'cover',
+            position: 'center',
+          });
+      } catch {
+        // Fallback au gradient
+        const gradientBuffer = await createGradientBackground();
+        baseImage = sharp(gradientBuffer)
+          .resize(VIDEO_CONFIG.width, VIDEO_CONFIG.height);
+      }
+    } else {
+      // Utiliser le gradient par défaut
+      const gradientBuffer = await createGradientBackground();
+      baseImage = sharp(gradientBuffer)
+        .resize(VIDEO_CONFIG.width, VIDEO_CONFIG.height);
     }
 
-    // Logo/Watermark
-    ctx.font = `bold 28px ${VIDEO_CONFIG.fontFamily}`;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-    ctx.textAlign = 'center';
-    ctx.fillText('RevueTech.fr', VIDEO_CONFIG.width / 2, VIDEO_CONFIG.height - 80);
-
-    // Sauvegarder l'image
+    // Composer l'image finale
     const slidePath = path.join(config.tempDir, `slide_${slideNumber.toString().padStart(3, '0')}.png`);
-    const buffer = canvas.toBuffer('image/png');
-    await fs.writeFile(slidePath, buffer);
+    
+    await baseImage
+      .composite([
+        {
+          input: Buffer.from(overlaySvg),
+          top: 0,
+          left: 0,
+        },
+      ])
+      .png()
+      .toFile(slidePath);
 
     return slidePath;
   }

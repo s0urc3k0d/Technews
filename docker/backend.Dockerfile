@@ -66,8 +66,10 @@ COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 # Copy database package with Prisma client
 COPY --from=builder /app/packages/database/src ./packages/database/src
 COPY --from=builder /app/packages/database/prisma ./packages/database/prisma
-COPY --from=builder /app/node_modules/.pnpm/@prisma+client*/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
+# Copy Prisma generated client from pnpm structure
+# The generated client is in .pnpm/@prisma+client*/node_modules/.prisma/client
+COPY --from=builder /app/node_modules/.pnpm/@prisma+client@*/node_modules/.prisma ./node_modules/.prisma
 
 # Create uploads and shorts directories
 RUN mkdir -p /app/uploads /app/shorts /app/shorts/backgrounds /app/shorts/temp && \

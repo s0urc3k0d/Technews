@@ -112,7 +112,7 @@ export default function ArticleSocialPanel({
         throw new Error(data.error || 'Erreur lors du partage');
       }
 
-      const result = await res.json();
+      await res.json(); // Consume response
       fetchData(); // Refresh shares list
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur de partage');

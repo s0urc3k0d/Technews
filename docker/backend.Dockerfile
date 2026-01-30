@@ -73,8 +73,8 @@ RUN adduser --system --uid 1001 fastify
 # Copy the compiled dist file
 COPY --from=builder --chown=fastify:nodejs /app/apps/backend/dist ./dist
 
-# Create package.json with all production deps (no workspace protocol)
-RUN echo '{"name":"backend","type":"module","private":true,"dependencies":{"fastify":"^4.26.0","@fastify/cors":"^9.0.0","@fastify/helmet":"^11.1.0","@fastify/rate-limit":"^9.1.0","@fastify/static":"^7.0.0","@fastify/multipart":"^8.1.0","@fastify/cookie":"^9.3.0","fastify-plugin":"^4.5.1","@prisma/client":"5.22.0","ioredis":"^5.3.0","sharp":"^0.33.0","pino":"^8.19.0","pino-pretty":"^10.3.0","zod":"^3.22.0","jose":"^6.1.3","node-cron":"^3.0.0","resend":"^3.5.0","rss-parser":"^3.13.0","@mistralai/mistralai":"^0.1.3"}}' > package.json
+# Create package.json WITHOUT type:module (we're using CommonJS now)
+RUN echo '{"name":"backend","private":true,"dependencies":{"fastify":"^4.26.0","@fastify/cors":"^9.0.0","@fastify/helmet":"^11.1.0","@fastify/rate-limit":"^9.1.0","@fastify/static":"^7.0.0","@fastify/multipart":"^8.1.0","@fastify/cookie":"^9.3.0","fastify-plugin":"^4.5.1","@prisma/client":"5.22.0","ioredis":"^5.3.0","sharp":"^0.33.0","pino":"^8.19.0","pino-pretty":"^10.3.0","zod":"^3.22.0","jose":"^6.1.3","node-cron":"^3.0.0","resend":"^3.5.0","rss-parser":"^3.13.0","@mistralai/mistralai":"^0.1.3"}}' > package.json
 
 # Install all dependencies with npm
 RUN npm install --omit=dev
@@ -93,4 +93,4 @@ USER fastify
 
 EXPOSE 3001
 
-CMD ["node", "dist/server.js"]
+CMD ["node", "dist/server.cjs"]

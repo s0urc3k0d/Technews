@@ -3,11 +3,10 @@ import path from 'path';
 
 export default defineConfig({
   entry: ['src/server.ts'],
-  format: ['esm'],
+  format: ['cjs'],  // Use CommonJS to avoid ESM resolution issues
   target: 'node20',
   outDir: 'dist',
   clean: true,
-  // Don't bundle - keep external imports
   bundle: true,
   // Keep all dependencies external - they'll be in node_modules
   external: [
@@ -37,7 +36,7 @@ export default defineConfig({
   ],
   // Handle node built-ins
   platform: 'node',
-  // Shims for __dirname, __filename in ESM
+  // Shims for __dirname, __filename
   shims: true,
   // Resolve workspace packages
   esbuildOptions(options) {

@@ -1,6 +1,5 @@
 # ===========================================
 # Backend Production Dockerfile
-# BUNDLED approach - all deps in single file
 # ===========================================
 FROM node:20-alpine AS base
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
@@ -46,11 +45,11 @@ COPY . .
 # Generate Prisma client
 RUN pnpm --filter @technews/database db:generate
 
-# Build backend (now bundles all deps except sharp/prisma)
+# Build backend
 RUN pnpm --filter @technews/backend build
 
 # ===========================================
-# Runner stage - minimal, only native modules needed
+# Runner stage
 # ===========================================
 FROM node:20-alpine AS runner
 
@@ -71,20 +70,20 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 fastify
 
-# Copy the bundled dist file (contains all JS deps)
+# Copy the compiled dist file
 COPY --from=builder --chown=fastify:nodejs /app/apps/backend/dist ./dist
 
-# Create minimal package.json (no workspace deps)
-RUN echo '{"name":"backend","type":"module","private":true}' > package.json
+# Create package.json with all production deps (no workspace protocol)
+RUN echo '{"name":"backend","type":"module","private":true,"dependencies":{"fastify":"^4.26.0","@fastify/cors":"^9.0.0","@fastify/helmet":"^11.1.0","@fastify/rate-limit":"^9.1.0","@fastify/static":"^7.0.0","@fastify/multipart":"^8.1.0","@fastify/cookie":"^9.3.0","fastify-plugin":"^4.5.1","@prisma/client":"5.22.0","ioredis":"^5.3.0","sharp":"^0.33.0","pino":"^8.19.0","pino-pretty":"^10.3.0","zod":"^3.22.0","jose":"^6.1.3","node-cron":"^3.0.0","resend":"^3.5.0","rss-parser":"^3.13.0","@mistralai/mistralai":"^0.1.3"}}' > package.json
 
-# Only install the native modules that couldn't be bundled
-RUN npm install sharp@0.33.0 @prisma/client@5.22.0 --omit=dev
+# Install all dependencies with npm
+RUN npm install --omit=dev
 
 # Copy Prisma schema
 COPY --from=builder --chown=fastify:nodejs /app/packages/database/prisma ./prisma
 
-# Copy the already-generated Prisma client from builder (don't regenerate)
-COPY --from=builder --chown=fastify:nodejs /app/node_modules/.pnpm/@prisma+client@*/node_modules/.prisma ./node_modules/.prisma
+# Generate Prisma client with the installed version
+RUN npx prisma@5.22.0 generate --schema=./prisma/schema.prisma
 
 # Create uploads and shorts directories
 RUN mkdir -p /app/uploads /app/shorts /app/shorts/backgrounds /app/shorts/temp && \

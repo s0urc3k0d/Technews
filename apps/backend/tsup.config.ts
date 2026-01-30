@@ -7,20 +7,36 @@ export default defineConfig({
   target: 'node20',
   outDir: 'dist',
   clean: true,
-  // Bundle ALL dependencies except native modules
-  noExternal: [/.*/],
-  // Keep these as external (native binaries that can't be bundled)
+  // Don't bundle - keep external imports
+  bundle: true,
+  // Keep all dependencies external - they'll be in node_modules
   external: [
-    'sharp',
+    // All @fastify packages
+    'fastify',
+    '@fastify/cors',
+    '@fastify/helmet',
+    '@fastify/rate-limit',
+    '@fastify/static',
+    '@fastify/multipart',
+    '@fastify/cookie',
+    'fastify-plugin',
+    // Database
     '@prisma/client',
     '.prisma/client',
+    // Other deps
+    'ioredis',
+    'sharp',
+    'pino',
+    'pino-pretty',
+    'zod',
+    'jose',
+    'node-cron',
+    'resend',
+    'rss-parser',
+    '@mistralai/mistralai',
   ],
   // Handle node built-ins
   platform: 'node',
-  // Generate sourcemaps for debugging
-  sourcemap: true,
-  // Don't split chunks
-  splitting: false,
   // Shims for __dirname, __filename in ESM
   shims: true,
   // Resolve workspace packages

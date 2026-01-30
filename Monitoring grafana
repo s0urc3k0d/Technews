@@ -1,0 +1,48 @@
+3. Monitoring avec Grafana
+3.1 Métriques Techniques
+Performance Backend
+Temps de réponse API (p50, p95, p99)
+Taux d'erreurs HTTP (4xx, 5xx)
+Throughput (requêtes par seconde)
+Latence base de données
+Performance Frontend
+Core Web Vitals (LCP, FID, CLS)
+Temps de chargement des pages
+Erreurs JavaScript côté client
+Infrastructure
+Utilisation CPU/RAM des containers Docker
+Utilisation Redis (hit rate, mémoire)
+Connexions PostgreSQL actives
+Taille de la base de données
+Disponibilité
+Uptime de l'application
+Statut des services (frontend, backend, Redis)
+Échecs des cron jobs (parser RSS, newsletter)
+3.2 Métriques Métier
+Trafic & Engagement
+Nombre de visiteurs uniques (jour/semaine/mois)
+Pages vues totales et par article
+Temps moyen passé sur le site
+Taux de rebond
+Parcours utilisateurs (pages les plus visitées)
+Contenu
+Nombre d'articles publiés (jour/semaine/mois)
+Articles les plus consultés (top 10)
+Performance par catégorie
+Taux de publication (drafts vs publiés depuis RSS)
+Newsletter
+Nombre d'abonnés actifs
+Taux de croissance des abonnés
+Taux d'ouverture des emails
+Taux de clics (CTR)
+Taux de désinscription
+Articles les plus cliqués dans les newsletters
+Commentaires
+Nombre de commentaires (total et par article)
+Taux de commentaires par article
+Commentaires modérés/supprimés
+Temps moyen de modération
+Podcasts
+Vues des articles podcast vs articles standards
+Engagement sur les vidéos YouTube (si API disponible)
+Temps de visionnage moyen

@@ -51,9 +51,19 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 fastify
 
+# Copy package.json for module resolution
+COPY --from=builder /app/apps/backend/package.json ./package.json
+
 # Copy built files
 COPY --from=builder /app/apps/backend/dist ./dist
+
+# Copy node_modules from root (contains all dependencies for monorepo)
 COPY --from=builder /app/node_modules ./node_modules
+
+# Copy backend-specific node_modules (hoisted deps may need this)
+COPY --from=builder /app/apps/backend/node_modules ./apps/backend/node_modules
+
+# Copy database package (for Prisma client)
 COPY --from=builder /app/packages/database ./packages/database
 
 # Create uploads and shorts directories

@@ -1,40 +1,9 @@
-version: '3.8'
-
 # ===========================================
 # TechNews - Docker Compose Production
+# Nginx est sur le VPS (pas dans Docker)
 # ===========================================
 
 services:
-  # ===========================================
-  # Nginx - Reverse Proxy + SSL
-  # ===========================================
-  nginx:
-    build:
-      context: ./docker/nginx
-      dockerfile: Dockerfile
-    container_name: technews-nginx
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-      - ./uploads:/var/www/revuetech/uploads:ro
-      - ./docker/nginx/.htpasswd:/etc/nginx/.htpasswd:ro
-      - certbot-webroot:/var/www/certbot
-    depends_on:
-      - frontend
-      - backend
-      - grafana
-      - prometheus
-    networks:
-      - technews-network
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
   # ===========================================
   # Frontend - Next.js 15
   # ===========================================
@@ -44,8 +13,8 @@ services:
       dockerfile: ./docker/frontend.Dockerfile
     container_name: technews-frontend
     restart: unless-stopped
-    expose:
-      - "3000"
+    ports:
+      - "127.0.0.1:3000:3000"
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
@@ -77,8 +46,8 @@ services:
       dockerfile: ./docker/backend.Dockerfile
     container_name: technews-backend
     restart: unless-stopped
-    expose:
-      - "3001"
+    ports:
+      - "127.0.0.1:3001:3001"
     environment:
       - NODE_ENV=production
       - PORT=3001
@@ -136,8 +105,8 @@ services:
     image: prom/prometheus:v2.50.0
     container_name: technews-prometheus
     restart: unless-stopped
-    expose:
-      - "9090"
+    ports:
+      - "127.0.0.1:9090:9090"
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
@@ -159,8 +128,8 @@ services:
     image: grafana/grafana:10.3.0
     container_name: technews-grafana
     restart: unless-stopped
-    expose:
-      - "3000"
+    ports:
+      - "127.0.0.1:3052:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
@@ -180,19 +149,6 @@ services:
     networks:
       - technews-network
 
-  # ===========================================
-  # Certbot - SSL Auto-renewal
-  # ===========================================
-  certbot:
-    image: certbot/certbot:latest
-    container_name: technews-certbot
-    volumes:
-      - /etc/letsencrypt:/etc/letsencrypt
-      - certbot-webroot:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-    networks:
-      - technews-network
-
 networks:
   technews-network:
     driver: bridge
@@ -207,6 +163,4 @@ volumes:
   prometheus-data:
     driver: local
   grafana-data:
-    driver: local
-  certbot-webroot:
     driver: local

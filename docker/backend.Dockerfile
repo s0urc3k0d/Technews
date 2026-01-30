@@ -54,7 +54,7 @@ RUN adduser --system --uid 1001 fastify
 # Copy built files
 COPY --from=builder /app/apps/backend/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/packages/database/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/packages/database ./packages/database
 
 # Create uploads and shorts directories
 RUN mkdir -p /app/uploads /app/shorts /app/shorts/backgrounds /app/shorts/temp && \

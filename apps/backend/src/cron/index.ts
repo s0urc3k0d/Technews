@@ -1,5 +1,5 @@
 // ===========================================
-// Cron Jobs (RSS Parser, Newsletter)
+// Cron Jobs (RSS Parser, Newsletter, Shorts)
 // ===========================================
 
 import * as cron from 'node-cron';
@@ -7,6 +7,8 @@ import { PrismaClient } from '@technews/database';
 import { createRSSParserService, DEFAULT_RSS_FEED_URL } from '../services/rss.service.js';
 import { createNewsletterAIService } from '../services/newsletter-ai.service.js';
 import { createEmailService } from '../services/email.service.js';
+import { createShortsService } from '../services/shorts.service.js';
+import * as path from 'path';
 
 interface CronConfig {
   prisma: PrismaClient;
@@ -15,10 +17,11 @@ interface CronConfig {
   resendApiKey?: string;
   resendFromEmail?: string;
   siteUrl: string;
+  shortsDir?: string;
 }
 
 export const setupCronJobs = (config: CronConfig) => {
-  const { prisma, mistralApiKey, resendApiKey, resendFromEmail, siteUrl } = config;
+  const { prisma, mistralApiKey, resendApiKey, resendFromEmail, siteUrl, shortsDir } = config;
   
   // Utiliser l'URL TechPulse par défaut si non spécifiée
   const rssUrl = config.rssUrl || DEFAULT_RSS_FEED_URL;
@@ -251,5 +254,72 @@ export const setupCronJobs = (config: CronConfig) => {
     });
 
     console.log('📬 Newsletter sender cron job scheduled (every 5 minutes)');
+  }
+
+  // Shorts Video Generation - Daily at 10 PM
+  if (mistralApiKey && shortsDir) {
+    cron.schedule('0 22 * * *', async () => {
+      console.log('[CRON] Starting daily shorts video generation...');
+
+      const log = await prisma.cronJobLog.create({
+        data: {
+          jobName: 'shorts-generate',
+          status: 'RUNNING',
+          startedAt: new Date(),
+        },
+      });
+
+      try {
+        const shortsService = createShortsService(prisma, {
+          mistralApiKey,
+          shortsDir,
+          backgroundsDir: path.join(shortsDir, 'backgrounds'),
+          tempDir: path.join(shortsDir, 'temp'),
+        });
+
+        const result = await shortsService.generateDailyShort();
+
+        if (result) {
+          await prisma.cronJobLog.update({
+            where: { id: log.id },
+            data: {
+              status: 'SUCCESS',
+              completedAt: new Date(),
+              duration: Date.now() - log.startedAt.getTime(),
+              message: `Generated shorts video with ${result.slides.length} slides`,
+            },
+          });
+
+          console.log(`[CRON] Shorts video generated: ${result.slides.length} slides, duration: ${result.duration}s`);
+        } else {
+          await prisma.cronJobLog.update({
+            where: { id: log.id },
+            data: {
+              status: 'SUCCESS',
+              completedAt: new Date(),
+              duration: Date.now() - log.startedAt.getTime(),
+              message: 'No articles available for shorts generation',
+            },
+          });
+          console.log('[CRON] No articles available for shorts generation');
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+
+        await prisma.cronJobLog.update({
+          where: { id: log.id },
+          data: {
+            status: 'FAILED',
+            completedAt: new Date(),
+            duration: Date.now() - log.startedAt.getTime(),
+            message,
+          },
+        });
+
+        console.error('[CRON] Shorts generation failed:', err);
+      }
+    });
+
+    console.log('🎬 Shorts video cron job scheduled (daily at 10 PM)');
   }
 };

@@ -46,6 +46,9 @@ const envSchema = z.object({
   UPLOAD_PATH: z.string().default('./uploads'),
   UPLOAD_MAX_SIZE_MB: z.string().default('5'),
 
+  // Shorts vidéo
+  SHORTS_DIR: z.string().default('/var/www/revuetech/shorts'),
+
   // Frontend URL (for CORS & emails)
   NEXT_PUBLIC_SITE_URL: z.string().url().default('http://localhost:3000'),
 });

@@ -10,6 +10,7 @@ Secrets JWT/session (JWT_SECRET, SESSION_SECRET)
 Configuration Prometheus/Grafana
 URL du site (NEXT_PUBLIC_SITE_URL)
 Google AdSense ID (NEXT_PUBLIC_ADSENSE_ID) - optionnel
+Dossier shorts vidéo (SHORTS_DIR) - défaut: /var/www/revuetech/shorts
 Nginx
 Configuration reverse proxy vers app-frontend
 Proxy API vers app-backend
@@ -33,3 +34,16 @@ Dossier : /var/www/revuetech/uploads (monté en volume Docker)
 Backup : inclure dans stratégie de backup VPS
 Permissions : lecture publique, écriture backend uniquement
 Nettoyage : cron pour supprimer images orphelines
+Shorts Vidéo (TikTok/YouTube Shorts)
+Dossier : /var/www/revuetech/shorts (monté en volume Docker)
+Structure :
+  - current.mp4 : vidéo du jour (remplacée chaque nuit à 22h)
+  - thumbnail.png : miniature de la vidéo
+  - metadata.json : infos et tags pour les plateformes
+  - backgrounds/ : images de fond personnalisées
+  - temp/ : fichiers temporaires (nettoyés après génération)
+Prérequis serveur :
+  - FFmpeg installé (apt install ffmpeg)
+  - Librairies canvas (apt install libcairo2-dev libjpeg-dev libpango1.0-dev libgif-dev build-essential g++)
+Cron : génération quotidienne à 22h
+Admin : page /admin/shorts pour télécharger et copier les tags

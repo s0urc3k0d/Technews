@@ -58,9 +58,11 @@ services:
       - RSS_FEED_URL=${RSS_FEED_URL}
       - UPLOAD_PATH=/app/uploads
       - UPLOAD_MAX_SIZE_MB=${UPLOAD_MAX_SIZE_MB:-5}
+      - SHORTS_DIR=/app/shorts
       - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
     volumes:
       - uploads-data:/app/uploads
+      - shorts-data:/app/shorts
     depends_on:
       redis:
         condition: service_healthy
@@ -165,4 +167,6 @@ volumes:
   grafana-data:
     driver: local
   uploads-data:
+    driver: local
+  shorts-data:
     driver: local

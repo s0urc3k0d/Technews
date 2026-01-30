@@ -49,6 +49,17 @@ export const API_ENDPOINTS = {
   adminNewsletterGenerate: '/api/v1/admin/newsletter/generate',
   adminLogs: '/api/v1/admin/logs',
   
+  // Shorts
+  shorts: '/api/v1/shorts',
+  shortsCurrent: '/api/v1/shorts/current',
+  shortsVideo: '/api/v1/shorts/video',
+  shortsThumbnail: '/api/v1/shorts/thumbnail',
+  shortsGenerate: '/api/v1/shorts/generate',
+  shortsBackgrounds: '/api/v1/shorts/backgrounds',
+  shortsBackgroundDelete: (filename: string) => `/api/v1/shorts/backgrounds/${filename}`,
+  shortsPreview: '/api/v1/shorts/preview',
+  shortsTags: '/api/v1/shorts/tags',
+  
   // Metrics
   metrics: '/metrics',
   webVitals: '/metrics/web-vitals',

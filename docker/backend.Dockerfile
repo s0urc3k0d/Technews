@@ -4,8 +4,17 @@
 FROM node:20-alpine AS base
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 
-# Install sharp dependencies
-RUN apk add --no-cache libc6-compat vips-dev
+# Install sharp and canvas dependencies + ffmpeg for video generation
+RUN apk add --no-cache \
+    libc6-compat \
+    vips-dev \
+    cairo-dev \
+    jpeg-dev \
+    pango-dev \
+    giflib-dev \
+    build-base \
+    g++ \
+    ffmpeg
 
 # Dependencies stage
 FROM base AS deps
@@ -47,8 +56,9 @@ COPY --from=builder /app/apps/backend/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/database/node_modules/.prisma ./node_modules/.prisma
 
-# Create uploads directory
-RUN mkdir -p /app/uploads && chown -R fastify:nodejs /app/uploads
+# Create uploads and shorts directories
+RUN mkdir -p /app/uploads /app/shorts /app/shorts/backgrounds /app/shorts/temp && \
+    chown -R fastify:nodejs /app/uploads /app/shorts
 
 USER fastify
 

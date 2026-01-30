@@ -23,6 +23,7 @@ const adminNavigation = [
   { name: 'Catégories', href: '/admin/categories', icon: '📁' },
   { name: 'Commentaires', href: '/admin/comments', icon: '💬' },
   { name: 'Newsletter', href: '/admin/newsletter', icon: '📬' },
+  { name: 'Shorts', href: '/admin/shorts', icon: '🎬' },
   { name: 'Images', href: '/admin/images', icon: '🖼️' },
   { name: 'Paramètres', href: '/admin/settings', icon: '⚙️' },
 ];

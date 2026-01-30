@@ -24,6 +24,7 @@ import {
   metricsRoutes,
   trackResponseTime,
   socialRoutes,
+  shortsRoutes,
 } from './routes/index.js';
 
 // Cron jobs
@@ -112,7 +113,7 @@ async function buildServer() {
   // API v1 info
   fastify.get('/api/v1', async () => {
     return { 
-      message: 'TechNews API v1',
+      message: 'RevueTech API v1',
       version: '1.0.0',
       endpoints: [
         '/api/v1/articles',
@@ -123,6 +124,7 @@ async function buildServer() {
         '/api/v1/images',
         '/api/v1/admin',
         '/api/v1/social',
+        '/api/v1/shorts',
         '/metrics',
       ],
     };
@@ -137,6 +139,7 @@ async function buildServer() {
   await fastify.register(imagesRoutes, { prefix: '/api/v1/images' });
   await fastify.register(adminRoutes, { prefix: '/api/v1/admin' });
   await fastify.register(socialRoutes, { prefix: '/api/v1/social' });
+  await fastify.register(shortsRoutes, { prefix: '/api/v1/shorts' });
   await fastify.register(metricsRoutes, { prefix: '/metrics' });
 
   return fastify;
@@ -156,6 +159,7 @@ async function start() {
       resendApiKey: server.config.RESEND_API_KEY,
       resendFromEmail: server.config.RESEND_FROM_EMAIL,
       siteUrl: server.config.NEXT_PUBLIC_SITE_URL,
+      shortsDir: server.config.SHORTS_DIR,
     });
 
     await server.listen({ port, host });

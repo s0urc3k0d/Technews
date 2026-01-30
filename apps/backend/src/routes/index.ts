@@ -11,3 +11,4 @@ export { default as imagesRoutes } from './images.routes.js';
 export { default as adminRoutes } from './admin.routes.js';
 export { default as metricsRoutes, trackResponseTime } from './metrics.routes.js';
 export { default as socialRoutes } from './social.routes.js';
+export { default as shortsRoutes } from './shorts.routes.js';

@@ -74,9 +74,8 @@ RUN adduser --system --uid 1001 fastify
 # Copy package.json and remove workspace dependencies, then install with npm
 COPY --from=builder /app/apps/backend/package.json ./package.json
 
-# Remove workspace protocol dependencies and @technews/* packages, then install
-RUN sed -i '/"@technews\/database"/d' package.json && \
-    sed -i 's/"workspace:\*"/"*"/g' package.json && \
+# Remove ALL @technews/* workspace packages and install with npm
+RUN sed -i '/@technews/d' package.json && \
     npm install --omit=dev --legacy-peer-deps
 
 # Copy built dist files

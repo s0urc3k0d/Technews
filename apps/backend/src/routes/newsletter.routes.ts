@@ -31,16 +31,19 @@ const newsletterRoutes: FastifyPluginAsync = async (fastify) => {
   // ============================================
 
   // POST /newsletter/subscribe - S'inscrire à la newsletter
-  fastify.post<{ Body: SubscribeInput }>(
+  fastify.post(
     '/subscribe',
     {
       config: {
         rateLimit: { max: 5, timeWindow: '1 hour' },
       },
-      schema: { body: subscribeSchema },
     },
     async (request, reply) => {
-      const { email, firstName, source } = request.body;
+      const parseResult = subscribeSchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({ error: 'Invalid body', details: parseResult.error.issues });
+      }
+      const { email, firstName, source } = parseResult.data;
 
       // Check if already subscribed
       const existing = await prisma.subscriber.findUnique({
@@ -178,14 +181,15 @@ const newsletterRoutes: FastifyPluginAsync = async (fastify) => {
   // ============================================
 
   // GET /newsletter/subscribers - Liste des abonnés (admin)
-  fastify.get<{ Querystring: ListSubscribersQuery }>(
+  fastify.get(
     '/subscribers',
-    {
-      preHandler: [fastify.authenticate],
-      schema: { querystring: listSubscribersQuerySchema },
-    },
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const { page, limit, isActive, isConfirmed, search } = request.query;
+      const parseResult = listSubscribersQuerySchema.safeParse(request.query);
+      if (!parseResult.success) {
+        return reply.status(400).send({ error: 'Invalid query parameters', details: parseResult.error.issues });
+      }
+      const { page, limit, isActive, isConfirmed, search } = parseResult.data;
       const skip = (page - 1) * limit;
 
       const where: any = {};
@@ -241,14 +245,15 @@ const newsletterRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   // GET /newsletter/newsletters - Liste des newsletters (admin)
-  fastify.get<{ Querystring: ListNewslettersQuery }>(
+  fastify.get(
     '/newsletters',
-    {
-      preHandler: [fastify.authenticate],
-      schema: { querystring: listNewslettersQuerySchema },
-    },
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const { page, limit, status } = request.query;
+      const parseResult = listNewslettersQuerySchema.safeParse(request.query);
+      if (!parseResult.success) {
+        return reply.status(400).send({ error: 'Invalid query parameters', details: parseResult.error.issues });
+      }
+      const { page, limit, status } = parseResult.data;
       const skip = (page - 1) * limit;
 
       const where: any = {};
@@ -277,14 +282,15 @@ const newsletterRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   // POST /newsletter/newsletters - Créer newsletter (admin)
-  fastify.post<{ Body: CreateNewsletterInput }>(
+  fastify.post(
     '/newsletters',
-    {
-      preHandler: [fastify.authenticate],
-      schema: { body: createNewsletterSchema },
-    },
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const data = request.body;
+      const parseResult = createNewsletterSchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({ error: 'Invalid body', details: parseResult.error.issues });
+      }
+      const data = parseResult.data;
 
       const newsletter = await prisma.newsletter.create({
         data: {
@@ -299,15 +305,16 @@ const newsletterRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   // PUT /newsletter/newsletters/:id - Modifier newsletter (admin)
-  fastify.put<{ Params: { id: string }; Body: UpdateNewsletterInput }>(
+  fastify.put<{ Params: { id: string } }>(
     '/newsletters/:id',
-    {
-      preHandler: [fastify.authenticate],
-      schema: { body: updateNewsletterSchema },
-    },
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const { id } = request.params;
-      const data = request.body;
+      const parseResult = updateNewsletterSchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({ error: 'Invalid body', details: parseResult.error.issues });
+      }
+      const data = parseResult.data;
 
       const existing = await prisma.newsletter.findUnique({ where: { id } });
       if (!existing) {

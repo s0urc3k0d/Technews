@@ -5,10 +5,6 @@ import rateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
 import fastifyMultipart from '@fastify/multipart';
 import * as path from 'path';
-import {
-  serializerCompiler,
-  validatorCompiler,
-} from 'fastify-type-provider-zod';
 
 // Plugins
 import configPlugin from './plugins/config.js';
@@ -53,10 +49,6 @@ const environment = (process.env.NODE_ENV || 'development') as keyof typeof envT
 const fastify = Fastify({
   logger: envToLogger[environment] ?? true,
 });
-
-// Set up Zod type provider for validation
-fastify.setValidatorCompiler(validatorCompiler);
-fastify.setSerializerCompiler(serializerCompiler);
 
 async function buildServer() {
   // Register plugins in order

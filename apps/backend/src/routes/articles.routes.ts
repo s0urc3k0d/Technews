@@ -18,18 +18,18 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
   const { prisma } = fastify;
 
   // GET /articles - Liste des articles (public)
-  fastify.get<{ Querystring: ListArticlesQuery }>(
+  fastify.get(
     '/',
-    {
-      schema: {
-        querystring: listArticlesQuerySchema,
-      },
-    },
     async (request, reply) => {
+      // Validate query params with Zod
+      const parseResult = listArticlesQuerySchema.safeParse(request.query);
+      if (!parseResult.success) {
+        return reply.status(400).send({ error: 'Invalid query parameters', details: parseResult.error.issues });
+      }
       const { 
         page, limit, status, type, categorySlug, tagSlug, 
         search, source, featured, orderBy, order 
-      } = request.query;
+      } = parseResult.data;
 
       const skip = (page - 1) * limit;
 
@@ -195,16 +195,15 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   // POST /articles - Créer article (admin)
-  fastify.post<{ Body: CreateArticleInput }>(
+  fastify.post(
     '/',
-    {
-      preHandler: [fastify.authenticate],
-      schema: {
-        body: createArticleSchema,
-      },
-    },
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const { categoryIds, tagIds, ...data } = request.body;
+      const parseResult = createArticleSchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({ error: 'Invalid body', details: parseResult.error.issues });
+      }
+      const { categoryIds, tagIds, ...data } = parseResult.data;
 
       // If setting as featured, unset other featured articles
       if (data.isFeatured) {
@@ -241,17 +240,16 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   // PUT /articles/:id - Modifier article (admin)
-  fastify.put<{ Params: { id: string }; Body: UpdateArticleInput }>(
+  fastify.put<{ Params: { id: string } }>(
     '/:id',
-    {
-      preHandler: [fastify.authenticate],
-      schema: {
-        body: updateArticleSchema,
-      },
-    },
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const { id } = request.params;
-      const { categoryIds, tagIds, ...data } = request.body;
+      const parseResult = updateArticleSchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({ error: 'Invalid body', details: parseResult.error.issues });
+      }
+      const { categoryIds, tagIds, ...data } = parseResult.data;
 
       // Check if article exists
       const existing = await prisma.article.findUnique({ where: { id } });

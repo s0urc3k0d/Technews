@@ -59,14 +59,15 @@ const categoriesRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   // POST /categories - Créer catégorie (admin)
-  fastify.post<{ Body: CreateCategoryInput }>(
+  fastify.post(
     '/',
-    {
-      preHandler: [fastify.authenticate],
-      schema: { body: createCategorySchema },
-    },
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const data = request.body;
+      const parseResult = createCategorySchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({ error: 'Invalid body', details: parseResult.error.issues });
+      }
+      const data = parseResult.data;
 
       // Check unique constraints
       const existing = await prisma.category.findFirst({
@@ -88,15 +89,16 @@ const categoriesRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   // PUT /categories/:id - Modifier catégorie (admin)
-  fastify.put<{ Params: { id: string }; Body: UpdateCategoryInput }>(
+  fastify.put<{ Params: { id: string } }>(
     '/:id',
-    {
-      preHandler: [fastify.authenticate],
-      schema: { body: updateCategorySchema },
-    },
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const { id } = request.params;
-      const data = request.body;
+      const parseResult = updateCategorySchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({ error: 'Invalid body', details: parseResult.error.issues });
+      }
+      const data = parseResult.data;
 
       const existing = await prisma.category.findUnique({ where: { id } });
       if (!existing) {

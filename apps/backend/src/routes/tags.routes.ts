@@ -59,14 +59,15 @@ const tagsRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   // POST /tags - Créer tag (admin)
-  fastify.post<{ Body: CreateTagInput }>(
+  fastify.post(
     '/',
-    {
-      preHandler: [fastify.authenticate],
-      schema: { body: createTagSchema },
-    },
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const data = request.body;
+      const parseResult = createTagSchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({ error: 'Invalid body', details: parseResult.error.issues });
+      }
+      const data = parseResult.data;
 
       const existing = await prisma.tag.findFirst({
         where: {
@@ -87,15 +88,16 @@ const tagsRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   // PUT /tags/:id - Modifier tag (admin)
-  fastify.put<{ Params: { id: string }; Body: UpdateTagInput }>(
+  fastify.put<{ Params: { id: string } }>(
     '/:id',
-    {
-      preHandler: [fastify.authenticate],
-      schema: { body: updateTagSchema },
-    },
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const { id } = request.params;
-      const data = request.body;
+      const parseResult = updateTagSchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({ error: 'Invalid body', details: parseResult.error.issues });
+      }
+      const data = parseResult.data;
 
       const existing = await prisma.tag.findUnique({ where: { id } });
       if (!existing) {

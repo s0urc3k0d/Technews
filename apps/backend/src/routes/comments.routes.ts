@@ -19,14 +19,15 @@ const commentsRoutes: FastifyPluginAsync = async (fastify) => {
   const spamService = createSpamService(prisma);
 
   // GET /comments - Liste des commentaires (admin)
-  fastify.get<{ Querystring: ListCommentsQuery }>(
+  fastify.get(
     '/',
-    {
-      preHandler: [fastify.authenticate],
-      schema: { querystring: listCommentsQuerySchema },
-    },
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const { page, limit, status, articleId, orderBy, order } = request.query;
+      const parseResult = listCommentsQuerySchema.safeParse(request.query);
+      if (!parseResult.success) {
+        return reply.status(400).send({ error: 'Invalid query parameters', details: parseResult.error.issues });
+      }
+      const { page, limit, status, articleId, orderBy, order } = parseResult.data;
       const skip = (page - 1) * limit;
 
       const where: any = {};
@@ -89,7 +90,7 @@ const commentsRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   // POST /comments - Créer commentaire (public)
-  fastify.post<{ Body: CreateCommentInput }>(
+  fastify.post(
     '/',
     {
       config: {
@@ -98,10 +99,13 @@ const commentsRoutes: FastifyPluginAsync = async (fastify) => {
           timeWindow: '1 minute',
         },
       },
-      schema: { body: createCommentSchema },
     },
     async (request, reply) => {
-      const { website, ...data } = request.body;
+      const parseResult = createCommentSchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({ error: 'Invalid body', details: parseResult.error.issues });
+      }
+      const { website, ...data } = parseResult.data;
       const ip = request.ip;
       const userAgent = request.headers['user-agent'] || '';
 
@@ -158,15 +162,16 @@ const commentsRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   // PUT /comments/:id/status - Modifier statut (admin)
-  fastify.put<{ Params: { id: string }; Body: UpdateCommentStatusInput }>(
+  fastify.put<{ Params: { id: string } }>(
     '/:id/status',
-    {
-      preHandler: [fastify.authenticate],
-      schema: { body: updateCommentStatusSchema },
-    },
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const { id } = request.params;
-      const { status } = request.body;
+      const parseResult = updateCommentStatusSchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({ error: 'Invalid body', details: parseResult.error.issues });
+      }
+      const { status } = parseResult.data;
 
       const existing = await prisma.comment.findUnique({ where: { id } });
       if (!existing) {
@@ -183,7 +188,7 @@ const commentsRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   // POST /comments/:id/report - Signaler commentaire (public)
-  fastify.post<{ Params: { id: string }; Body: { reason?: string } }>(
+  fastify.post<{ Params: { id: string } }>(
     '/:id/report',
     {
       config: {
@@ -192,9 +197,12 @@ const commentsRoutes: FastifyPluginAsync = async (fastify) => {
           timeWindow: '1 hour',
         },
       },
-      schema: { body: reportCommentSchema },
     },
     async (request, reply) => {
+      const parseResult = reportCommentSchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({ error: 'Invalid body', details: parseResult.error.issues });
+      }
       const { id } = request.params;
 
       const existing = await prisma.comment.findUnique({ where: { id } });

@@ -63,7 +63,8 @@ RUN apk add --no-cache \
     giflib-dev \
     ffmpeg \
     openssl \
-    openssl-dev
+    openssl-dev \
+    wget
 
 WORKDIR /app
 

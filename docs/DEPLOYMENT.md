@@ -338,21 +338,34 @@ openssl rand -hex 32
 openssl rand -hex 32
 ```
 
-### 6. Obtention du certificat SSL
+### 6. Installation et configuration de Nginx
+
+Nginx est installé directement sur le VPS (pas dans Docker) pour servir de reverse proxy.
+
+#### Installation de Nginx et Certbot
 
 ```bash
-# Arrêter nginx s'il est en cours d'exécution
-sudo docker-compose -f docker-compose.prod.yml stop nginx 2>/dev/null || true
+# Installer Nginx et le plugin Certbot pour Nginx
+sudo apt install -y nginx certbot python3-certbot-nginx
 
-# Obtenir le certificat Let's Encrypt
-sudo certbot certonly \
-    --standalone \
+# Activer et démarrer Nginx
+sudo systemctl enable nginx
+sudo systemctl start nginx
+```
+
+#### Obtention du certificat SSL
+
+```bash
+# Obtenir et configurer automatiquement le certificat Let's Encrypt
+sudo certbot --nginx \
     --agree-tos \
     --no-eff-email \
     --email admin@revuetech.fr \
     -d revuetech.fr \
     -d www.revuetech.fr
 ```
+
+> **Avantage** : `certbot --nginx` configure automatiquement les directives SSL dans nginx et gère le renouvellement sans interruption de service.
 
 **Vérifier les certificats :**
 ```bash
@@ -373,6 +386,63 @@ Certbot ajoute automatiquement un timer systemd. Vérifiez :
 sudo systemctl status certbot.timer
 ```
 
+#### Configuration du reverse proxy Nginx
+
+Le projet fournit deux fichiers de configuration dans `docker/nginx/vps/` :
+- `revuetech.conf` - Configuration initiale (HTTP uniquement, avant certbot)
+- `revuetech-ssl.conf` - Configuration complète avec SSL (référence)
+
+**Étape 1 : Installer la configuration initiale**
+
+```bash
+# Copier la configuration initiale (sans SSL)
+sudo cp /var/www/revuetech/docker/nginx/vps/revuetech.conf /etc/nginx/sites-available/revuetech
+
+# Activer le site
+sudo ln -sf /etc/nginx/sites-available/revuetech /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+
+# Créer le fichier .htpasswd pour le monitoring
+sudo apt install -y apache2-utils
+sudo htpasswd -c /etc/nginx/.htpasswd admin
+
+# Tester et recharger la configuration
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+**Étape 2 : Obtenir le certificat SSL avec certbot**
+
+```bash
+# Certbot va modifier automatiquement la config nginx
+sudo certbot --nginx \
+    --agree-tos \
+    --no-eff-email \
+    --email admin@revuetech.fr \
+    -d revuetech.fr \
+    -d www.revuetech.fr
+```
+
+Certbot va :
+1. Obtenir le certificat SSL
+2. Modifier `/etc/nginx/sites-available/revuetech` pour ajouter la config SSL
+3. Configurer la redirection HTTP → HTTPS
+
+**Étape 3 : Ajouter les headers de sécurité (optionnel)**
+
+Après certbot, vous pouvez remplacer la config par la version complète :
+
+```bash
+# Utiliser la config SSL complète avec tous les headers de sécurité
+sudo cp /var/www/revuetech/docker/nginx/vps/revuetech-ssl.conf /etc/nginx/sites-available/revuetech
+
+# Tester et recharger
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+> **Note** : La config `revuetech-ssl.conf` inclut : HSTS, CSP optimisé pour AdSense, OCSP Stapling, etc.
+
 ### 7. Construction et lancement des conteneurs
 
 ```bash
@@ -391,13 +461,14 @@ sudo docker-compose -f docker-compose.prod.yml ps
 **Sortie attendue :**
 ```
 NAME                    STATUS              PORTS
-technews-frontend       Up (healthy)        3000/tcp
-technews-backend        Up (healthy)        3001/tcp
-technews-nginx          Up                  0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp
+technews-frontend       Up (healthy)        0.0.0.0:3000->3000/tcp
+technews-backend        Up (healthy)        0.0.0.0:3001->3001/tcp
 technews-redis          Up (healthy)        6379/tcp
 revuetech-prometheus    Up                  9090/tcp
 revuetech-grafana       Up                  3000/tcp
 ```
+
+> **Note** : Nginx n'est pas dans Docker - il tourne directement sur le VPS et proxy les requêtes vers les conteneurs.
 
 **Attendre que les services soient prêts :**
 ```bash
@@ -612,19 +683,15 @@ Les identifiants Basic Auth sont stockés dans `docker/nginx/.htpasswd`.
 
 **Générer/modifier les identifiants :**
 ```bash
-# Méthode 1 : Utiliser le script fourni
-./scripts/setup-monitoring-auth.sh admin
-# Suivre les instructions pour entrer le mot de passe
-
-# Méthode 2 : Manuellement avec htpasswd
+# Avec htpasswd (nginx est sur le VPS)
 sudo apt install apache2-utils  # Si nécessaire
-htpasswd -c docker/nginx/.htpasswd admin
+sudo htpasswd -c /etc/nginx/.htpasswd admin
 
 # Redémarrer nginx pour appliquer
-sudo docker-compose -f docker-compose.prod.yml restart nginx
+sudo systemctl restart nginx
 ```
 
-**Format du fichier .htpasswd :**
+**Emplacement du fichier .htpasswd :** `/etc/nginx/.htpasswd`
 ```
 admin:$apr1$xxxxx$yyyyyyyyyyyyyyyyyyy
 ```
@@ -649,7 +716,10 @@ sudo docker-compose -f docker-compose.prod.yml logs -f
 # Voir les logs d'un service spécifique
 sudo docker-compose -f docker-compose.prod.yml logs -f backend
 sudo docker-compose -f docker-compose.prod.yml logs -f frontend
-sudo docker-compose -f docker-compose.prod.yml logs -f nginx
+
+# Logs Nginx (sur le VPS, pas dans Docker)
+sudo tail -f /var/log/nginx/access.log
+sudo tail -f /var/log/nginx/error.log
 
 # Redémarrer tous les services
 sudo docker-compose -f docker-compose.prod.yml restart
@@ -724,7 +794,7 @@ sudo certbot renew
 sudo certbot renew --force-renewal
 
 # Après renouvellement, redémarrer nginx
-sudo docker-compose -f docker-compose.prod.yml restart nginx
+sudo systemctl restart nginx
 ```
 
 ### Backups
@@ -802,14 +872,24 @@ sudo docker exec technews-redis redis-cli FLUSHALL
 
 ### Nginx ne démarre pas
 
+Nginx est installé sur le VPS (pas dans Docker).
+
 ```bash
 # Vérifier la configuration
-sudo docker-compose -f docker-compose.prod.yml exec nginx nginx -t
+sudo nginx -t
+
+# Voir les logs d'erreur
+sudo journalctl -u nginx --no-pager -n 50
+sudo tail -20 /var/log/nginx/error.log
 
 # Problèmes courants:
 # 1. Certificats SSL manquants → obtenir avec certbot
 # 2. Ports déjà utilisés → sudo lsof -i :80 -i :443
-# 3. Erreur de syntaxe → vérifier docker/nginx/nginx.conf
+# 3. Erreur de syntaxe → sudo nginx -t
+# 4. Permissions .htpasswd → sudo chmod 644 /etc/nginx/.htpasswd
+
+# Redémarrer nginx
+sudo systemctl restart nginx
 ```
 
 ### Pas de données dans Grafana
@@ -848,7 +928,7 @@ curl -X POST https://revuetech.fr/api/v1/admin/rss/parse \
 - [ ] Firewall UFW activé (ports 22, 80, 443 uniquement)
 - [ ] Certificat SSL Let's Encrypt configuré
 - [ ] Variables sensibles dans `.env` (fichier non commité)
-- [ ] Grafana/Prometheus non exposés publiquement
+- [ ] Grafana/Prometheus protégés par Basic Auth
 - [ ] Mots de passe forts (générés avec `openssl rand -hex 32`)
 - [ ] Sauvegardes automatiques activées et testées
 - [ ] Auth0 configuré avec restrictions d'accès
@@ -903,31 +983,29 @@ sudo docker-compose -f docker-compose.prod.yml up -d
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    NGINX (Port 80/443)                      │
+│              NGINX (VPS - Port 80/443)                      │
 │                   SSL Termination                           │
-│                   Rate Limiting                             │
+│              Rate Limiting + Basic Auth                     │
+│                    (non dockerisé)                          │
 └─────────────────────────────────────────────────────────────┘
-           │                                    │
-           ▼                                    ▼
-┌─────────────────────┐            ┌─────────────────────────┐
-│   Frontend (3000)   │            │     Backend (3001)      │
-│      Next.js        │            │        Fastify          │
-│   Static + SSR      │            │    API REST + Cron      │
-└─────────────────────┘            └─────────────────────────┘
-                                              │
-                    ┌─────────────────────────┼─────────────────────────┐
-                    │                         │                         │
-                    ▼                         ▼                         ▼
-          ┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐
-          │   PostgreSQL    │      │      Redis      │      │   File System   │
-          │   (Port 5432)   │      │   (Port 6379)   │    │    /uploads     │
-          │    Database     │      │      Cache      │      │    /shorts      │
-          └─────────────────┘      └─────────────────┘      └─────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│                      MONITORING                              │
-│  Prometheus (9090) ──────────────► Grafana (3052)           │
-└─────────────────────────────────────────────────────────────┘
+           │                    │                    │
+           ▼                    ▼                    ▼
+┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
+│ Frontend (3000)  │ │ Backend (3001)   │ │ Monitoring       │
+│    Next.js       │ │    Fastify       │ │ /grafana/        │
+│   Static + SSR   │ │ API REST + Cron  │ │ /prometheus/     │
+│    [Docker]      │ │    [Docker]      │ │    [Docker]      │
+└──────────────────┘ └──────────────────┘ └──────────────────┘
+                              │
+           ┌──────────────────┼──────────────────┐
+           │                  │                  │
+           ▼                  ▼                  ▼
+   ┌───────────────┐  ┌───────────────┐  ┌───────────────┐
+   │  PostgreSQL   │  │    Redis      │  │  File System  │
+   │  (Port 5432)  │  │  (Port 6379)  │  │   /uploads    │
+   │   Database    │  │    Cache      │  │   /shorts     │
+   │    [VPS]      │  │   [Docker]    │  │    [VPS]      │
+   └───────────────┘  └───────────────┘  └───────────────┘
 ```
 
 ---

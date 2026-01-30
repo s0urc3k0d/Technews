@@ -1,0 +1,86 @@
+2. Fonctionnalités
+2.1 Gestion du contenu
+Parser RSS automatique
+Cron job quotidien récupérant le flux RSS depuis www.techpulse.sourcekod.fr
+Stockage des articles en statut "draft" dans la BDD
+Parsing des métadonnées : titre, description, lien source, date, catégorie
+Types d'articles
+Articles standards : Contenu complet avec titre, corps, image, catégorie, tags
+Articles podcast : Intégration YouTube player, résumé des sujets traités, timestamps (optionnel)
+Système de catégorisation
+Catégories multiples par article
+Filtrage dynamique sur le frontend
+Tags personnalisables
+Mise en une
+Système de featured post pour le dernier podcast (hebdomadaire)
+Affichage prioritaire en hero section sur la homepage
+2.2 Interface Admin
+Dashboard
+Vue d'ensemble des statistiques (voir section Monitoring)
+Aperçu des derniers articles/commentaires
+Alertes modération si nécessaire
+Gestion des articles
+CRUD complet : création, édition, suppression
+Validation/publication des articles draftés depuis le parser RSS
+Éditeur de texte riche (WYSIWYG)
+Upload d'images
+Prévisualisation avant publication
+Gestion des catégories et tags
+Modération des commentaires
+Liste des commentaires récents
+Actions : validation, suppression, réponse
+Système de signalement par les utilisateurs (optionnel)
+Gestion Newsletter
+Prévisualisation de la newsletter avant envoi
+Historique des newsletters envoyées
+Liste des abonnés avec stats (taux d'ouverture, clics)
+Possibilité d'envoi manuel en dehors du cron
+2.3 Frontend Public
+Homepage
+Hero section : dernier podcast en une avec player YouTube intégré
+Grid d'articles récents (pagination ou scroll infini)
+Sidebar : articles populaires, catégories
+Footer : formulaire inscription newsletter
+Page Article
+Affichage article complet ou intégration YouTube pour podcasts
+Métadonnées : auteur, date, catégories, tags
+Système de commentaires inline
+Partage social (Twitter, LinkedIn, Facebook)
+Articles similaires en fin de page
+Catégories & Tags
+Pages dédiées avec filtrage
+Breadcrumb navigation
+Système de commentaires
+Affichage direct sans modération préalable
+Formulaire : nom, email, message
+Possibilité de répondre aux commentaires (threading)
+Signalement de commentaires inappropriés
+Newsletter
+Formulaire d'inscription (email + double opt-in)
+Page de confirmation d'inscription
+Lien de désinscription dans chaque email
+2.4 Newsletter Intelligente
+Sélection automatique via IA
+Cron job quotidien à 17h30
+Appel API Mistral pour analyser les articles publiés dans la journée
+Critères de sélection : pertinence, diversité thématique, engagement potentiel
+Sélection de 5 à 7 articles top
+Génération & Envoi
+Template HTML responsive
+Personnalisation : prénom abonné (si disponible)
+Analytics : tracking ouvertures et clics
+Envoi automatique entre 17h et 18h
+2.5 Parsing & Intégration RSS
+Flux initial
+Récupération depuis www.techpulse.sourcekod.fr
+Pas d'import d'historique (démarrage fresh)
+Pipeline de traitement
+Fetch du flux RSS (quotidien)
+Parsing et extraction des données
+Déduplication (vérification si article déjà existant)
+Création en BDD avec statut "draft"
+Notification admin (email ou dashboard)
+Édition manuelle
+Interface admin pour modifier titre, contenu, catégorie
+Possibilité de rejeter un article (ne pas publier)
+Ajout d'images custom si non présentes dans le flux

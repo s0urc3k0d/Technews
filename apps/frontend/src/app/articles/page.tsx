@@ -2,6 +2,9 @@
 // Articles List Page
 // ===========================================
 
+// Force dynamic rendering to avoid build-time API calls
+export const dynamic = 'force-dynamic';
+
 import { Suspense } from 'react';
 import { Metadata } from 'next';
 import { ArticleList, CardSkeleton } from '@/components';

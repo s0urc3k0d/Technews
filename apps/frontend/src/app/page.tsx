@@ -2,6 +2,9 @@
 // Home Page
 // ===========================================
 
+// Force dynamic rendering to avoid build-time API calls
+export const dynamic = 'force-dynamic';
+
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { ArticleCard, ArticleList, CardSkeleton } from '@/components';

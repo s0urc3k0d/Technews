@@ -2,6 +2,9 @@
 // Categories List Page
 // ===========================================
 
+// Force dynamic rendering to avoid build-time API calls
+export const dynamic = 'force-dynamic';
+
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { API_ENDPOINTS } from '@/lib/api-client';

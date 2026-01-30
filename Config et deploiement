@@ -1,0 +1,22 @@
+5. Configuration & Déploiement
+Variables d'environnement requises
+Credentials PostgreSQL
+URL Redis
+Clé API Mistral
+Configuration Auth0 (Client ID, Secret, Domain)
+Service email (API key ou SMTP)
+URL du flux RSS source
+Secrets JWT/session
+Configuration Prometheus/Grafana
+Nginx
+Configuration reverse proxy vers app-frontend
+Proxy API vers app-backend
+SSL/TLS (Let's Encrypt)
+Cache statique
+Gzip/Brotli compression
+Sécurité
+Rate limiting sur l'API
+Protection CSRF
+Headers de sécurité (HSTS, CSP, X-Frame-Options)
+Sanitization des inputs utilisateur
+Validation des données côté backend

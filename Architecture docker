@@ -1,0 +1,16 @@
+4. Architecture Docker
+Services à containeriser
+app-frontend : Application Next.js
+app-backend : API Node.js/Fastify
+redis : Cache
+grafana : Interface de monitoring
+prometheus : Collecte de métriques
+Services externes (VPS)
+PostgreSQL : Base de données (non dockerisée)
+Nginx : Reverse proxy (configuration à adapter)
+Configuration Docker Compose
+Network bridge pour communication inter-services
+Volumes persistants pour Redis, Grafana, Prometheus
+Variables d'environnement via fichier .env
+Health checks pour chaque service
+Restart policy : unless-stopped

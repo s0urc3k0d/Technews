@@ -1,0 +1,25 @@
+1. Stack Technique
+Frontend
+Framework : Next.js 15 (App Router)
+Styling : Tailwind CSS
+Gestion d'état : React Query + Zustand (si nécessaire)
+Langage : TypeScript
+Backend
+Runtime : Node.js
+Framework API : Fastify
+ORM : Prisma
+Langage : TypeScript
+Base de données
+BDD principale : PostgreSQL (instance existante sur VPS)
+Cache : Redis (dockerisé)
+Infrastructure & Monitoring
+Containerisation : Docker + Docker Compose
+Reverse Proxy : Nginx (existant sur VPS)
+Monitoring : Grafana + Prometheus
+IA : Mistral AI API (compte existant)
+Authentification
+Solution : Auth0 (ou alternative OAuth)
+Scope : Interface admin uniquement
+Services externes
+Envoi emails : Resend ou SMTP custom
+Intégration vidéo : YouTube Player API

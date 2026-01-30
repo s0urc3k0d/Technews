@@ -3,7 +3,7 @@
 // ===========================================
 
 import { FastifyPluginAsync } from 'fastify';
-import { SocialPlatform } from '@technews/database';
+import { SocialPlatform } from '@prisma/client';
 import { createSocialService } from '../services/social.service.js';
 import crypto from 'crypto';
 

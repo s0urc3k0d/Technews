@@ -11,7 +11,7 @@ import {
   UpdateArticleInput,
   ListArticlesQuery,
 } from '../schemas/index.js';
-import { ArticleStatus } from '@technews/database';
+import { ArticleStatus } from '@prisma/client';
 import { createSocialService } from '../services/social.service.js';
 
 const articlesRoutes: FastifyPluginAsync = async (fastify) => {

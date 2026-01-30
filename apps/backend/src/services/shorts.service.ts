@@ -4,7 +4,7 @@
 // Utilise Sharp pour la génération d'images (pas de canvas)
 // ===========================================
 
-import { PrismaClient, ArticleStatus } from '@technews/database';
+import { PrismaClient, ArticleStatus } from '@prisma/client';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs/promises';

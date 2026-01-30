@@ -3,7 +3,7 @@
 // ===========================================
 
 import Parser from 'rss-parser';
-import { PrismaClient, ArticleStatus, ArticleSource } from '@technews/database';
+import { PrismaClient, ArticleStatus, ArticleSource } from '@prisma/client';
 
 // Interface étendue pour TechPulse RSS
 interface TechPulseItem {

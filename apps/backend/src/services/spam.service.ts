@@ -2,7 +2,7 @@
 // Service Anti-Spam pour les commentaires
 // ===========================================
 
-import { PrismaClient, SpamBlockType } from '@technews/database';
+import { PrismaClient, SpamBlockType } from '@prisma/client';
 
 interface SpamCheckResult {
   isSpam: boolean;

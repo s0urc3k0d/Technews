@@ -2,7 +2,7 @@
 // Service de Publication sur Réseaux Sociaux
 // ===========================================
 
-import { PrismaClient, SocialPlatform, SocialShareStatus, Article } from '@technews/database';
+import { PrismaClient, SocialPlatform, SocialShareStatus, Article } from '@prisma/client';
 
 interface SocialConfig {
   twitter?: {

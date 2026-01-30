@@ -2,7 +2,7 @@
 // Service Newsletter IA (Mistral)
 // ===========================================
 
-import { PrismaClient, ArticleStatus } from '@technews/database';
+import { PrismaClient, ArticleStatus } from '@prisma/client';
 
 interface MistralResponse {
   choices: Array<{

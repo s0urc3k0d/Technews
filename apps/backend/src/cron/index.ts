@@ -3,7 +3,7 @@
 // ===========================================
 
 import * as cron from 'node-cron';
-import { PrismaClient } from '@technews/database';
+import { PrismaClient } from '@prisma/client';
 import { createRSSParserService, DEFAULT_RSS_FEED_URL } from '../services/rss.service.js';
 import { createNewsletterAIService } from '../services/newsletter-ai.service.js';
 import { createEmailService } from '../services/email.service.js';

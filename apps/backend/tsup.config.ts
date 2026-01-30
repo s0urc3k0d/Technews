@@ -1,5 +1,4 @@
 import { defineConfig } from 'tsup';
-import path from 'path';
 
 export default defineConfig({
   entry: { server: 'src/server.ts' },  // Named entry for consistent output
@@ -40,10 +39,4 @@ export default defineConfig({
   platform: 'node',
   // Shims for __dirname, __filename
   shims: true,
-  // Resolve workspace packages
-  esbuildOptions(options) {
-    options.alias = {
-      '@technews/database': path.resolve(__dirname, '../../packages/database/src/index.ts'),
-    };
-  },
 });

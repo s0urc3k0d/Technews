@@ -8,7 +8,6 @@ import {
   Linkedin, 
   Instagram,
   CloudIcon,
-  Check, 
   X, 
   ExternalLink,
   ToggleLeft,

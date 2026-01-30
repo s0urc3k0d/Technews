@@ -2,12 +2,14 @@ import { defineConfig } from 'tsup';
 import path from 'path';
 
 export default defineConfig({
-  entry: ['src/server.ts'],
+  entry: { server: 'src/server.ts' },  // Named entry for consistent output
   format: ['cjs'],  // Use CommonJS to avoid ESM resolution issues
   target: 'node20',
   outDir: 'dist',
   clean: true,
   bundle: true,
+  // Force .js extension for CommonJS
+  outExtension: () => ({ js: '.js' }),
   // Keep all dependencies external - they'll be in node_modules
   external: [
     // All @fastify packages

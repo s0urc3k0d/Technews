@@ -93,4 +93,4 @@ USER fastify
 
 EXPOSE 3001
 
-CMD ["node", "dist/server.cjs"]
+CMD ["node", "dist/server.js"]

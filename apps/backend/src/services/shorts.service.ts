@@ -9,11 +9,25 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import * as MistralModule from '@mistralai/mistralai';
 import sharp from 'sharp';
 
-// Handle both ESM and CJS exports
-const Mistral = (MistralModule as any).default || (MistralModule as any).Mistral || MistralModule;
+// Mistral AI client - lazy loaded to handle ESM/CJS compatibility
+let mistralClient: any = null;
+
+async function getMistralClient(apiKey: string): Promise<any> {
+  if (mistralClient) return mistralClient;
+  
+  try {
+    // Dynamic import for ESM module in CommonJS context
+    const MistralModule = await import('@mistralai/mistralai');
+    const MistralClass = MistralModule.default || MistralModule.Mistral || MistralModule;
+    mistralClient = new MistralClass({ apiKey });
+    return mistralClient;
+  } catch (error) {
+    console.error('Failed to load Mistral AI:', error);
+    throw new Error('Mistral AI module could not be loaded');
+  }
+}
 
 const execAsync = promisify(exec);
 
@@ -55,7 +69,16 @@ interface ShortsConfig {
 }
 
 export function createShortsService(prisma: PrismaClient, config: ShortsConfig) {
-  const mistral = config.mistralApiKey ? new Mistral(config.mistralApiKey) : null;
+  // Mistral client will be loaded lazily
+  let mistralPromise: Promise<any> | null = null;
+
+  async function getMistral(): Promise<any | null> {
+    if (!config.mistralApiKey) return null;
+    if (!mistralPromise) {
+      mistralPromise = getMistralClient(config.mistralApiKey);
+    }
+    return mistralPromise;
+  }
 
   /**
    * Récupère les articles publiés aujourd'hui
@@ -92,13 +115,14 @@ export function createShortsService(prisma: PrismaClient, config: ShortsConfig) 
    * Génère un résumé d'une phrase via Mistral
    */
   async function generateSummary(title: string, excerpt: string): Promise<string> {
+    const mistral = await getMistral();
     if (!mistral) {
       // Fallback si pas de Mistral : utiliser le titre
       return title.length > 80 ? title.substring(0, 77) + '...' : title;
     }
 
     try {
-      const response = await mistral.chat({
+      const response = await mistral.chat.complete({
         model: 'mistral-small-latest',
         messages: [
           {

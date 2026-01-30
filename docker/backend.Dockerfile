@@ -1,5 +1,6 @@
 # ===========================================
 # Backend Production Dockerfile
+# BUNDLED approach - all deps in single file
 # ===========================================
 FROM node:20-alpine AS base
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
@@ -18,16 +19,14 @@ RUN apk add --no-cache \
     python3
 
 # ===========================================
-# Dependencies stage - use hoisted node_modules
+# Dependencies stage
 # ===========================================
 FROM base AS deps
 WORKDIR /app
 
-# Create .npmrc to use hoisted node-linker
-RUN echo "node-linker=hoisted" > .npmrc
-
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY apps/backend/package.json ./apps/backend/
+COPY apps/backend/tsup.config.ts ./apps/backend/
 COPY packages/database/package.json ./packages/database/
 COPY packages/typescript-config/package.json ./packages/typescript-config/
 
@@ -39,7 +38,6 @@ RUN pnpm install --frozen-lockfile
 FROM base AS builder
 WORKDIR /app
 
-# Copy hoisted node_modules (no symlinks)
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/backend/node_modules ./apps/backend/node_modules
 COPY --from=deps /app/packages/database/node_modules ./packages/database/node_modules
@@ -48,15 +46,15 @@ COPY . .
 # Generate Prisma client
 RUN pnpm --filter @technews/database db:generate
 
-# Build backend
+# Build backend (now bundles all deps except sharp/prisma)
 RUN pnpm --filter @technews/backend build
 
 # ===========================================
-# Runner stage
+# Runner stage - minimal, only native modules needed
 # ===========================================
 FROM node:20-alpine AS runner
 
-# Install runtime dependencies for sharp/canvas/ffmpeg
+# Install runtime dependencies for sharp/ffmpeg
 RUN apk add --no-cache \
     libc6-compat \
     vips-dev \
@@ -73,17 +71,18 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 fastify
 
-# Copy the hoisted node_modules from builder (already flat, no symlinks)
-COPY --from=builder --chown=fastify:nodejs /app/node_modules ./node_modules
-
-# Copy built dist files
+# Copy the bundled dist file (contains all JS deps)
 COPY --from=builder --chown=fastify:nodejs /app/apps/backend/dist ./dist
 
 # Copy package.json for node to read type: module
 COPY --from=builder --chown=fastify:nodejs /app/apps/backend/package.json ./package.json
 
-# Copy Prisma schema
+# Only install the native modules that couldn't be bundled
+RUN npm install sharp@0.33.0 @prisma/client@5.22.0 --omit=dev
+
+# Copy Prisma schema and generate client
 COPY --from=builder --chown=fastify:nodejs /app/packages/database/prisma ./prisma
+RUN npx prisma generate --schema=./prisma/schema.prisma
 
 # Create uploads and shorts directories
 RUN mkdir -p /app/uploads /app/shorts /app/shorts/backgrounds /app/shorts/temp && \

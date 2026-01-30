@@ -74,8 +74,8 @@ RUN adduser --system --uid 1001 fastify
 # Copy the bundled dist file (contains all JS deps)
 COPY --from=builder --chown=fastify:nodejs /app/apps/backend/dist ./dist
 
-# Copy package.json for node to read type: module
-COPY --from=builder --chown=fastify:nodejs /app/apps/backend/package.json ./package.json
+# Create minimal package.json (no workspace deps)
+RUN echo '{"name":"backend","type":"module","private":true}' > package.json
 
 # Only install the native modules that couldn't be bundled
 RUN npm install sharp@0.33.0 @prisma/client@5.22.0 --omit=dev

@@ -80,9 +80,11 @@ RUN echo '{"name":"backend","type":"module","private":true}' > package.json
 # Only install the native modules that couldn't be bundled
 RUN npm install sharp@0.33.0 @prisma/client@5.22.0 --omit=dev
 
-# Copy Prisma schema and generate client
+# Copy Prisma schema
 COPY --from=builder --chown=fastify:nodejs /app/packages/database/prisma ./prisma
-RUN npx prisma generate --schema=./prisma/schema.prisma
+
+# Copy the already-generated Prisma client from builder (don't regenerate)
+COPY --from=builder --chown=fastify:nodejs /app/node_modules/.pnpm/@prisma+client@*/node_modules/.prisma ./node_modules/.prisma
 
 # Create uploads and shorts directories
 RUN mkdir -p /app/uploads /app/shorts /app/shorts/backgrounds /app/shorts/temp && \

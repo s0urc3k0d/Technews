@@ -71,12 +71,13 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 fastify
 
-# Copy package.json and generate package-lock.json from it
+# Copy package.json and remove workspace dependencies, then install with npm
 COPY --from=builder /app/apps/backend/package.json ./package.json
 
-# Remove workspace protocol and install with npm (creates flat node_modules)
-RUN sed -i 's/"workspace:\*"/"*"/g' package.json && \
-    npm install --omit=dev
+# Remove workspace protocol dependencies and @technews/* packages, then install
+RUN sed -i '/"@technews\/database"/d' package.json && \
+    sed -i 's/"workspace:\*"/"*"/g' package.json && \
+    npm install --omit=dev --legacy-peer-deps
 
 # Copy built dist files
 COPY --from=builder --chown=fastify:nodejs /app/apps/backend/dist ./dist
@@ -84,8 +85,9 @@ COPY --from=builder --chown=fastify:nodejs /app/apps/backend/dist ./dist
 # Copy Prisma schema
 COPY --from=builder --chown=fastify:nodejs /app/packages/database/prisma ./prisma
 
-# Generate Prisma client in production
-RUN npx prisma generate --schema=./prisma/schema.prisma
+# Copy the generated Prisma client from builder
+COPY --from=builder --chown=fastify:nodejs /app/node_modules/.pnpm/@prisma+client@*/node_modules/@prisma/client ./node_modules/@prisma/client
+COPY --from=builder --chown=fastify:nodejs /app/node_modules/.pnpm/@prisma+client@*/node_modules/.prisma ./node_modules/.prisma
 
 # Create uploads and shorts directories
 RUN mkdir -p /app/uploads /app/shorts /app/shorts/backgrounds /app/shorts/temp && \

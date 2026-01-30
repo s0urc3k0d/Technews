@@ -27,8 +27,7 @@ COPY apps/backend/package.json ./apps/backend/
 COPY packages/database/package.json ./packages/database/
 COPY packages/typescript-config/package.json ./packages/typescript-config/
 
-# Use shamefully-hoist to create flat node_modules without symlinks
-RUN pnpm install --frozen-lockfile --shamefully-hoist
+RUN pnpm install --frozen-lockfile
 
 # ===========================================
 # Builder stage
@@ -37,6 +36,8 @@ FROM base AS builder
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/backend/node_modules ./apps/backend/node_modules
+COPY --from=deps /app/packages/database/node_modules ./packages/database/node_modules
 COPY . .
 
 # Generate Prisma client
@@ -46,18 +47,22 @@ RUN pnpm --filter @technews/database db:generate
 RUN pnpm --filter @technews/backend build
 
 # ===========================================
-# Runner stage
+# Runner stage - Use npm for flat node_modules
 # ===========================================
 FROM node:20-alpine AS runner
 
-# Install runtime dependencies for sharp/canvas/ffmpeg (not -dev versions)
+# Install runtime dependencies for sharp/canvas/ffmpeg
 RUN apk add --no-cache \
     libc6-compat \
-    vips \
-    cairo \
-    pango \
-    giflib \
-    ffmpeg
+    vips-dev \
+    cairo-dev \
+    jpeg-dev \
+    pango-dev \
+    giflib-dev \
+    build-base \
+    g++ \
+    ffmpeg \
+    python3
 
 WORKDIR /app
 
@@ -66,24 +71,25 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 fastify
 
-# Copy node_modules from deps (shamefully-hoisted = flat structure)
-COPY --from=deps --chown=fastify:nodejs /app/node_modules ./node_modules
+# Copy package.json and generate package-lock.json from it
+COPY --from=builder /app/apps/backend/package.json ./package.json
+
+# Remove workspace protocol and install with npm (creates flat node_modules)
+RUN sed -i 's/"workspace:\*"/"*"/g' package.json && \
+    npm install --omit=dev
 
 # Copy built dist files
 COPY --from=builder --chown=fastify:nodejs /app/apps/backend/dist ./dist
 
-# Copy package.json for Node.js module resolution
-COPY --from=builder --chown=fastify:nodejs /app/apps/backend/package.json ./package.json
-
-# Copy Prisma schema for migrations
+# Copy Prisma schema
 COPY --from=builder --chown=fastify:nodejs /app/packages/database/prisma ./prisma
 
-# Copy generated Prisma client
-COPY --from=builder --chown=fastify:nodejs /app/node_modules/.pnpm/@prisma+client@*/node_modules/.prisma ./node_modules/.prisma
+# Generate Prisma client in production
+RUN npx prisma generate --schema=./prisma/schema.prisma
 
 # Create uploads and shorts directories
 RUN mkdir -p /app/uploads /app/shorts /app/shorts/backgrounds /app/shorts/temp && \
-    chown -R fastify:nodejs /app/uploads /app/shorts
+    chown -R fastify:nodejs /app /app/uploads /app/shorts
 
 USER fastify
 

@@ -77,8 +77,9 @@ RUN mkdir -p /app/uploads /app/shorts /app/shorts/backgrounds /app/shorts/temp &
 
 USER fastify
 
-WORKDIR /app/apps/backend
+# Stay at /app root so Node.js can find modules in /app/node_modules
+WORKDIR /app
 
 EXPOSE 3001
 
-CMD ["node", "dist/server.js"]
+CMD ["node", "apps/backend/dist/server.js"]

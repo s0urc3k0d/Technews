@@ -1,0 +1,668 @@
+{
+  "info": {
+    "_postman_id": "technews-api-collection",
+    "name": "TechNews API",
+    "description": "Collection complète pour tester l'API TechNews",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Articles",
+      "item": [
+        {
+          "name": "List Articles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/articles?page=1&limit=10&status=PUBLISHED",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "articles"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "status", "value": "PUBLISHED" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Article by Slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/articles/:slug",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "articles", ":slug"],
+              "variable": [
+                { "key": "slug", "value": "exemple-article" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Featured Articles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/articles/featured",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "articles", "featured"]
+            }
+          }
+        },
+        {
+          "name": "Create Article (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Nouvel article de test\",\n  \"content\": \"<p>Contenu de l'article...</p>\",\n  \"excerpt\": \"Résumé de l'article\",\n  \"categoryId\": \"uuid-category\",\n  \"type\": \"ARTICLE\",\n  \"status\": \"DRAFT\",\n  \"tagIds\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/articles",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "articles"]
+            }
+          }
+        },
+        {
+          "name": "Update Article (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }]
+            },
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Article mis à jour\",\n  \"content\": \"<p>Nouveau contenu...</p>\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/articles/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "articles", ":id"],
+              "variable": [
+                { "key": "id", "value": "uuid-article" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Publish Article (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/articles/:id/publish",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "articles", ":id", "publish"],
+              "variable": [
+                { "key": "id", "value": "uuid-article" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Article (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/articles/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "articles", ":id"],
+              "variable": [
+                { "key": "id", "value": "uuid-article" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "List Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories"]
+            }
+          }
+        },
+        {
+          "name": "Get Category by Slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/:slug",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories", ":slug"],
+              "variable": [
+                { "key": "slug", "value": "tech" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Category (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nouvelle catégorie\",\n  \"slug\": \"nouvelle-categorie\",\n  \"description\": \"Description de la catégorie\",\n  \"color\": \"#3B82F6\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tags",
+      "item": [
+        {
+          "name": "List Tags",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tags"]
+            }
+          }
+        },
+        {
+          "name": "Get Tag by Slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags/:slug",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tags", ":slug"],
+              "variable": [
+                { "key": "slug", "value": "javascript" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Comments",
+      "item": [
+        {
+          "name": "Get Comments by Article",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/comments/article/:articleId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "comments", "article", ":articleId"],
+              "variable": [
+                { "key": "articleId", "value": "uuid-article" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"authorName\": \"John Doe\",\n  \"authorEmail\": \"john@example.com\",\n  \"content\": \"Super article, merci !\",\n  \"articleId\": \"uuid-article\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "comments"]
+            }
+          }
+        },
+        {
+          "name": "Report Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Spam\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/comments/:id/report",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "comments", ":id", "report"],
+              "variable": [
+                { "key": "id", "value": "uuid-comment" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List All Comments (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/comments?page=1&limit=20&status=PENDING",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "comments"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "status", "value": "PENDING" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Comment Status (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }]
+            },
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"APPROVED\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/comments/:id/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "comments", ":id", "status"],
+              "variable": [
+                { "key": "id", "value": "uuid-comment" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Newsletter",
+      "item": [
+        {
+          "name": "Subscribe",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"subscriber@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/newsletter/subscribe",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "newsletter", "subscribe"]
+            }
+          }
+        },
+        {
+          "name": "Confirm Subscription",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/newsletter/confirm?token=xxx",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "newsletter", "confirm"],
+              "query": [
+                { "key": "token", "value": "xxx" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Unsubscribe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/newsletter/unsubscribe?token=xxx",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "newsletter", "unsubscribe"],
+              "query": [
+                { "key": "token", "value": "xxx" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Subscribers (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/newsletter/subscribers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "newsletter", "subscribers"]
+            }
+          }
+        },
+        {
+          "name": "List Newsletters (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/newsletter/newsletters",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "newsletter", "newsletters"]
+            }
+          }
+        },
+        {
+          "name": "Send Newsletter (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/newsletter/newsletters/:id/send",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "newsletter", "newsletters", ":id", "send"],
+              "variable": [
+                { "key": "id", "value": "uuid-newsletter" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Images",
+      "item": [
+        {
+          "name": "Upload Image (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "" },
+                { "key": "articleId", "value": "uuid-article", "type": "text" },
+                { "key": "alt", "value": "Description de l'image", "type": "text" },
+                { "key": "isPrimary", "value": "true", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/images/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "images", "upload"]
+            }
+          }
+        },
+        {
+          "name": "Get Images by Article",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/images/article/:articleId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "images", "article", ":articleId"],
+              "variable": [
+                { "key": "articleId", "value": "uuid-article" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Image (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/images/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "images", ":id"],
+              "variable": [
+                { "key": "id", "value": "uuid-image" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Trigger RSS Parse",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/rss/parse",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "rss", "parse"]
+            }
+          }
+        },
+        {
+          "name": "Generate Newsletter (AI)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/newsletter/generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "newsletter", "generate"]
+            }
+          }
+        },
+        {
+          "name": "Get Cron Logs",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/logs?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "logs"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Metrics",
+      "item": [
+        {
+          "name": "Get Prometheus Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/metrics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "metrics"]
+            }
+          }
+        },
+        {
+          "name": "Record Page View",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"path\": \"/article/exemple\",\n  \"articleId\": \"uuid-article\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/metrics/pageview",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "metrics", "pageview"]
+            }
+          }
+        },
+        {
+          "name": "Record Web Vitals",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"LCP\",\n  \"value\": 2500,\n  \"path\": \"/\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/metrics/web-vitals",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "metrics", "web-vitals"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

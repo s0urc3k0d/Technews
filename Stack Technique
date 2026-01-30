@@ -4,22 +4,28 @@ Framework : Next.js 15 (App Router)
 Styling : Tailwind CSS
 Gestion d'état : React Query + Zustand (si nécessaire)
 Langage : TypeScript
+SEO : next-sitemap, next-seo (meta tags dynamiques, Open Graph, Twitter Cards)
+Ads : Google AdSense (préparation slots publicitaires)
 Backend
 Runtime : Node.js
 Framework API : Fastify
 ORM : Prisma
 Langage : TypeScript
+Traitement images : Sharp (compression, redimensionnement, conversion WebP)
 Base de données
 BDD principale : PostgreSQL (instance existante sur VPS)
 Cache : Redis (dockerisé)
+Stockage images : Local VPS (dossier /uploads avec volumes Docker)
 Infrastructure & Monitoring
 Containerisation : Docker + Docker Compose
 Reverse Proxy : Nginx (existant sur VPS)
 Monitoring : Grafana + Prometheus
+Métriques frontend : Web Vitals envoyées à Prometheus via API custom
 IA : Mistral AI API (compte existant)
 Authentification
-Solution : Auth0 (ou alternative OAuth)
-Scope : Interface admin uniquement
+Solution : Auth0
+Scope : Interface admin uniquement (compte unique)
 Services externes
-Envoi emails : Resend ou SMTP custom
+Envoi emails : Resend (API)
 Intégration vidéo : YouTube Player API
+Intégration podcast : Liens optionnels vers Spotify, Apple Podcasts, Deezer

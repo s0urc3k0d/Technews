@@ -6,3 +6,7 @@ Schéma de base de données (Prisma schema)
 Collection Postman/Thunder Client pour tester l'API
 Dashboards Grafana pré-configurés (export JSON)
 Guide de déploiement sur VPS
+Configuration Nginx (reverse proxy + serveur images)
+Template .env.example avec toutes les variables
+Configuration SEO (sitemap, robots.txt, meta tags)
+Pages légales (mentions légales, politique confidentialité, RGPD)

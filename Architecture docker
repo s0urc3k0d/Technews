@@ -6,11 +6,20 @@ redis : Cache
 grafana : Interface de monitoring
 prometheus : Collecte de métriques
 Services externes (VPS)
-PostgreSQL : Base de données (non dockerisée)
+PostgreSQL : Base de données (non dockerisée, instance existante)
 Nginx : Reverse proxy (configuration à adapter)
 Configuration Docker Compose
 Network bridge pour communication inter-services
-Volumes persistants pour Redis, Grafana, Prometheus
+Volumes persistants :
+  - Redis : données cache
+  - Grafana : dashboards et configuration
+  - Prometheus : données métriques
+  - Uploads : images articles (/var/www/revuetech/uploads)
 Variables d'environnement via fichier .env
 Health checks pour chaque service
 Restart policy : unless-stopped
+Volumes Images
+Volume partagé pour les images uploadées
+Accessible par app-backend (écriture) et Nginx (lecture)
+Path container : /app/uploads
+Path host : /var/www/revuetech/uploads

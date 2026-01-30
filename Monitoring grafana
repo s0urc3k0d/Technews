@@ -5,19 +5,22 @@ Temps de réponse API (p50, p95, p99)
 Taux d'erreurs HTTP (4xx, 5xx)
 Throughput (requêtes par seconde)
 Latence base de données
-Performance Frontend
-Core Web Vitals (LCP, FID, CLS)
+Performance Frontend (envoyées à Prometheus via API)
+Core Web Vitals (LCP, FID, CLS) - collectées via web-vitals + endpoint custom
 Temps de chargement des pages
 Erreurs JavaScript côté client
+Métriques par page/route
 Infrastructure
 Utilisation CPU/RAM des containers Docker
 Utilisation Redis (hit rate, mémoire)
 Connexions PostgreSQL actives
 Taille de la base de données
+Espace disque uploads (images)
 Disponibilité
 Uptime de l'application
 Statut des services (frontend, backend, Redis)
 Échecs des cron jobs (parser RSS, newsletter)
+Santé des endpoints critiques
 3.2 Métriques Métier
 Trafic & Engagement
 Nombre de visiteurs uniques (jour/semaine/mois)
@@ -30,19 +33,25 @@ Nombre d'articles publiés (jour/semaine/mois)
 Articles les plus consultés (top 10)
 Performance par catégorie
 Taux de publication (drafts vs publiés depuis RSS)
-Newsletter
+Newsletter (via webhooks Resend)
 Nombre d'abonnés actifs
 Taux de croissance des abonnés
 Taux d'ouverture des emails
 Taux de clics (CTR)
 Taux de désinscription
 Articles les plus cliqués dans les newsletters
+Bounces et plaintes spam
 Commentaires
 Nombre de commentaires (total et par article)
 Taux de commentaires par article
 Commentaires modérés/supprimés
-Temps moyen de modération
+Commentaires bloqués par anti-spam
+Signalements utilisateurs
 Podcasts
 Vues des articles podcast vs articles standards
 Engagement sur les vidéos YouTube (si API disponible)
-Temps de visionnage moyen
+Clics vers plateformes externes (Spotify, Apple, Deezer)
+SEO & Ads (préparation)
+Pages indexées (via Google Search Console API - optionnel)
+Impressions AdSense (via API Google - optionnel)
+Performance des emplacements publicitaires

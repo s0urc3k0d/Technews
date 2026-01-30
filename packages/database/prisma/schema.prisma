@@ -1,0 +1,515 @@
+// ===========================================
+// TechNews - Prisma Schema
+// ===========================================
+// Base de données PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===========================================
+// ARTICLES
+// ===========================================
+
+model Article {
+  id            String         @id @default(cuid())
+  slug          String         @unique
+  title         String
+  excerpt       String?        @db.Text
+  content       String         @db.Text
+  
+  // SEO
+  metaTitle       String?
+  metaDescription String?       @db.Text
+  
+  // Images
+  featuredImage   String?       // URL de l'image principale
+  images          ArticleImage[]
+  
+  // Type et statut
+  type          ArticleType    @default(STANDARD)
+  status        ArticleStatus  @default(DRAFT)
+  source        ArticleSource  @default(MANUAL)
+  
+  // Podcast specific fields
+  youtubeUrl    String?
+  spotifyUrl    String?
+  applePodcastUrl String?
+  deezerUrl     String?
+  podcastSummary String?       @db.Text
+  timestamps    String?        @db.Text  // Format JSON pour les timestamps
+  
+  // Featured post (mise en une)
+  isFeatured    Boolean        @default(false)
+  featuredAt    DateTime?
+  
+  // RSS source tracking
+  sourceUrl     String?        @unique  // URL originale si importé depuis RSS
+  sourceName    String?
+  
+  // Relations
+  categories    CategoriesOnArticles[]
+  tags          TagsOnArticles[]
+  comments      Comment[]
+  
+  // Analytics
+  viewCount     Int            @default(0)
+  
+  // Partage réseaux sociaux
+  shareOnPublish  Boolean      @default(false)  // Partager automatiquement à la publication
+  socialShares    SocialShare[]
+  
+  // Timestamps
+  publishedAt   DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([type])
+  @@index([isFeatured])
+  @@index([slug])
+}
+
+model ArticleImage {
+  id          String   @id @default(cuid())
+  articleId   String
+  article     Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  
+  url         String   // Path relatif /uploads/...
+  alt         String?
+  caption     String?
+  width       Int?
+  height      Int?
+  size        Int?     // Taille en bytes
+  mimeType    String?
+  
+  // Variantes générées
+  thumbnail   String?  // Version thumbnail
+  medium      String?  // Version medium
+  
+  isPrimary   Boolean  @default(false)
+  order       Int      @default(0)
+  
+  createdAt   DateTime @default(now())
+
+  @@index([articleId])
+}
+
+enum ArticleType {
+  STANDARD    // Article classique
+  PODCAST     // Épisode de podcast avec intégration YouTube
+}
+
+enum ArticleStatus {
+  DRAFT       // Brouillon (articles importés RSS ou en cours de rédaction)
+  PUBLISHED   // Publié et visible
+  SCHEDULED   // Publication programmée
+  REJECTED    // Rejeté (articles RSS non publiés)
+  ARCHIVED    // Archivé
+}
+
+enum ArticleSource {
+  MANUAL      // Créé manuellement via admin
+  RSS         // Importé depuis le flux RSS
+}
+
+// ===========================================
+// CATEGORIES
+// ===========================================
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?  @db.Text
+  color       String?  // Couleur hex pour l'affichage
+  icon        String?  // Nom d'icône ou emoji
+  
+  // SEO
+  metaTitle       String?
+  metaDescription String?  @db.Text
+  
+  // Relations
+  articles    CategoriesOnArticles[]
+  
+  // Ordre d'affichage
+  order       Int      @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([slug])
+}
+
+model CategoriesOnArticles {
+  article     Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  articleId   String
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId  String
+  
+  assignedAt  DateTime @default(now())
+
+  @@id([articleId, categoryId])
+}
+
+// ===========================================
+// TAGS
+// ===========================================
+
+model Tag {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  
+  // Relations
+  articles    TagsOnArticles[]
+  
+  createdAt   DateTime @default(now())
+
+  @@index([slug])
+}
+
+model TagsOnArticles {
+  article     Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  articleId   String
+  tag         Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tagId       String
+  
+  assignedAt  DateTime @default(now())
+
+  @@id([articleId, tagId])
+}
+
+// ===========================================
+// COMMENTS
+// ===========================================
+
+model Comment {
+  id          String        @id @default(cuid())
+  
+  // Auteur (visiteur anonyme)
+  authorName  String
+  authorEmail String
+  
+  // Contenu
+  content     String        @db.Text
+  
+  // Statut et modération
+  status      CommentStatus @default(APPROVED)  // Approuvé par défaut (modération a posteriori)
+  
+  // Anti-spam tracking
+  ipAddress   String?
+  userAgent   String?
+  
+  // Signalement
+  reportCount Int           @default(0)
+  reportedAt  DateTime?
+  
+  // Relations
+  article     Article       @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  articleId   String
+  
+  // Threading (réponses)
+  parentId    String?
+  parent      Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     Comment[]     @relation("CommentReplies")
+  
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([articleId, status])
+  @@index([parentId])
+  @@index([authorEmail])
+}
+
+enum CommentStatus {
+  APPROVED    // Visible (par défaut)
+  PENDING     // En attente de modération (si signalé)
+  SPAM        // Marqué comme spam
+  DELETED     // Supprimé par modération
+}
+
+// ===========================================
+// NEWSLETTER
+// ===========================================
+
+model Subscriber {
+  id              String           @id @default(cuid())
+  email           String           @unique
+  firstName       String?
+  
+  // Double opt-in
+  isConfirmed     Boolean          @default(false)
+  confirmToken    String?          @unique
+  confirmedAt     DateTime?
+  
+  // Désinscription
+  isActive        Boolean          @default(true)
+  unsubscribedAt  DateTime?
+  unsubscribeToken String?         @unique
+  
+  // Source
+  source          String?          // D'où vient l'inscription
+  
+  // Relations
+  emailsSent      NewsletterRecipient[]
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([email])
+  @@index([isActive, isConfirmed])
+}
+
+model Newsletter {
+  id              String           @id @default(cuid())
+  
+  subject         String
+  previewText     String?
+  htmlContent     String           @db.Text
+  textContent     String?          @db.Text
+  
+  // Articles sélectionnés (JSON array d'IDs)
+  selectedArticles String[]
+  
+  // Statut
+  status          NewsletterStatus @default(DRAFT)
+  
+  // Envoi
+  sentAt          DateTime?
+  scheduledAt     DateTime?
+  
+  // Stats globales
+  totalRecipients Int              @default(0)
+  totalOpens      Int              @default(0)
+  totalClicks     Int              @default(0)
+  
+  // Génération IA
+  aiGenerated     Boolean          @default(false)
+  
+  // Relations
+  recipients      NewsletterRecipient[]
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([status])
+  @@index([sentAt])
+}
+
+model NewsletterRecipient {
+  id              String       @id @default(cuid())
+  
+  newsletter      Newsletter   @relation(fields: [newsletterId], references: [id], onDelete: Cascade)
+  newsletterId    String
+  
+  subscriber      Subscriber   @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+  subscriberId    String
+  
+  // Resend tracking
+  resendId        String?      // ID de l'email chez Resend
+  
+  // Stats individuelles
+  openedAt        DateTime?
+  clickedAt       DateTime?
+  bouncedAt       DateTime?
+  complainedAt    DateTime?    // Plainte spam
+  
+  sentAt          DateTime     @default(now())
+
+  @@unique([newsletterId, subscriberId])
+  @@index([newsletterId])
+  @@index([subscriberId])
+}
+
+enum NewsletterStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  FAILED
+}
+
+// ===========================================
+// ANALYTICS & METRICS
+// ===========================================
+
+model PageView {
+  id          String   @id @default(cuid())
+  
+  // Page visitée
+  path        String
+  articleId   String?  // Si c'est une page article
+  
+  // Visiteur
+  sessionId   String   // Cookie de session anonyme
+  ipHash      String?  // Hash de l'IP pour déduplication
+  userAgent   String?
+  referrer    String?
+  
+  // UTM parameters
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  
+  createdAt   DateTime @default(now())
+
+  @@index([path, createdAt])
+  @@index([articleId, createdAt])
+  @@index([sessionId])
+}
+
+model WebVitals {
+  id          String   @id @default(cuid())
+  
+  // Metrics
+  name        String   // LCP, FID, CLS, TTFB, FCP
+  value       Float
+  rating      String?  // good, needs-improvement, poor
+  
+  // Context
+  path        String
+  sessionId   String
+  userAgent   String?
+  
+  createdAt   DateTime @default(now())
+
+  @@index([name, createdAt])
+  @@index([path])
+}
+
+// ===========================================
+// CRON JOB LOGS
+// ===========================================
+
+model CronJobLog {
+  id          String        @id @default(cuid())
+  
+  jobName     String        // rss-parser, newsletter-send, newsletter-generate
+  status      CronJobStatus
+  
+  // Résultat
+  message     String?
+  details     Json?         // Données additionnelles (nb articles importés, etc.)
+  
+  // Durée
+  startedAt   DateTime
+  completedAt DateTime?
+  duration    Int?          // Durée en ms
+
+  @@index([jobName, startedAt])
+  @@index([status])
+}
+
+enum CronJobStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
+// ===========================================
+// SPAM BLOCKLIST
+// ===========================================
+
+model SpamBlocklist {
+  id          String   @id @default(cuid())
+  
+  type        SpamBlockType
+  value       String   // Email, IP, ou mot-clé
+  reason      String?
+  
+  createdAt   DateTime @default(now())
+
+  @@unique([type, value])
+  @@index([type])
+}
+
+enum SpamBlockType {
+  EMAIL
+  IP
+  KEYWORD
+  DOMAIN
+}
+
+// ===========================================
+// SOCIAL MEDIA CONNECTIONS
+// ===========================================
+
+model SocialConnection {
+  id            String         @id @default(cuid())
+  
+  platform      SocialPlatform
+  
+  // OAuth tokens (chiffrés)
+  accessToken   String         @db.Text
+  refreshToken  String?        @db.Text
+  tokenExpiry   DateTime?
+  
+  // Infos du compte connecté
+  accountId     String         // ID du compte sur la plateforme
+  accountName   String         // Nom affiché
+  accountUrl    String?        // URL du profil
+  accountImage  String?        // Avatar
+  
+  // État
+  isActive      Boolean        @default(true)
+  lastUsedAt    DateTime?
+  lastError     String?
+  
+  // Relations
+  shares        SocialShare[]
+  
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@unique([platform])  // Un seul compte par plateforme
+  @@index([platform, isActive])
+}
+
+model SocialShare {
+  id            String         @id @default(cuid())
+  
+  // Relations
+  article       Article        @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  articleId     String
+  connection    SocialConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  connectionId  String
+  
+  // Résultat du partage
+  platform      SocialPlatform
+  status        SocialShareStatus @default(PENDING)
+  postId        String?        // ID du post sur la plateforme
+  postUrl       String?        // URL du post publié
+  error         String?
+  
+  // Contenu partagé
+  content       String?        @db.Text  // Texte personnalisé si différent
+  
+  sharedAt      DateTime?
+  createdAt     DateTime       @default(now())
+
+  @@unique([articleId, platform])  // Un partage par plateforme par article
+  @@index([articleId])
+  @@index([connectionId])
+  @@index([status])
+}
+
+enum SocialPlatform {
+  TWITTER       // X (Twitter)
+  FACEBOOK      // Facebook Page
+  LINKEDIN      // LinkedIn
+  INSTAGRAM     // Instagram (via Facebook)
+  BLUESKY       // Bluesky
+}
+
+enum SocialShareStatus {
+  PENDING       // En attente
+  PUBLISHED     // Publié avec succès
+  FAILED        // Échec
+  SKIPPED       // Ignoré (toggle désactivé)
+}

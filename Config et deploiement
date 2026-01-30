@@ -1,22 +1,35 @@
 5. Configuration & Déploiement
 Variables d'environnement requises
-Credentials PostgreSQL
-URL Redis
-Clé API Mistral
-Configuration Auth0 (Client ID, Secret, Domain)
-Service email (API key ou SMTP)
-URL du flux RSS source
-Secrets JWT/session
+Credentials PostgreSQL (DATABASE_URL)
+URL Redis (REDIS_URL)
+Clé API Mistral (MISTRAL_API_KEY)
+Configuration Auth0 (AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET, AUTH0_DOMAIN)
+Clé API Resend (RESEND_API_KEY)
+URL du flux RSS source (RSS_FEED_URL)
+Secrets JWT/session (JWT_SECRET, SESSION_SECRET)
 Configuration Prometheus/Grafana
+URL du site (NEXT_PUBLIC_SITE_URL)
+Google AdSense ID (NEXT_PUBLIC_ADSENSE_ID) - optionnel
 Nginx
 Configuration reverse proxy vers app-frontend
 Proxy API vers app-backend
+Serveur de fichiers statiques pour /uploads (images)
 SSL/TLS (Let's Encrypt)
-Cache statique
+Cache statique (images, assets)
 Gzip/Brotli compression
 Sécurité
-Rate limiting sur l'API
+Rate limiting sur l'API (général)
+Rate limiting spécifique commentaires (3/min par IP)
 Protection CSRF
 Headers de sécurité (HSTS, CSP, X-Frame-Options)
 Sanitization des inputs utilisateur
 Validation des données côté backend
+Anti-spam commentaires :
+  - Honeypot fields
+  - Détection patterns spam
+  - Blacklist mots-clés
+Stockage Images
+Dossier : /var/www/revuetech/uploads (monté en volume Docker)
+Backup : inclure dans stratégie de backup VPS
+Permissions : lecture publique, écriture backend uniquement
+Nettoyage : cron pour supprimer images orphelines

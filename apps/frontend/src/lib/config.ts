@@ -1,0 +1,60 @@
+// ===========================================
+// Configuration API
+// ===========================================
+
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+export const SITE_NAME = 'TechNews';
+export const SITE_DESCRIPTION = 'Actualités tech et podcasts sur les dernières tendances technologiques';
+
+// API Endpoints
+export const API_ENDPOINTS = {
+  // Articles
+  articles: '/api/v1/articles',
+  articleBySlug: (slug: string) => `/api/v1/articles/${slug}`,
+  articleFeatured: '/api/v1/articles/featured',
+  articlePublish: (id: string) => `/api/v1/articles/${id}/publish`,
+  articleReject: (id: string) => `/api/v1/articles/${id}/reject`,
+  
+  // Categories
+  categories: '/api/v1/categories',
+  categoryBySlug: (slug: string) => `/api/v1/categories/${slug}`,
+  
+  // Tags
+  tags: '/api/v1/tags',
+  tagBySlug: (slug: string) => `/api/v1/tags/${slug}`,
+  
+  // Comments
+  comments: '/api/v1/comments',
+  commentsByArticle: (articleId: string) => `/api/v1/comments/article/${articleId}`,
+  commentStatus: (id: string) => `/api/v1/comments/${id}/status`,
+  commentReport: (id: string) => `/api/v1/comments/${id}/report`,
+  
+  // Newsletter
+  newsletterSubscribe: '/api/v1/newsletter/subscribe',
+  newsletterConfirm: '/api/v1/newsletter/confirm',
+  newsletterUnsubscribe: '/api/v1/newsletter/unsubscribe',
+  newsletterSubscribers: '/api/v1/newsletter/subscribers',
+  newsletters: '/api/v1/newsletter/newsletters',
+  newsletterSend: (id: string) => `/api/v1/newsletter/newsletters/${id}/send`,
+  
+  // Images
+  images: '/api/v1/images',
+  imageUpload: '/api/v1/images/upload',
+  imagesByArticle: (articleId: string) => `/api/v1/images/article/${articleId}`,
+  
+  // Admin
+  adminStats: '/api/v1/admin/stats',
+  adminRssParse: '/api/v1/admin/rss/parse',
+  adminNewsletterGenerate: '/api/v1/admin/newsletter/generate',
+  adminLogs: '/api/v1/admin/logs',
+  
+  // Metrics
+  metrics: '/metrics',
+  webVitals: '/metrics/web-vitals',
+  pageview: '/metrics/pageview',
+} as const;
+
+// Default pagination
+export const DEFAULT_PAGE_SIZE = 12;
+export const DEFAULT_ADMIN_PAGE_SIZE = 20;

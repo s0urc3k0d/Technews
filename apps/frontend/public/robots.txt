@@ -1,0 +1,12 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Disallow admin section
+Disallow: /admin/
+
+# Sitemaps
+Sitemap: https://revuetech.fr/sitemap.xml
+
+# Crawl-delay (optionnel)
+Crawl-delay: 1

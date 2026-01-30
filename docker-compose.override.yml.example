@@ -1,0 +1,26 @@
+# Development override - permet hot reload
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: ./docker/frontend.dev.Dockerfile
+    volumes:
+      - ./apps/frontend:/app/apps/frontend
+      - /app/apps/frontend/node_modules
+      - /app/apps/frontend/.next
+    environment:
+      - NODE_ENV=development
+
+  backend:
+    build:
+      context: .
+      dockerfile: ./docker/backend.dev.Dockerfile
+    volumes:
+      - ./apps/backend:/app/apps/backend
+      - ./packages:/app/packages
+      - /app/apps/backend/node_modules
+      - ./uploads:/app/uploads
+    environment:
+      - NODE_ENV=development

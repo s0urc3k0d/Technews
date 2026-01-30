@@ -1,39 +1,71 @@
 2. Fonctionnalités
 2.1 Gestion du contenu
-Parser RSS automatique
-Cron job quotidien récupérant le flux RSS depuis www.techpulse.sourcekod.fr
-Stockage des articles en statut "draft" dans la BDD
-Parsing des métadonnées : titre, description, lien source, date, catégorie
+Sources d'articles
+Option 1 - Parser RSS automatique :
+  Cron job quotidien récupérant le flux RSS depuis www.techpulse.sourcekod.fr
+  Stockage des articles en statut "draft" dans la BDD
+  Parsing des métadonnées : titre, description, lien source, date, catégorie
+Option 2 - Création manuelle :
+  Rédaction complète via l'interface admin
+  Upload d'images et contenu personnalisé
+  Publication directe ou programmée
 Types d'articles
 Articles standards : Contenu complet avec titre, corps, image, catégorie, tags
-Articles podcast : Intégration YouTube player, résumé des sujets traités, timestamps (optionnel)
+Articles podcast (création manuelle uniquement) :
+  Intégration YouTube player (lien obligatoire)
+  Liens optionnels : Spotify, Apple Podcasts, Deezer
+  Résumé des sujets traités
+  Timestamps (optionnel)
 Système de catégorisation
 Catégories multiples par article
 Filtrage dynamique sur le frontend
 Tags personnalisables
-Mise en une
-Système de featured post pour le dernier podcast (hebdomadaire)
+Mise en une (Featured Post)
+Sélection manuelle via l'interface admin
 Affichage prioritaire en hero section sur la homepage
+Réservé aux articles podcast
+Un seul featured post actif à la fois
+Gestion des images
+Compression automatique avant stockage (Sharp)
+Conversion en WebP pour optimisation
+Redimensionnement adaptatif (thumbnails, medium, large)
+Stockage local sur VPS (/uploads)
+Limite de taille : 5MB avant compression
 2.2 Interface Admin
+Authentification
+Compte unique (propriétaire)
+Connexion via Auth0
+Session sécurisée avec JWT
 Dashboard
 Vue d'ensemble des statistiques (voir section Monitoring)
 Aperçu des derniers articles/commentaires
 Alertes modération si nécessaire
 Gestion des articles
 CRUD complet : création, édition, suppression
-Validation/publication des articles draftés depuis le parser RSS
+Deux modes de création :
+  - Création manuelle complète
+  - Validation/publication des articles draftés depuis le parser RSS
 Éditeur de texte riche (WYSIWYG)
-Upload d'images
+Upload d'images avec compression automatique
 Prévisualisation avant publication
 Gestion des catégories et tags
+Toggle "Featured Post" pour les podcasts
+Gestion des podcasts
+Formulaire dédié avec champs :
+  - Lien YouTube (obligatoire)
+  - Lien Spotify (optionnel)
+  - Lien Apple Podcasts (optionnel)
+  - Lien Deezer (optionnel)
+  - Résumé et timestamps
 Modération des commentaires
 Liste des commentaires récents
 Actions : validation, suppression, réponse
-Système de signalement par les utilisateurs (optionnel)
+Système de signalement par les utilisateurs
+Filtre anti-spam automatique (voir section Sécurité)
 Gestion Newsletter
 Prévisualisation de la newsletter avant envoi
 Historique des newsletters envoyées
-Liste des abonnés avec stats (taux d'ouverture, clics)
+Liste des abonnés avec stats (taux d'ouverture, clics via Resend)
 Possibilité d'envoi manuel en dehors du cron
 2.3 Frontend Public
 Homepage
@@ -51,26 +83,46 @@ Catégories & Tags
 Pages dédiées avec filtrage
 Breadcrumb navigation
 Système de commentaires
-Affichage direct sans modération préalable
+Affichage direct sans modération préalable (modération a posteriori)
 Formulaire : nom, email, message
 Possibilité de répondre aux commentaires (threading)
 Signalement de commentaires inappropriés
-Newsletter
-Formulaire d'inscription (email + double opt-in)
-Page de confirmation d'inscription
-Lien de désinscription dans chaque email
-2.4 Newsletter Intelligente
+Protection anti-spam :
+  - Honeypot field (champ caché)
+  - Rate limiting (max 3 commentaires/minute par IP)
+  - Détection de liens suspects
+SEO & Publicité
+Optimisation SEO complète :
+  - Meta tags dynamiques par page/article
+  - Open Graph et Twitter Cards pour partage social
+  - Sitemap.xml généré automatiquement
+  - robots.txt configuré
+  - URLs canoniques
+  - Schema.org (Article, Podcast, Breadcrumb)
+  - Balises H1-H6 structurées
+Préparation Google AdSense :
+  - Emplacements publicitaires prédéfinis (header, sidebar, in-article)
+  - Composants ads.txt et politique de confidentialité
+  - Lazy loading des publicités
+2.4 Newsletter Intelligente (via Resend)
 Sélection automatique via IA
 Cron job quotidien à 17h30
-Appel API Mistral pour analyser les articles publiés dans la journée
-Critères de sélection : pertinence, diversité thématique, engagement potentiel
-Sélection de 5 à 7 articles top
-Génération & Envoi
-Template HTML responsive
-Personnalisation : prénom abonné (si disponible)
-Analytics : tracking ouvertures et clics
-Envoi automatique entre 17h et 18h
-2.5 Parsing & Intégration RSS
+Appel API Mistral pour analys (optionnel)
+Flux source
+Récupération depuis www.techpulse.sourcekod.fr
+Pas d'import d'historique (démarrage fresh)
+Articles RSS ≠ Podcasts (podcasts créés manuellement uniquement)
+Pipeline de traitement
+Fetch du flux RSS (cron quotidien configurable)
+Parsing et extraction des données
+Déduplication (vérification si article déjà existant via URL source)
+Création en BDD avec statut "draft"
+Notification admin (email via Resend ou indicateur dashboard)
+Édition post-import
+Interface admin pour modifier titre, contenu, catégorie
+Possibilité de rejeter un article (statut "rejected")
+Ajout/remplacement d'images avec compression automatique
+Enrichissement du contenu avant publication
 Flux initial
 Récupération depuis www.techpulse.sourcekod.fr
 Pas d'import d'historique (démarrage fresh)

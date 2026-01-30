@@ -1,0 +1,5 @@
+# ads.txt - Authorized Digital Sellers for RevueTech.fr
+# https://iabtechlab.com/ads-txt/
+# Format: <domain>, <publisher_id>, <relationship>, <certification_authority_id>
+
+google.com, pub-7283351114219521, DIRECT, f08c47fec0942fa0

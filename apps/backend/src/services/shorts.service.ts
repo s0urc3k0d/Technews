@@ -13,19 +13,28 @@ import sharp from 'sharp';
 
 // Mistral AI client - lazy loaded to handle ESM/CJS compatibility
 let mistralClient: any = null;
+let mistralLoadAttempted = false;
+let mistralLoadError: Error | null = null;
 
-async function getMistralClient(apiKey: string): Promise<any> {
+async function getMistralClient(apiKey: string): Promise<any | null> {
   if (mistralClient) return mistralClient;
+  if (mistralLoadAttempted && mistralLoadError) return null;
+  
+  mistralLoadAttempted = true;
   
   try {
     // Dynamic import for ESM module in CommonJS context
-    const MistralModule = await import('@mistralai/mistralai');
+    // Use Function constructor to prevent tsup from transforming this import
+    const dynamicImport = new Function('specifier', 'return import(specifier)');
+    const MistralModule = await dynamicImport('@mistralai/mistralai');
     const MistralClass = MistralModule.default || MistralModule.Mistral || MistralModule;
     mistralClient = new MistralClass({ apiKey });
+    console.log('✅ Mistral AI client loaded successfully');
     return mistralClient;
   } catch (error) {
-    console.error('Failed to load Mistral AI:', error);
-    throw new Error('Mistral AI module could not be loaded');
+    mistralLoadError = error as Error;
+    console.warn('⚠️ Mistral AI not available, using fallback summaries:', (error as Error).message);
+    return null;
   }
 }
 

@@ -14,13 +14,17 @@ RUN apk add --no-cache \
     giflib-dev \
     build-base \
     g++ \
-    ffmpeg
+    ffmpeg \
+    python3
 
 # ===========================================
-# Dependencies stage
+# Dependencies stage - use hoisted node_modules
 # ===========================================
 FROM base AS deps
 WORKDIR /app
+
+# Create .npmrc to use hoisted node-linker
+RUN echo "node-linker=hoisted" > .npmrc
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY apps/backend/package.json ./apps/backend/
@@ -35,6 +39,7 @@ RUN pnpm install --frozen-lockfile
 FROM base AS builder
 WORKDIR /app
 
+# Copy hoisted node_modules (no symlinks)
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/backend/node_modules ./apps/backend/node_modules
 COPY --from=deps /app/packages/database/node_modules ./packages/database/node_modules
@@ -47,7 +52,7 @@ RUN pnpm --filter @technews/database db:generate
 RUN pnpm --filter @technews/backend build
 
 # ===========================================
-# Runner stage - Use npm for flat node_modules
+# Runner stage
 # ===========================================
 FROM node:20-alpine AS runner
 
@@ -59,10 +64,7 @@ RUN apk add --no-cache \
     jpeg-dev \
     pango-dev \
     giflib-dev \
-    build-base \
-    g++ \
-    ffmpeg \
-    python3
+    ffmpeg
 
 WORKDIR /app
 
@@ -71,22 +73,17 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 fastify
 
-# Copy package.json and remove workspace dependencies, then install with npm
-COPY --from=builder /app/apps/backend/package.json ./package.json
-
-# Remove ALL @technews/* workspace packages and install with npm
-RUN sed -i '/@technews/d' package.json && \
-    npm install --omit=dev --legacy-peer-deps
+# Copy the hoisted node_modules from builder (already flat, no symlinks)
+COPY --from=builder --chown=fastify:nodejs /app/node_modules ./node_modules
 
 # Copy built dist files
 COPY --from=builder --chown=fastify:nodejs /app/apps/backend/dist ./dist
 
+# Copy package.json for node to read type: module
+COPY --from=builder --chown=fastify:nodejs /app/apps/backend/package.json ./package.json
+
 # Copy Prisma schema
 COPY --from=builder --chown=fastify:nodejs /app/packages/database/prisma ./prisma
-
-# Copy the generated Prisma client from builder
-COPY --from=builder --chown=fastify:nodejs /app/node_modules/.pnpm/@prisma+client@*/node_modules/@prisma/client ./node_modules/@prisma/client
-COPY --from=builder --chown=fastify:nodejs /app/node_modules/.pnpm/@prisma+client@*/node_modules/.prisma ./node_modules/.prisma
 
 # Create uploads and shorts directories
 RUN mkdir -p /app/uploads /app/shorts /app/shorts/backgrounds /app/shorts/temp && \

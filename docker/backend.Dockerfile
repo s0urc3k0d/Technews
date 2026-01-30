@@ -53,7 +53,7 @@ RUN pnpm --filter @technews/backend build
 # ===========================================
 FROM node:20-alpine AS runner
 
-# Install runtime dependencies for sharp/ffmpeg
+# Install runtime dependencies for sharp/ffmpeg AND OpenSSL for Prisma
 RUN apk add --no-cache \
     libc6-compat \
     vips-dev \
@@ -61,7 +61,9 @@ RUN apk add --no-cache \
     jpeg-dev \
     pango-dev \
     giflib-dev \
-    ffmpeg
+    ffmpeg \
+    openssl \
+    openssl-dev
 
 WORKDIR /app
 

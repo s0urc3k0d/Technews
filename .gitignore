@@ -50,6 +50,9 @@ uploads/*
 # Docker
 docker-compose.override.yml
 
+# Nginx auth (contient les mots de passe hashés)
+docker/nginx/.htpasswd
+
 # Prometheus/Grafana data
 monitoring/prometheus/data
 monitoring/grafana/data

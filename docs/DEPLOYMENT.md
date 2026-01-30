@@ -303,11 +303,10 @@ RSS_FEED_URL=https://techpulse.sourcekod.fr/api/feeds/all.xml
 NEXT_PUBLIC_ADSENSE_ID=ca-pub-7283351114219521
 
 # ===========================================
-# Monitoring - Grafana
+# Monitoring (optionnel - utilisé en dev)
 # ===========================================
 GRAFANA_ADMIN_USER=admin
 GRAFANA_ADMIN_PASSWORD=VOTRE_MOT_DE_PASSE_GRAFANA
-GRAFANA_ROOT_URL=http://localhost:3052
 
 # ===========================================
 # Upload & Shorts
@@ -591,25 +590,46 @@ sudo docker-compose -f docker-compose.prod.yml logs --tail 20
 - [ ] Images s'uploadent correctement
 - [ ] Backups automatiques configurés
 - [ ] Certificat SSL valide (pas d'avertissement navigateur)
-- [ ] Grafana accessible sur localhost:3052
+- [ ] Grafana accessible sur https://revuetech.fr/grafana/ (Basic Auth)
+- [ ] Prometheus accessible sur https://revuetech.fr/prometheus/ (Basic Auth)
 
 ---
 
 ## 📊 Accès Monitoring
 
+Le monitoring (Grafana et Prometheus) est exposé publiquement mais **protégé par Basic Auth**.
+
 | Service | URL | Accès |
 |---------|-----|-------|
 | Site public | https://revuetech.fr | Public |
 | Admin | https://revuetech.fr/admin | Auth0 |
-| Grafana | http://localhost:3052 | Local uniquement |
-| Prometheus | http://localhost:9090 | Local uniquement |
+| Grafana | https://revuetech.fr/grafana/ | Basic Auth |
+| Prometheus | https://revuetech.fr/prometheus/ | Basic Auth |
 
-**Accéder à Grafana depuis l'extérieur (tunnel SSH) :**
+### Configuration de l'authentification monitoring
+
+Les identifiants Basic Auth sont stockés dans `docker/nginx/.htpasswd`.
+
+**Générer/modifier les identifiants :**
 ```bash
-# Sur votre machine locale
-ssh -L 3052:localhost:3052 user@votre-serveur
-# Puis ouvrir http://localhost:3052 dans votre navigateur
+# Méthode 1 : Utiliser le script fourni
+./scripts/setup-monitoring-auth.sh admin
+# Suivre les instructions pour entrer le mot de passe
+
+# Méthode 2 : Manuellement avec htpasswd
+sudo apt install apache2-utils  # Si nécessaire
+htpasswd -c docker/nginx/.htpasswd admin
+
+# Redémarrer nginx pour appliquer
+sudo docker-compose -f docker-compose.prod.yml restart nginx
 ```
+
+**Format du fichier .htpasswd :**
+```
+admin:$apr1$xxxxx$yyyyyyyyyyyyyyyyyyy
+```
+
+> ⚠️ **Important** : Changez les identifiants par défaut avant le déploiement en production !
 
 ---
 

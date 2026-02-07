@@ -20,6 +20,7 @@ declare module 'fastify' {
   interface FastifyInstance {
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
     authenticateOptional: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    requireAdmin: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
   interface FastifyRequest {
     user?: JWTPayload;
@@ -27,7 +28,15 @@ declare module 'fastify' {
 }
 
 const authPlugin: FastifyPluginAsync = async (fastify) => {
-  const { AUTH0_DOMAIN, AUTH0_AUDIENCE } = fastify.config;
+  const { 
+    AUTH0_DOMAIN, 
+    AUTH0_AUDIENCE, 
+    AUTH0_ADMIN_ROLE,
+    AUTH0_ADMIN_PERMISSION,
+    AUTH0_ROLES_CLAIM,
+    ADMIN_EMAILS,
+    ADMIN_SUBS,
+  } = fastify.config;
 
   // Create JWKS client for Auth0
   const JWKS = AUTH0_DOMAIN 
@@ -92,8 +101,77 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
     }
   };
 
+  const parseList = (value?: string): string[] => {
+    if (!value) return [];
+    return value
+      .split(',')
+      .map((item) => item.trim().toLowerCase())
+      .filter(Boolean);
+  };
+
+  const getClaimArray = (payload: JWTPayload, key: string): string[] => {
+    const raw = (payload as Record<string, unknown>)[key];
+    if (Array.isArray(raw)) {
+      return raw.map((item) => String(item));
+    }
+    if (typeof raw === 'string') {
+      return raw.split(/\s+/).filter(Boolean);
+    }
+    return [];
+  };
+
+  const requireAdmin = async (request: FastifyRequest, reply: FastifyReply) => {
+    await authenticate(request, reply);
+    if (reply.sent) return;
+
+    const user = request.user;
+    if (!user) {
+      reply.code(401).send({ error: 'Unauthorized', message: 'Missing user context' });
+      return;
+    }
+
+    const allowedEmails = parseList(ADMIN_EMAILS);
+    const allowedSubs = parseList(ADMIN_SUBS);
+    const email = (user.email || '').toLowerCase();
+
+    if (allowedSubs.length > 0 && !allowedSubs.includes(user.sub.toLowerCase())) {
+      reply.code(403).send({ error: 'Forbidden', message: 'Admin access denied' });
+      return;
+    }
+
+    if (allowedEmails.length > 0 && (!email || !allowedEmails.includes(email))) {
+      reply.code(403).send({ error: 'Forbidden', message: 'Admin access denied' });
+      return;
+    }
+
+    const rolesClaim = AUTH0_ROLES_CLAIM || 'roles';
+    const roles = getClaimArray(user, rolesClaim);
+    const permissions = getClaimArray(user, 'permissions');
+
+    if (AUTH0_ADMIN_ROLE && !roles.includes(AUTH0_ADMIN_ROLE)) {
+      reply.code(403).send({ error: 'Forbidden', message: 'Admin role required' });
+      return;
+    }
+
+    if (AUTH0_ADMIN_PERMISSION && !permissions.includes(AUTH0_ADMIN_PERMISSION)) {
+      reply.code(403).send({ error: 'Forbidden', message: 'Admin permission required' });
+      return;
+    }
+
+    if (
+      allowedEmails.length === 0 &&
+      allowedSubs.length === 0 &&
+      !AUTH0_ADMIN_ROLE &&
+      !AUTH0_ADMIN_PERMISSION
+    ) {
+      reply.code(403).send({ error: 'Forbidden', message: 'Admin policy not configured' });
+      return;
+    }
+  };
+
   fastify.decorate('authenticate', authenticate);
   fastify.decorate('authenticateOptional', authenticateOptional);
+  fastify.decorate('requireAdmin', requireAdmin);
 };
 
 export default fp(authPlugin, {

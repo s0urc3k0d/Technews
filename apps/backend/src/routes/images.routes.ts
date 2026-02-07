@@ -15,7 +15,7 @@ const imagesRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /images/upload - Upload image (admin)
   fastify.post(
     '/upload',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const data = await request.file();
 
@@ -110,7 +110,7 @@ const imagesRoutes: FastifyPluginAsync = async (fastify) => {
   // DELETE /images/:id - Delete image (admin)
   fastify.delete<{ Params: { id: string } }>(
     '/:id',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const { id } = request.params;
 

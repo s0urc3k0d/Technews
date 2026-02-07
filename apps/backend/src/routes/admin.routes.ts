@@ -10,7 +10,7 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
   const { prisma, config } = fastify;
 
   // All admin routes require authentication
-  fastify.addHook('preHandler', fastify.authenticate);
+  fastify.addHook('preHandler', fastify.requireAdmin);
 
   // GET /admin/stats - Statistiques dashboard
   fastify.get('/stats', async (request, reply) => {

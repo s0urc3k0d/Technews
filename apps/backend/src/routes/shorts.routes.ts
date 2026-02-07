@@ -25,7 +25,7 @@ export async function shortsRoutes(fastify: FastifyInstance) {
   // GET /shorts/current - Récupérer les infos du short actuel
   fastify.get(
     '/current',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const metadata = await shortsService.getCurrentShort();
       
@@ -50,7 +50,7 @@ export async function shortsRoutes(fastify: FastifyInstance) {
   // GET /shorts/video - Télécharger la vidéo
   fastify.get(
     '/video',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const exists = await shortsService.shortExists();
       
@@ -73,7 +73,7 @@ export async function shortsRoutes(fastify: FastifyInstance) {
   // GET /shorts/thumbnail - Récupérer la miniature
   fastify.get(
     '/thumbnail',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const thumbnailPath = shortsService.getThumbnailPath();
       
@@ -95,7 +95,7 @@ export async function shortsRoutes(fastify: FastifyInstance) {
   // POST /shorts/generate - Forcer la génération d'un short
   fastify.post(
     '/generate',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         fastify.log.info('Génération manuelle du short demandée');
@@ -131,7 +131,7 @@ export async function shortsRoutes(fastify: FastifyInstance) {
   // GET /shorts/backgrounds - Lister les images de fond
   fastify.get(
     '/backgrounds',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const backgrounds = await shortsService.listBackgrounds();
       
@@ -148,7 +148,7 @@ export async function shortsRoutes(fastify: FastifyInstance) {
   // GET /shorts/backgrounds/:filename - Récupérer une image de fond
   fastify.get<{ Params: { filename: string } }>(
     '/backgrounds/:filename',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const { filename } = request.params;
       const backgroundsDir = fastify.config.SHORTS_DIR 
@@ -188,7 +188,7 @@ export async function shortsRoutes(fastify: FastifyInstance) {
   // POST /shorts/backgrounds - Uploader une image de fond
   fastify.post(
     '/backgrounds',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const data = await request.file();
       
@@ -238,7 +238,7 @@ export async function shortsRoutes(fastify: FastifyInstance) {
   // DELETE /shorts/backgrounds/:filename - Supprimer une image de fond
   fastify.delete<{ Params: { filename: string } }>(
     '/backgrounds/:filename',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const { filename } = request.params;
 
@@ -259,7 +259,7 @@ export async function shortsRoutes(fastify: FastifyInstance) {
   // GET /shorts/preview - Prévisualisation des articles du jour
   fastify.get(
     '/preview',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const articles = await shortsService.getTodayArticles();
       
@@ -280,7 +280,7 @@ export async function shortsRoutes(fastify: FastifyInstance) {
   // GET /shorts/tags - Générer les tags sans créer la vidéo
   fastify.get(
     '/tags',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const metadata = await shortsService.getCurrentShort();
       

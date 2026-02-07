@@ -61,7 +61,7 @@ const tagsRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /tags - Créer tag (admin)
   fastify.post(
     '/',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const parseResult = createTagSchema.safeParse(request.body);
       if (!parseResult.success) {
@@ -90,7 +90,7 @@ const tagsRoutes: FastifyPluginAsync = async (fastify) => {
   // PUT /tags/:id - Modifier tag (admin)
   fastify.put<{ Params: { id: string } }>(
     '/:id',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const { id } = request.params;
       const parseResult = updateTagSchema.safeParse(request.body);
@@ -116,7 +116,7 @@ const tagsRoutes: FastifyPluginAsync = async (fastify) => {
   // DELETE /tags/:id - Supprimer tag (admin)
   fastify.delete<{ Params: { id: string } }>(
     '/:id',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const { id } = request.params;
 

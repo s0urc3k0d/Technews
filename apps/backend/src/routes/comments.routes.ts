@@ -21,7 +21,7 @@ const commentsRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /comments - Liste des commentaires (admin)
   fastify.get(
     '/',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const parseResult = listCommentsQuerySchema.safeParse(request.query);
       if (!parseResult.success) {
@@ -164,7 +164,7 @@ const commentsRoutes: FastifyPluginAsync = async (fastify) => {
   // PUT /comments/:id/status - Modifier statut (admin)
   fastify.put<{ Params: { id: string } }>(
     '/:id/status',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const { id } = request.params;
       const parseResult = updateCommentStatusSchema.safeParse(request.body);
@@ -228,7 +228,7 @@ const commentsRoutes: FastifyPluginAsync = async (fastify) => {
   // DELETE /comments/:id - Supprimer commentaire (admin)
   fastify.delete<{ Params: { id: string } }>(
     '/:id',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const { id } = request.params;
 

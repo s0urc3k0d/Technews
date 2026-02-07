@@ -29,7 +29,7 @@ const socialRoutes: FastifyPluginAsync = async (fastify) => {
   const socialService = createSocialService(prisma, socialConfig, config.NEXT_PUBLIC_SITE_URL);
 
   // Toutes les routes nécessitent l'authentification admin
-  fastify.addHook('preHandler', fastify.authenticate);
+  fastify.addHook('preHandler', fastify.requireAdmin);
 
   // ===========================================
   // CONNEXIONS

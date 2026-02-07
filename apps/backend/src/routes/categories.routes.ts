@@ -61,7 +61,7 @@ const categoriesRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /categories - Créer catégorie (admin)
   fastify.post(
     '/',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const parseResult = createCategorySchema.safeParse(request.body);
       if (!parseResult.success) {
@@ -91,7 +91,7 @@ const categoriesRoutes: FastifyPluginAsync = async (fastify) => {
   // PUT /categories/:id - Modifier catégorie (admin)
   fastify.put<{ Params: { id: string } }>(
     '/:id',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const { id } = request.params;
       const parseResult = updateCategorySchema.safeParse(request.body);
@@ -136,7 +136,7 @@ const categoriesRoutes: FastifyPluginAsync = async (fastify) => {
   // DELETE /categories/:id - Supprimer catégorie (admin)
   fastify.delete<{ Params: { id: string } }>(
     '/:id',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const { id } = request.params;
 

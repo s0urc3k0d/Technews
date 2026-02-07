@@ -19,10 +19,17 @@ const envSchema = z.object({
   // Auth0
   AUTH0_DOMAIN: z.string().optional(),
   AUTH0_AUDIENCE: z.string().optional(),
+  AUTH0_ADMIN_ROLE: z.string().optional(),
+  AUTH0_ADMIN_PERMISSION: z.string().optional(),
+  AUTH0_ROLES_CLAIM: z.string().optional(),
 
   // JWT
   JWT_SECRET: z.string().min(32),
   SESSION_SECRET: z.string().min(32),
+
+  // Admin allowlist
+  ADMIN_EMAILS: z.string().optional(),
+  ADMIN_SUBS: z.string().optional(),
 
   // Resend
   RESEND_API_KEY: z.string().optional(),

@@ -197,7 +197,7 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /articles - Créer article (admin)
   fastify.post(
     '/',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const parseResult = createArticleSchema.safeParse(request.body);
       if (!parseResult.success) {
@@ -242,7 +242,7 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
   // PUT /articles/:id - Modifier article (admin)
   fastify.put<{ Params: { id: string } }>(
     '/:id',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const { id } = request.params;
       const parseResult = updateArticleSchema.safeParse(request.body);
@@ -307,7 +307,7 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
   // DELETE /articles/:id - Supprimer article (admin)
   fastify.delete<{ Params: { id: string } }>(
     '/:id',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const { id } = request.params;
 
@@ -325,7 +325,7 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /articles/:id/publish - Publier un article draft (admin)
   fastify.post<{ Params: { id: string }; Body: { shareOnPublish?: boolean } }>(
     '/:id/publish',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const { id } = request.params;
       const { shareOnPublish } = request.body || {};
@@ -381,7 +381,7 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /articles/:id/reject - Rejeter un article RSS (admin)
   fastify.post<{ Params: { id: string } }>(
     '/:id/reject',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const { id } = request.params;
 

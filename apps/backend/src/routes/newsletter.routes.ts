@@ -183,7 +183,7 @@ const newsletterRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /newsletter/subscribers - Liste des abonnés (admin)
   fastify.get(
     '/subscribers',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const parseResult = listSubscribersQuerySchema.safeParse(request.query);
       if (!parseResult.success) {
@@ -247,7 +247,7 @@ const newsletterRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /newsletter/newsletters - Liste des newsletters (admin)
   fastify.get(
     '/newsletters',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const parseResult = listNewslettersQuerySchema.safeParse(request.query);
       if (!parseResult.success) {
@@ -284,7 +284,7 @@ const newsletterRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /newsletter/newsletters - Créer newsletter (admin)
   fastify.post(
     '/newsletters',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const parseResult = createNewsletterSchema.safeParse(request.body);
       if (!parseResult.success) {
@@ -307,7 +307,7 @@ const newsletterRoutes: FastifyPluginAsync = async (fastify) => {
   // PUT /newsletter/newsletters/:id - Modifier newsletter (admin)
   fastify.put<{ Params: { id: string } }>(
     '/newsletters/:id',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const { id } = request.params;
       const parseResult = updateNewsletterSchema.safeParse(request.body);
@@ -340,7 +340,7 @@ const newsletterRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /newsletter/newsletters/:id/send - Envoyer newsletter (admin)
   fastify.post<{ Params: { id: string } }>(
     '/newsletters/:id/send',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const { id } = request.params;
 
@@ -415,7 +415,7 @@ const newsletterRoutes: FastifyPluginAsync = async (fastify) => {
   // DELETE /newsletter/newsletters/:id - Supprimer newsletter (admin)
   fastify.delete<{ Params: { id: string } }>(
     '/newsletters/:id',
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [fastify.requireAdmin] },
     async (request, reply) => {
       const { id } = request.params;
 

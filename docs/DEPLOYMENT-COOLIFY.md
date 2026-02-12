@@ -57,6 +57,11 @@ Services attendus:
 - `prometheus`
 - `grafana`
 
+Note importante:
+
+- La stack monitoring est volontairement buildée avec configs embarquées (`docker/prometheus.Dockerfile`, `docker/grafana.Dockerfile`).
+- Cela évite les erreurs Coolify de type *"not a directory"* sur les montages de fichiers (`prometheus.yml`, `alerts.yml`).
+
 Volumes persistants déjà définis dans le compose:
 
 - `uploads-data`
@@ -64,6 +69,12 @@ Volumes persistants déjà définis dans le compose:
 - `redis-data`
 - `prometheus-data`
 - `grafana-data`
+
+⚠️ Important (UI Coolify): pour une application **Docker Compose**, les `Source Path` des volumes sont en lecture seule dans le dashboard.
+
+- Vous ne modifiez pas ces chemins dans l'UI.
+- Toute modification de volumes (nom/source/destination) se fait dans [docker-compose.coolify.yml](../docker-compose.coolify.yml).
+- Ensuite, dans Coolify: **Reload Compose File** puis **Redeploy**.
 
 ---
 
@@ -188,3 +199,8 @@ Si plusieurs instances backend:
 - Erreurs OAuth social: vérifier callbacks section 4.2 exactement
 - API cassée côté frontend: vérifier `NEXT_PUBLIC_API_URL` sans suffixe `/api`
 - Cron en doublon: vérifier `ENABLE_CRON` sur chaque instance
+- Erreur deployment `error mounting ... prometheus.yml ... not a directory`:
+   1. Vérifier que vous utilisez bien la dernière version de [docker-compose.coolify.yml](../docker-compose.coolify.yml)
+   2. Dans Coolify: `Reload Compose File`
+   3. Puis `Redeploy`
+   4. Si besoin, supprimer les anciens conteneurs échoués et redeployer

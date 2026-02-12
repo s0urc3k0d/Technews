@@ -48,6 +48,7 @@ const environment = (process.env.NODE_ENV || 'development') as keyof typeof envT
 
 const fastify = Fastify({
   logger: envToLogger[environment] ?? true,
+  pluginTimeout: 60000,
 });
 
 async function buildServer() {

@@ -19,15 +19,35 @@ const prismaPlugin: FastifyPluginAsync = async (fastify) => {
       : ['error'],
   });
 
-  await prisma.$connect();
+  const maxAttempts = 10;
+  const retryDelayMs = 3000;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      await prisma.$connect();
+      fastify.log.info('✅ Prisma connected');
+      break;
+    } catch (error) {
+      const isLastAttempt = attempt === maxAttempts;
+
+      fastify.log.error(
+        { err: error, attempt, maxAttempts },
+        '❌ Prisma connection failed'
+      );
+
+      if (isLastAttempt) {
+        throw error;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+    }
+  }
 
   fastify.decorate('prisma', prisma);
 
   fastify.addHook('onClose', async (instance) => {
     await instance.prisma.$disconnect();
   });
-
-  fastify.log.info('✅ Prisma connected');
 };
 
 export default fp(prismaPlugin, {

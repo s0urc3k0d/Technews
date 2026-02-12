@@ -4,9 +4,10 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { createPortal } from 'react-dom';
 import { useCategories } from '@/hooks';
 import { useUIStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
@@ -22,9 +23,14 @@ const navigation = [
 export function Header() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const { toggleSearch } = useUIStore();
   const { data: categoriesData } = useCategories();
   const categories = categoriesData?.data ?? [];
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
@@ -116,10 +122,10 @@ export function Header() {
       </nav>
 
       {/* Mobile menu */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-[100]">
-          <div className="fixed inset-0 z-[100] bg-black/20" onClick={() => setMobileMenuOpen(false)} />
-          <div className="fixed inset-y-0 right-0 z-[110] w-full max-w-sm bg-white px-6 py-6 overflow-y-auto">
+      {mobileMenuOpen && isMounted && createPortal(
+        <div className="lg:hidden fixed inset-0 z-[9999]">
+          <div className="fixed inset-0 bg-black/20" onClick={() => setMobileMenuOpen(false)} />
+          <div className="fixed inset-y-0 right-0 z-[10000] w-full max-w-sm bg-white px-6 py-6 overflow-y-auto">
             <div className="flex items-center justify-between">
               <Link href="/" className="-m-1.5 p-1.5 flex items-center gap-2">
                 <span className="text-2xl">🚀</span>
@@ -166,7 +172,8 @@ export function Header() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </header>
   );

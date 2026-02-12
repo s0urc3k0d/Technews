@@ -154,7 +154,8 @@ Après un déploiement réussi, exécuter dans le conteneur backend:
 Ce script exécute:
 
 - `prisma generate`
-- `prisma migrate deploy`
+- `prisma migrate deploy` si des migrations existent
+- sinon `prisma db push` (initialisation du schéma)
 - note: le seed n'est pas exécuté dans l'image runtime (pas de workspace pnpm)
 
 Recommandation:

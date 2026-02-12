@@ -13,8 +13,13 @@ fi
 echo "📦 Prisma generate"
 npx prisma@5.22.0 generate --schema="$SCHEMA_PATH"
 
-echo "🗄️ Prisma migrate deploy"
-npx prisma@5.22.0 migrate deploy --schema="$SCHEMA_PATH"
+if [ -d "/app/prisma/migrations" ] && [ "$(ls -A /app/prisma/migrations 2>/dev/null)" ]; then
+  echo "🗄️ Prisma migrate deploy"
+  npx prisma@5.22.0 migrate deploy --schema="$SCHEMA_PATH"
+else
+  echo "🗄️ Aucune migration trouvée, application du schéma avec prisma db push"
+  npx prisma@5.22.0 db push --schema="$SCHEMA_PATH"
+fi
 
 if [ "${RUN_SEED:-false}" = "true" ]; then
   echo "ℹ️ Seed demandé mais non supporté dans l'image runtime (pnpm/workspace absents)"

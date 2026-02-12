@@ -85,8 +85,14 @@ RUN npm install --omit=dev
 # Copy Prisma schema
 COPY --from=builder --chown=fastify:nodejs /app/packages/database/prisma ./prisma
 
+# Copy deployment scripts
+COPY --from=builder --chown=fastify:nodejs /app/scripts ./scripts
+
 # Generate Prisma client with the installed version
 RUN npx prisma@5.22.0 generate --schema=./prisma/schema.prisma
+
+# Make post-deploy script executable
+RUN chmod +x /app/scripts/post-deploy.sh
 
 # Create uploads and shorts directories
 RUN mkdir -p /app/uploads /app/shorts /app/shorts/backgrounds /app/shorts/temp && \

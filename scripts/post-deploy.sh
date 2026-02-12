@@ -3,20 +3,22 @@ set -euo pipefail
 
 echo "🚀 Post-déploiement RevueTech"
 
-if ! command -v pnpm >/dev/null 2>&1; then
-  echo "❌ pnpm est requis dans le conteneur"
+SCHEMA_PATH="/app/prisma/schema.prisma"
+
+if [[ ! -f "$SCHEMA_PATH" ]]; then
+  echo "❌ Schéma Prisma introuvable: $SCHEMA_PATH"
   exit 1
 fi
 
 echo "📦 Prisma generate"
-pnpm --filter @technews/database exec prisma generate
+npx prisma@5.22.0 generate --schema="$SCHEMA_PATH"
 
 echo "🗄️ Prisma migrate deploy"
-pnpm --filter @technews/database exec prisma migrate deploy
+npx prisma@5.22.0 migrate deploy --schema="$SCHEMA_PATH"
 
 if [[ "${RUN_SEED:-false}" == "true" ]]; then
-  echo "🌱 Prisma seed"
-  pnpm --filter @technews/database exec prisma db seed
+  echo "ℹ️ Seed demandé mais non supporté dans l'image runtime (pnpm/workspace absents)"
+  echo "ℹ️ Exécuter le seed depuis l'environnement build/CI si nécessaire"
 else
   echo "ℹ️ Seed ignoré (RUN_SEED=true pour l'exécuter)"
 fi

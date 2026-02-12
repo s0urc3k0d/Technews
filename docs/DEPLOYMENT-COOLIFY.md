@@ -155,12 +155,12 @@ Ce script exécute:
 
 - `prisma generate`
 - `prisma migrate deploy`
-- seed optionnel si `RUN_SEED=true`
+- note: le seed n'est pas exécuté dans l'image runtime (pas de workspace pnpm)
 
 Recommandation:
 
-- premier déploiement: exécuter avec `RUN_SEED=true` si nécessaire
-- déploiements suivants: `RUN_SEED=false`
+- premier déploiement: exécuter migration puis seed depuis CI/environnement build si nécessaire
+- déploiements suivants: migration uniquement via `./scripts/post-deploy.sh`
 
 ---
 

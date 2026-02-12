@@ -131,6 +131,12 @@ services:
       - prometheus-data:/prometheus
     networks:
       - technews-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
 
   grafana:
     build:
@@ -150,6 +156,12 @@ services:
       - prometheus
     networks:
       - technews-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
 networks:
   technews-network:

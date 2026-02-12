@@ -136,8 +136,8 @@ networks:
     driver: bridge
 
 volumes:
-  uploads-data:/opt/uploads
-  shorts-data:/opt/shorts
-  redis-data:/opt/data
-  prometheus-data:/opt/prometheus
-  grafana-data:/opt/grafana
+  uploads-data:
+  shorts-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:

@@ -4,7 +4,8 @@
 # Notes:
 # - Coolify gère le reverse proxy, TLS et les domaines.
 # - Définir les domaines dans l'UI Coolify (frontend, api, grafana, prometheus).
-# - Utiliser une base PostgreSQL managée (service Coolify ou externe).
+# - PostgreSQL est inclus par défaut dans cette stack (persistant).
+# - Possibilité de surcharger DATABASE_URL pour une base externe.
 
 services:
   frontend:
@@ -42,7 +43,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-change-me-in-coolify}@postgres:5432/${POSTGRES_DB:-postgres}?schema=public}
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=${JWT_SECRET}
       - SESSION_SECRET=${SESSION_SECRET}
@@ -74,6 +75,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
     networks:
       - technews-network
     healthcheck:
@@ -96,6 +99,23 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-change-me-in-coolify}
+      - POSTGRES_DB=${POSTGRES_DB:-postgres}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - technews-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   prometheus:
     build:
@@ -136,6 +156,7 @@ networks:
     driver: bridge
 
 volumes:
+  postgres-data:
   uploads-data:
   shorts-data:
   redis-data:

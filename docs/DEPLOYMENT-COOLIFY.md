@@ -14,6 +14,8 @@ Avant de créer le service Coolify, vérifier:
 3. Une base PostgreSQL prête (service Coolify ou externe).
 4. Secrets disponibles (Auth0, Resend, Mistral, OAuth social).
 
+Par défaut, ce dépôt déploie PostgreSQL dans le même compose (recommandé pour éviter les problèmes de réseau interne).
+
 Fichiers utilisés:
 
 - Compose: [docker-compose.coolify.yml](../docker-compose.coolify.yml)
@@ -31,7 +33,8 @@ Points critiques (cohérence avec le code actuel):
 
 - `NEXT_PUBLIC_SITE_URL=https://revuetech.fr`
 - `NEXT_PUBLIC_API_URL=https://api.revuetech.fr` (**sans `/api`**)
-- `DATABASE_URL=postgresql://...`
+- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` (si DB intégrée)
+- `DATABASE_URL` peut rester vide pour utiliser la DB intégrée
 - `ENABLE_CRON=true` sur **une seule instance backend**
 
 Règle anti-doublon cron:
@@ -53,6 +56,7 @@ Services attendus:
 
 - `frontend` (Next.js)
 - `backend` (Fastify)
+- `postgres` (PostgreSQL, intégré)
 - `redis`
 - `prometheus`
 - `grafana`
@@ -64,11 +68,32 @@ Note importante:
 
 Volumes persistants déjà définis dans le compose:
 
+- `postgres-data`
 - `uploads-data`
 - `shorts-data`
 - `redis-data`
 - `prometheus-data`
 - `grafana-data`
+
+## 2.1) PostgreSQL intégré: persistance et backup
+
+La base est persistante via le volume Docker `postgres-data`.
+
+Backup (dump SQL) depuis le serveur:
+
+1. Identifier le conteneur postgres du projet Coolify.
+2. Exécuter:
+
+`docker exec <container_postgres> pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" > backup-$(date +%F-%H%M).sql`
+
+Restauration:
+
+`cat backup-YYYY-MM-DD-HHMM.sql | docker exec -i <container_postgres> psql -U "$POSTGRES_USER" "$POSTGRES_DB"`
+
+Conseils:
+
+- Planifier un backup quotidien (cron) + rotation.
+- Copier les dumps hors serveur (S3/objet storage/rsync chiffré).
 
 ⚠️ Important (UI Coolify): pour une application **Docker Compose**, les `Source Path` des volumes sont en lecture seule dans le dashboard.
 

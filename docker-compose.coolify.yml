@@ -25,7 +25,7 @@ services:
       - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
     depends_on:
       backend:
-        condition: service_healthy
+        condition: service_started
     networks:
       - technews-network
     healthcheck:

@@ -24,12 +24,60 @@ export function Header() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [userLabel, setUserLabel] = useState<string | null>(null);
   const { toggleSearch } = useUIStore();
   const { data: categoriesData } = useCategories();
   const categories = categoriesData?.data ?? [];
 
+  const adminHref = isAuthenticated ? '/admin' : '/api/auth/login?returnTo=/admin';
+  const logoutHref = '/api/auth/logout?returnTo=/';
+
   useEffect(() => {
     setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSession = async () => {
+      try {
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include',
+          cache: 'no-store',
+        });
+
+        if (!response.ok) {
+          if (!cancelled) {
+            setIsAuthenticated(false);
+            setUserLabel(null);
+          }
+          return;
+        }
+
+        const session = await response.json();
+        if (!cancelled) {
+          setIsAuthenticated(true);
+          setUserLabel(session?.name || session?.nickname || session?.email || null);
+        }
+      } catch {
+        if (!cancelled) {
+          setIsAuthenticated(false);
+          setUserLabel(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setAuthLoading(false);
+        }
+      }
+    };
+
+    loadSession();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -112,12 +160,25 @@ export function Header() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
             </svg>
           </button>
+          {isAuthenticated && !authLoading && (
+            <span className="hidden xl:inline text-xs text-gray-500 self-center max-w-[220px] truncate" title={userLabel || undefined}>
+              Connecté {userLabel ? `: ${userLabel}` : ''}
+            </span>
+          )}
           <Link
-            href="/api/auth/login"
+            href={adminHref}
             className="text-sm font-semibold leading-6 text-gray-900 hover:text-blue-600"
           >
-            Admin <span aria-hidden="true">&rarr;</span>
+            {isAuthenticated ? 'Admin' : 'Se connecter'} <span aria-hidden="true">&rarr;</span>
           </Link>
+          {isAuthenticated && !authLoading && (
+            <Link
+              href={logoutHref}
+              className="text-sm font-semibold leading-6 text-gray-900 hover:text-blue-600"
+            >
+              Déconnexion
+            </Link>
+          )}
         </div>
       </nav>
 
@@ -163,11 +224,21 @@ export function Header() {
                 </div>
                 <div className="py-6">
                   <Link
-                    href="/api/auth/login"
+                    href={adminHref}
+                    onClick={() => setMobileMenuOpen(false)}
                     className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
                   >
-                    Admin
+                    {isAuthenticated ? 'Admin' : 'Se connecter'}
                   </Link>
+                  {isAuthenticated && !authLoading && (
+                    <Link
+                      href={logoutHref}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                    >
+                      Déconnexion
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>

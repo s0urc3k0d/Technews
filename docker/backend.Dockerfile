@@ -61,6 +61,9 @@ RUN apk add --no-cache \
     jpeg-dev \
     pango-dev \
     giflib-dev \
+    build-base \
+    g++ \
+    python3 \
     ffmpeg \
     openssl \
     openssl-dev \

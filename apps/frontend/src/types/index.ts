@@ -9,6 +9,7 @@ export interface Article {
   title: string;
   excerpt: string | null;
   content: string;
+  featuredImage?: string | null;
   imageUrl: string | null;
   imageAlt: string | null;
   thumbnailUrl: string | null;
@@ -29,15 +30,15 @@ export interface Article {
   podcastUrl: string | null;
   podcastDuration: number | null;
   videoUrl: string | null;
-  category: Category | null;
+  category?: Category | null;
   categories?: Category[];
   tags: Tag[];
   images?: ArticleImage[];
   comments?: Comment[];
 }
 
-export type ArticleType = 'ARTICLE' | 'PODCAST' | 'VIDEO';
-export type ArticleStatus = 'DRAFT' | 'PENDING' | 'PUBLISHED' | 'REJECTED' | 'ARCHIVED';
+export type ArticleType = 'STANDARD' | 'PODCAST';
+export type ArticleStatus = 'DRAFT' | 'PUBLISHED' | 'SCHEDULED' | 'REJECTED' | 'ARCHIVED';
 export type ArticleSource = 'MANUAL' | 'RSS';
 
 export interface ArticleImage {
@@ -88,7 +89,7 @@ export interface Comment {
   article?: { title: string; slug: string };
 }
 
-export type CommentStatus = 'APPROVED' | 'PENDING' | 'SPAM' | 'DELETED' | 'REJECTED';
+export type CommentStatus = 'APPROVED' | 'PENDING' | 'SPAM' | 'DELETED';
 
 // Newsletter
 export interface Subscriber {

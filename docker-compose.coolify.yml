@@ -1,0 +1,143 @@
+# ===========================================
+# TechNews - Docker Compose pour Coolify
+# ===========================================
+# Notes:
+# - Coolify gère le reverse proxy, TLS et les domaines.
+# - Définir les domaines dans l'UI Coolify (frontend, api, grafana, prometheus).
+# - Utiliser une base PostgreSQL managée (service Coolify ou externe).
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: ./docker/frontend.Dockerfile
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - NEXT_PUBLIC_ADSENSE_ID=${NEXT_PUBLIC_ADSENSE_ID}
+      - AUTH0_SECRET=${AUTH0_SECRET}
+      - AUTH0_BASE_URL=${AUTH0_BASE_URL}
+      - AUTH0_ISSUER_BASE_URL=${AUTH0_ISSUER_BASE_URL}
+      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
+      - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - technews-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  backend:
+    build:
+      context: .
+      dockerfile: ./docker/backend.Dockerfile
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL}
+      - RSS_FEED_URL=${RSS_FEED_URL}
+      - UPLOAD_PATH=/app/uploads
+      - UPLOAD_MAX_SIZE_MB=${UPLOAD_MAX_SIZE_MB:-5}
+      - SHORTS_DIR=/app/shorts
+      - ENABLE_CRON=${ENABLE_CRON:-true}
+      - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - AUTH0_ADMIN_ROLE=${AUTH0_ADMIN_ROLE:-admin}
+      - AUTH0_ADMIN_PERMISSION=${AUTH0_ADMIN_PERMISSION:-admin:all}
+      - AUTH0_ROLES_CLAIM=${AUTH0_ROLES_CLAIM}
+      - ADMIN_EMAILS=${ADMIN_EMAILS}
+      - ADMIN_SUBS=${ADMIN_SUBS}
+      - TWITTER_CLIENT_ID=${TWITTER_CLIENT_ID}
+      - TWITTER_CLIENT_SECRET=${TWITTER_CLIENT_SECRET}
+      - FACEBOOK_APP_ID=${FACEBOOK_APP_ID}
+      - FACEBOOK_APP_SECRET=${FACEBOOK_APP_SECRET}
+      - LINKEDIN_CLIENT_ID=${LINKEDIN_CLIENT_ID}
+      - LINKEDIN_CLIENT_SECRET=${LINKEDIN_CLIENT_SECRET}
+    volumes:
+      - uploads-data:/app/uploads
+      - shorts-data:/app/shorts
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - technews-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - technews-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  prometheus:
+    image: prom/prometheus:v2.50.0
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - technews-network
+
+  grafana:
+    image: grafana/grafana:10.3.0
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-https://grafana.example.com}
+      - GF_SERVER_SERVE_FROM_SUB_PATH=false
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - technews-network
+
+networks:
+  technews-network:
+    driver: bridge
+
+volumes:
+  uploads-data:
+  shorts-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:

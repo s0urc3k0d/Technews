@@ -3,6 +3,7 @@
 // ===========================================
 
 import { FastifyPluginAsync } from 'fastify';
+import '@fastify/cookie';
 import { SocialPlatform } from '@prisma/client';
 import { createSocialService } from '../services/social.service.js';
 import crypto from 'crypto';
@@ -107,7 +108,7 @@ const socialRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     const state = crypto.randomBytes(16).toString('hex');
-    const redirectUri = `${config.NEXT_PUBLIC_SITE_URL}/api/social/callback/${platform.toLowerCase()}`;
+    const redirectUri = `${config.NEXT_PUBLIC_SITE_URL}/admin/social/callback/${platform.toLowerCase()}`;
 
     try {
       const authUrl = socialService.getAuthUrl(platformEnum, redirectUri, state);
@@ -150,7 +151,7 @@ const socialRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.redirect('/admin/social?error=invalid_state');
     }
 
-    const redirectUri = `${config.NEXT_PUBLIC_SITE_URL}/api/social/callback/${platform.toLowerCase()}`;
+    const redirectUri = `${config.NEXT_PUBLIC_SITE_URL}/admin/social/callback/${platform.toLowerCase()}`;
 
     try {
       const tokens = await socialService.exchangeCode(platformEnum, code, redirectUri);
@@ -222,11 +223,11 @@ const socialRoutes: FastifyPluginAsync = async (fastify) => {
       );
 
       if (!sessionResponse.ok) {
-        const error = await sessionResponse.json();
+        const error = await sessionResponse.json() as { message?: string };
         throw new Error(error.message || 'Invalid credentials');
       }
 
-      const session = await sessionResponse.json();
+      const session = await sessionResponse.json() as { did: string; handle: string };
 
       // Sauvegarder la connexion
       await prisma.socialConnection.upsert({

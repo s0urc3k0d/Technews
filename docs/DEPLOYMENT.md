@@ -4,6 +4,10 @@
 > 
 > **Domaine** : revuetech.fr / www.revuetech.fr
 
+> ⚠️ Ce guide VPS/Nginx est conservé en **legacy**.
+> Pour la cible actuelle (**Coolify auto-hébergé**), utilisez le runbook dédié :
+> [docs/DEPLOYMENT-COOLIFY.md](DEPLOYMENT-COOLIFY.md)
+
 ---
 
 ## 📋 Table des matières

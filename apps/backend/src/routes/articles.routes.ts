@@ -27,7 +27,7 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(400).send({ error: 'Invalid query parameters', details: parseResult.error.issues });
       }
       const { 
-        page, limit, status, type, categorySlug, tagSlug, 
+        page, limit, status, type, categoryId, tagId, categorySlug, tagSlug, 
         search, source, featured, orderBy, order 
       } = parseResult.data;
 
@@ -47,7 +47,13 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
       if (source) where.source = source;
       if (featured !== undefined) where.isFeatured = featured;
 
-      if (categorySlug) {
+      if (categoryId) {
+        where.categories = {
+          some: {
+            categoryId,
+          },
+        };
+      } else if (categorySlug) {
         where.categories = {
           some: {
             category: { slug: categorySlug },
@@ -55,7 +61,13 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
         };
       }
 
-      if (tagSlug) {
+      if (tagId) {
+        where.tags = {
+          some: {
+            tagId,
+          },
+        };
+      } else if (tagSlug) {
         where.tags = {
           some: {
             tag: { slug: tagSlug },
@@ -136,9 +148,11 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     return reply.send({
-      ...article,
-      categories: article.categories.map(c => c.category),
-      tags: article.tags.map(t => t.tag),
+      data: {
+        ...article,
+        categories: article.categories.map(c => c.category),
+        tags: article.tags.map(t => t.tag),
+      },
     });
   });
 
@@ -187,9 +201,45 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
       }).catch(() => {});
 
       return reply.send({
-        ...article,
-        categories: article.categories.map(c => c.category),
-        tags: article.tags.map(t => t.tag),
+        data: {
+          ...article,
+          categories: article.categories.map(c => c.category),
+          tags: article.tags.map(t => t.tag),
+        },
+      });
+    }
+  );
+
+  // GET /articles/id/:id - Détail article par ID (admin)
+  fastify.get<{ Params: { id: string } }>(
+    '/id/:id',
+    { preHandler: [fastify.requireAdmin] },
+    async (request, reply) => {
+      const { id } = request.params;
+
+      const article = await prisma.article.findUnique({
+        where: { id },
+        include: {
+          categories: {
+            include: { category: true },
+          },
+          tags: {
+            include: { tag: true },
+          },
+          images: true,
+        },
+      });
+
+      if (!article) {
+        return reply.code(404).send({ error: 'Article not found' });
+      }
+
+      return reply.send({
+        data: {
+          ...article,
+          categories: article.categories.map(c => c.category),
+          tags: article.tags.map(t => t.tag),
+        },
       });
     }
   );
@@ -232,9 +282,11 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
       });
 
       return reply.code(201).send({
-        ...article,
-        categories: article.categories.map(c => c.category),
-        tags: article.tags.map(t => t.tag),
+        data: {
+          ...article,
+          categories: article.categories.map(c => c.category),
+          tags: article.tags.map(t => t.tag),
+        },
       });
     }
   );
@@ -297,9 +349,11 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
       });
 
       return reply.send({
-        ...article,
-        categories: article.categories.map(c => c.category),
-        tags: article.tags.map(t => t.tag),
+        data: {
+          ...article,
+          categories: article.categories.map(c => c.category),
+          tags: article.tags.map(t => t.tag),
+        },
       });
     }
   );
@@ -372,8 +426,10 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       return reply.send({
-        ...article,
-        socialShares: socialResults,
+        data: {
+          ...article,
+          socialShares: socialResults,
+        },
       });
     }
   );
@@ -390,7 +446,7 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
         data: { status: ArticleStatus.REJECTED },
       });
 
-      return reply.send(article);
+      return reply.send({ data: article });
     }
   );
 };

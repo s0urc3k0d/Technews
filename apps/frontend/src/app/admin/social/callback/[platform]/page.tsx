@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useParams, useRouter } from 'next/navigation';
 import { Check, X, Loader2 } from 'lucide-react';
+import { API_BASE_URL, API_ENDPOINTS } from '@/lib/config';
 
 export default function SocialCallbackPage() {
   const router = useRouter();
@@ -12,8 +13,6 @@ export default function SocialCallbackPage() {
   
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
-
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3051';
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -35,29 +34,11 @@ export default function SocialCallbackPage() {
       }
 
       try {
-        // Construire l'URL avec tous les paramètres
-        const callbackUrl = new URL(`${API_URL}/api/v1/social/callback/${platform}`);
+        // Le backend gère le callback OAuth puis redirige vers /admin/social
+        const callbackUrl = new URL(`${API_BASE_URL}${API_ENDPOINTS.socialCallback(platform)}`);
         callbackUrl.searchParams.set('code', code);
         if (state) callbackUrl.searchParams.set('state', state);
-
-        const res = await fetch(callbackUrl.toString(), {
-          method: 'GET',
-          credentials: 'include',
-        });
-
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || 'Erreur lors de la connexion');
-        }
-
-        const data = await res.json();
-        setStatus('success');
-        setMessage(`Connexion réussie à ${data.accountName || platform}`);
-        
-        // Rediriger vers la page des connexions après 2 secondes
-        setTimeout(() => {
-          router.push('/admin/social');
-        }, 2000);
+        window.location.href = callbackUrl.toString();
       } catch (err) {
         setStatus('error');
         setMessage(err instanceof Error ? err.message : 'Erreur inconnue');
@@ -65,7 +46,7 @@ export default function SocialCallbackPage() {
     };
 
     handleCallback();
-  }, [platform, searchParams, router, API_URL]);
+  }, [platform, searchParams]);
 
   const platformNames: Record<string, string> = {
     twitter: 'Twitter / X',

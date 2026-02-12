@@ -111,7 +111,7 @@ export function useRejectComment() {
 
   return useMutation({
     mutationFn: (id: string) => 
-      apiClient.put<Comment>(API_ENDPOINTS.commentStatus(id), { status: 'REJECTED' }),
+      apiClient.put<Comment>(API_ENDPOINTS.commentStatus(id), { status: 'DELETED' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: commentKeys.lists() });
     },

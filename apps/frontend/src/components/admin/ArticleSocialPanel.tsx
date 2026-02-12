@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { API_BASE_URL, API_ENDPOINTS } from '@/lib/config';
 import { 
   Twitter, 
   Facebook, 
@@ -64,8 +65,6 @@ export default function ArticleSocialPanel({
   const [sharing, setSharing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3051';
-
   useEffect(() => {
     fetchData();
   }, [articleId]);
@@ -73,8 +72,8 @@ export default function ArticleSocialPanel({
   const fetchData = async () => {
     try {
       const [sharesRes, connectionsRes] = await Promise.all([
-        fetch(`${API_URL}/api/v1/social/shares/${articleId}`, { credentials: 'include' }),
-        fetch(`${API_URL}/api/v1/social/connections`, { credentials: 'include' }),
+        fetch(`${API_BASE_URL}${API_ENDPOINTS.socialSharesByArticle(articleId)}`, { credentials: 'include' }),
+        fetch(`${API_BASE_URL}${API_ENDPOINTS.socialConnections}`, { credentials: 'include' }),
       ]);
 
       if (sharesRes.ok) {
@@ -84,7 +83,7 @@ export default function ArticleSocialPanel({
 
       if (connectionsRes.ok) {
         const connectionsData = await connectionsRes.json();
-        setConnections(connectionsData);
+        setConnections(connectionsData.connections ?? []);
       }
     } catch (err) {
       console.error('Error fetching social data:', err);
@@ -99,8 +98,8 @@ export default function ArticleSocialPanel({
 
     try {
       const url = platform 
-        ? `${API_URL}/api/v1/social/share/${articleId}?platform=${platform}`
-        : `${API_URL}/api/v1/social/share/${articleId}`;
+        ? `${API_BASE_URL}${API_ENDPOINTS.socialShareArticle(articleId)}?platform=${platform}`
+        : `${API_BASE_URL}${API_ENDPOINTS.socialShareArticle(articleId)}`;
       
       const res = await fetch(url, {
         method: 'POST',

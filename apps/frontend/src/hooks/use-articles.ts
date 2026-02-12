@@ -67,7 +67,10 @@ export function useInfiniteArticles(filters: Omit<ArticleFilters, 'page'> = {}) 
 export function useArticle(slug: string) {
   return useQuery({
     queryKey: articleKeys.detail(slug),
-    queryFn: () => apiClient.get<Article>(API_ENDPOINTS.articleBySlug(slug)),
+    queryFn: async () => {
+      const response = await apiClient.get<{ data: Article }>(API_ENDPOINTS.articleBySlug(slug));
+      return response.data;
+    },
     enabled: !!slug,
   });
 }
@@ -76,7 +79,10 @@ export function useArticle(slug: string) {
 export function useFeaturedArticle() {
   return useQuery({
     queryKey: articleKeys.featured(),
-    queryFn: () => apiClient.get<Article>(API_ENDPOINTS.articleFeatured),
+    queryFn: async () => {
+      const response = await apiClient.get<{ data: Article }>(API_ENDPOINTS.articleFeatured);
+      return response.data;
+    },
   });
 }
 
@@ -85,8 +91,10 @@ export function useCreateArticle() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateArticleInput) => 
-      apiClient.post<Article>(API_ENDPOINTS.articles, data),
+    mutationFn: async (data: CreateArticleInput) => {
+      const response = await apiClient.post<{ data: Article }>(API_ENDPOINTS.articles, data);
+      return response.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: articleKeys.lists() });
     },
@@ -98,8 +106,10 @@ export function useUpdateArticle() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateArticleInput }) => 
-      apiClient.put<Article>(`${API_ENDPOINTS.articles}/${id}`, data),
+    mutationFn: async ({ id, data }: { id: string; data: UpdateArticleInput }) => {
+      const response = await apiClient.put<{ data: Article }>(`${API_ENDPOINTS.articles}/${id}`, data);
+      return response.data;
+    },
     onSuccess: (article) => {
       queryClient.invalidateQueries({ queryKey: articleKeys.lists() });
       queryClient.setQueryData(articleKeys.detail(article.slug), article);
@@ -124,7 +134,10 @@ export function usePublishArticle() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => apiClient.post<Article>(API_ENDPOINTS.articlePublish(id)),
+    mutationFn: async (id: string) => {
+      const response = await apiClient.post<{ data: Article }>(API_ENDPOINTS.articlePublish(id));
+      return response.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: articleKeys.lists() });
     },
@@ -136,7 +149,10 @@ export function useRejectArticle() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => apiClient.post<Article>(API_ENDPOINTS.articleReject(id)),
+    mutationFn: async (id: string) => {
+      const response = await apiClient.post<{ data: Article }>(API_ENDPOINTS.articleReject(id));
+      return response.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: articleKeys.lists() });
     },

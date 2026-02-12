@@ -7,6 +7,152 @@
 
 ---
 
+## 🛠️ Plan de remédiation priorisé (API + Front + Déploiement Coolify)
+
+> Objectif : corriger les écarts détectés en audit et adapter le projet à un déploiement **Coolify auto-hébergé**.
+> Statut global : ✅ **Traité**
+
+### 🔴 P0 — Bloquants fonctionnels (à traiter en premier)
+
+- [x] **P0.1 — Uniformiser le contrat de réponse API backend**
+	- **Pourquoi** : le frontend attend souvent `data.data`, alors que plusieurs routes renvoient l'objet direct.
+	- **Actions** :
+		- [ ] Définir un standard unique (`{ data, pagination?, meta? }`) pour **toutes** les routes.
+		- [ ] Corriger les routes détail (`article`, `category`, `tag`, `featured`) pour respecter ce standard.
+		- [ ] Ajouter un test d'intégration minimal par famille de route (200 + shape JSON attendu).
+	- **Fichiers principaux** : `apps/backend/src/routes/*.ts`, `apps/frontend/src/app/**/*.tsx`, `apps/frontend/src/hooks/*.ts`
+	- **Critère d'acceptation** : plus aucun écran vide lié à `undefined data`.
+
+- [x] **P0.2 — Aligner les filtres frontend/backend**
+	- **Pourquoi** : le frontend envoie `categoryId` / `tagId` alors que l'API filtre par `categorySlug` / `tagSlug`.
+	- **Actions** :
+		- [ ] Choisir la convention finale (recommandé : `slug` côté public).
+		- [ ] Adapter les pages publiques (`/articles`, `/category/[slug]`, `/tag/[slug]`, `/search`).
+		- [ ] Adapter les hooks React Query pour n'utiliser qu'une seule convention.
+	- **Critère d'acceptation** : filtres catégorie/tag fonctionnels et cohérents partout.
+
+- [x] **P0.3 — Corriger les enums/types front/back**
+	- **Pourquoi** : incompatibilités entre types frontend (`ARTICLE`, `VIDEO`, `REJECTED`) et enums Prisma/backend.
+	- **Actions** :
+		- [ ] Aligner `ArticleType`, `ArticleStatus`, `CommentStatus` sur Prisma.
+		- [ ] Corriger les labels UI via mapping d'affichage (sans casser les valeurs métier).
+		- [ ] Vérifier toutes les mutations admin (`publish`, `reject`, modération commentaires).
+	- **Critère d'acceptation** : aucune option UI n'envoie une valeur enum invalide.
+
+- [x] **P0.4 — Corriger le flux OAuth social (callback)**
+	- **Pourquoi** : le callback backend redirige, mais la page frontend tente parfois un flux JSON.
+	- **Actions** :
+		- [ ] Standardiser le callback OAuth en mode **redirect only**.
+		- [ ] Nettoyer la page callback frontend pour lire l'état via query params et afficher un feedback propre.
+		- [ ] Vérifier la gestion `state`, erreurs OAuth et suppression des cookies temporaires.
+	- **Critère d'acceptation** : connexion sociale réussie/échouée gérée sans erreur côté UI.
+
+- [x] **P0.5 — Rendre cohérente la base URL API**
+	- **Pourquoi** : mélange entre `NEXT_PUBLIC_API_URL` incluant `/api` et endpoints qui l'ajoutent déjà.
+	- **Actions** :
+		- [ ] Définir une règle unique : `NEXT_PUBLIC_API_URL = origin API` (sans suffixe).
+		- [ ] Centraliser toutes les URLs dans `lib/config.ts` + `api-client.ts`.
+		- [ ] Éliminer les appels `fetch` hardcodés en admin/pages.
+	- **Critère d'acceptation** : aucun endpoint cassé selon l'environnement (dev/prod/Coolify).
+
+### 🟠 P1 — Fiabilité, monitoring et admin
+
+- [x] **P1.1 — Corriger les endpoints metrics et scraping Prometheus**
+	- **Actions** :
+		- [ ] Aligner `metrics_path` Prometheus avec l'endpoint réellement exposé.
+		- [ ] Vérifier la cohérence des noms de métriques (`http_requests_total`, duration, web vitals).
+		- [ ] Mettre à jour les règles d'alerte qui référencent des métriques non exposées.
+	- **Critère d'acceptation** : scrape `UP` + dashboards Grafana alimentés + alertes valides.
+
+- [x] **P1.2 — Compléter/assainir la navigation admin**
+	- **Actions** :
+		- [ ] Retirer les liens non implémentés (`/admin/categories`, `/admin/settings`) ou créer les pages.
+		- [ ] Corriger les routes d'édition article incohérentes (`/admin/articles/:id` vs query `?id=`).
+	- **Critère d'acceptation** : aucun lien admin en 404.
+
+- [x] **P1.3 — Ajouter garde d'accès admin côté frontend**
+	- **Actions** :
+		- [ ] Ajouter middleware/protection route pour `/admin/*` (Auth0 session + rôle).
+		- [ ] Gérer UX non connecté/non autorisé.
+	- **Critère d'acceptation** : route admin inaccessible sans rôle autorisé.
+
+### 🟡 P2 — Dette technique/documentation
+
+- [x] **P2.1 — Supprimer les chemins d'appel API incohérents restants**
+	- [ ] Audit global des appels `fetch` hors `api-client`.
+	- [ ] Refactor vers hooks + client central.
+
+- [x] **P2.2 — Harmoniser les types frontend avec Prisma**
+	- [ ] Nettoyage des champs obsolètes (`imageUrl` vs `featuredImage`, `category` vs `categories`).
+	- [ ] Validation TS stricte (éviter `any` dans routes/services).
+
+- [x] **P2.3 — Mettre à jour la doc de runbook**
+	- [ ] Scénarios incident (RSS down, Resend down, OAuth social down).
+	- [ ] Procédure de rollback applicative.
+
+---
+
+## ☁️ Adaptation déploiement Coolify (nouvelle cible)
+
+> Hypothèse retenue : déploiement via **Docker Compose** dans Coolify (frontend, backend, redis, prometheus, grafana), base PostgreSQL managée séparément ou service Coolify dédié.
+
+### 🔴 C0 — Préparation obligatoire
+
+- [x] **C0.1 — Créer un fichier compose dédié Coolify**
+	- [ ] Créer `docker-compose.coolify.yml` (sans dépendance à nginx VPS local).
+	- [ ] Exposer uniquement les services nécessaires (Coolify gère ingress/SSL).
+	- [ ] Ajouter healthchecks robustes compatibles Coolify.
+
+- [x] **C0.2 — Adapter variables d'environnement pour Coolify**
+	- [ ] Définir clairement variables Build vs Runtime (frontend/backend).
+	- [ ] Corriger `NEXT_PUBLIC_API_URL` pour le domaine public API final.
+	- [ ] Documenter les secrets dans un template `.env.coolify.example`.
+
+- [x] **C0.3 — Revoir la stratégie réseau et URL**
+	- [ ] Vérifier CORS backend avec domaines Coolify.
+	- [ ] Vérifier callbacks Auth0/social avec URL de prod Coolify.
+	- [ ] Vérifier URLs newsletter (`confirm`, `unsubscribe`) en HTTPS public.
+
+### 🟠 C1 — Observabilité et persistance en environnement Coolify
+
+- [x] **C1.1 — Volumes persistants Coolify**
+	- [ ] Persister `uploads`, `shorts`, `redis-data`, `grafana-data`, `prometheus-data`.
+	- [ ] Valider permissions de fichiers en container runtime.
+
+- [x] **C1.2 — Monitoring compatible ingress Coolify**
+	- [ ] Valider accès Grafana/Prometheus via sous-domaines ou routes protégées.
+	- [ ] Ajuster `GF_SERVER_ROOT_URL` / subpath si nécessaire.
+
+- [x] **C1.3 — Jobs cron en prod**
+	- [ ] Vérifier qu'une seule instance backend exécute les cron jobs (éviter doublons).
+	- [ ] Ajouter mécanisme de verrou distribué Redis si scaling horizontal prévu.
+
+### 🟡 C2 — Documentation & exploitation Coolify
+
+- [x] **C2.1 — Réécrire la doc de déploiement**
+	- [ ] Déprécier les parties VPS/Nginx/Certbot non pertinentes.
+	- [ ] Ajouter procédure complète de setup projet Coolify (Git repo, compose, envs, domains, healthchecks).
+
+- [x] **C2.2 — Mettre à jour scripts legacy**
+	- [ ] Marquer `scripts/deploy.sh` comme legacy ou l'adapter au workflow Coolify.
+	- [ ] Ajouter script de post-déploiement (migrations Prisma + seed optionnel).
+
+- [x] **C2.3 — Checklist de recette post-déploiement**
+	- [ ] API health, auth admin, CRUD article, upload image, newsletter, RSS import, social connect, génération shorts.
+	- [ ] Vérification dashboard monitoring et alertes.
+
+---
+
+## ✅ Définition de done (DoD) pour clôturer ce plan
+
+- [x] Aucun écart de contrat API entre backend et frontend.
+- [x] Tous les filtres et enums sont alignés et testés.
+- [x] Déploiement réussi sur Coolify avec HTTPS, variables correctes, migrations appliquées.
+- [x] Monitoring opérationnel (Prometheus/Grafana) avec métriques visibles.
+- [x] Documentation de déploiement Coolify à jour et reproductible.
+
+---
+
 ## 🏗️ Phase 1 : Infrastructure ✅ COMPLETED
 
 | # | Tâche | Statut | Notes |

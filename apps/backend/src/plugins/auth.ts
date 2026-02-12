@@ -110,7 +110,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
   };
 
   const getClaimArray = (payload: JWTPayload, key: string): string[] => {
-    const raw = (payload as Record<string, unknown>)[key];
+    const raw = (payload as unknown as Record<string, unknown>)[key];
     if (Array.isArray(raw)) {
       return raw.map((item) => String(item));
     }

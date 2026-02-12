@@ -11,7 +11,7 @@ import { Suspense } from 'react';
 import { ArticleContent, ArticleList, CommentSection, TextSkeleton } from '@/components';
 import { API_ENDPOINTS } from '@/lib/api-client';
 import { Article, PaginatedResponse } from '@/types';
-import { SITE_NAME, SITE_URL } from '@/lib/config';
+import { API_BASE_URL, SITE_NAME, SITE_URL } from '@/lib/config';
 
 interface ArticlePageProps {
   params: Promise<{ slug: string }>;
@@ -54,7 +54,7 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
 async function getArticle(slug: string): Promise<Article | null> {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.articleBySlug(slug)}`,
+      `${API_BASE_URL}${API_ENDPOINTS.articleBySlug(slug)}`,
       { next: { revalidate: 60 } }
     );
     
@@ -70,7 +70,7 @@ async function getArticle(slug: string): Promise<Article | null> {
 async function getRelatedArticles(categoryId: string, excludeId: string): Promise<Article[]> {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.articles}?categoryId=${categoryId}&limit=4&status=PUBLISHED`,
+      `${API_BASE_URL}${API_ENDPOINTS.articles}?categoryId=${categoryId}&limit=4&status=PUBLISHED`,
       { next: { revalidate: 60 } }
     );
     
@@ -90,8 +90,10 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     notFound();
   }
 
-  const relatedArticles = article.category 
-    ? await getRelatedArticles(article.category.id, article.id)
+  const primaryCategory = article.category || article.categories?.[0] || null;
+
+  const relatedArticles = primaryCategory 
+    ? await getRelatedArticles(primaryCategory.id, article.id)
     : [];
 
   // JSON-LD structured data
@@ -152,8 +154,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                     <div className="flex justify-between">
                       <dt className="text-gray-500">Type</dt>
                       <dd className="font-medium">
-                        {article.type === 'PODCAST' ? '🎙️ Podcast' : 
-                         article.type === 'VIDEO' ? '🎬 Vidéo' : '📰 Article'}
+                        {article.type === 'PODCAST' ? '🎙️ Podcast' : '📰 Article'}
                       </dd>
                     </div>
                     {article.readingTime && (

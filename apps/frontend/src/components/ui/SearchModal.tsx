@@ -143,7 +143,7 @@ export function SearchModal() {
                   >
                     <div className="flex items-start gap-3">
                       <span className="text-xl shrink-0">
-                        {article.type === 'PODCAST' ? '🎙️' : article.type === 'VIDEO' ? '🎬' : '📰'}
+                        {article.type === 'PODCAST' ? '🎙️' : '📰'}
                       </span>
                       <div>
                         <h3 className="font-medium text-gray-900 line-clamp-1">

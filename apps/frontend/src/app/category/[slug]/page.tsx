@@ -11,7 +11,7 @@ import { Suspense } from 'react';
 import { ArticleList, CardSkeleton } from '@/components';
 import { API_ENDPOINTS } from '@/lib/api-client';
 import { Article, Category, PaginatedResponse } from '@/types';
-import { SITE_NAME } from '@/lib/config';
+import { API_BASE_URL, SITE_NAME } from '@/lib/config';
 
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
@@ -22,7 +22,7 @@ interface CategoryPageProps {
 async function getCategory(slug: string): Promise<Category | null> {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.categoryBySlug(slug)}`,
+      `${API_BASE_URL}${API_ENDPOINTS.categoryBySlug(slug)}`,
       { next: { revalidate: 300 } }
     );
     
@@ -38,7 +38,7 @@ async function getCategory(slug: string): Promise<Category | null> {
 async function getCategoryArticles(categoryId: string, page: number = 1): Promise<PaginatedResponse<Article>> {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.articles}?categoryId=${categoryId}&page=${page}&limit=12&status=PUBLISHED`,
+      `${API_BASE_URL}${API_ENDPOINTS.articles}?categoryId=${categoryId}&page=${page}&limit=12&status=PUBLISHED`,
       { next: { revalidate: 60 } }
     );
     

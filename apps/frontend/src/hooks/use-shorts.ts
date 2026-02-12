@@ -54,11 +54,23 @@ export function useCurrentShort() {
   return useQuery<ShortMetadata | null>({
     queryKey: ['shorts', 'current'],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.shortsCurrent}`);
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.shortsCurrent}`, { credentials: 'include' });
       if (res.status === 404) return null;
       if (!res.ok) throw new Error('Failed to fetch current short');
       const data = await res.json();
-      return data.data;
+
+      return {
+        generatedAt: data.generatedAt,
+        slidesCount: data.slides?.length || 0,
+        duration: data.duration || 0,
+        articles: (data.slides || []).map((slide: any) => ({
+          id: slide.articleId,
+          title: slide.title,
+          summary: slide.summary,
+        })),
+        tiktokTags: data.tagsTikTok || [],
+        youtubeTags: data.tagsYouTube || [],
+      } satisfies ShortMetadata;
     },
   });
 }
@@ -68,10 +80,20 @@ export function useShortsPreview() {
   return useQuery<ShortsPreview>({
     queryKey: ['shorts', 'preview'],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.shortsPreview}`);
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.shortsPreview}`, { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch shorts preview');
       const data = await res.json();
-      return data.data;
+
+      return {
+        articles: (data.articles || []).map((article: any) => ({
+          id: article.id,
+          title: article.title,
+          category: article.category,
+          publishedAt: article.publishedAt,
+        })),
+        backgroundsCount: data.backgroundsCount || 0,
+        canGenerate: (data.count || 0) > 0,
+      } satisfies ShortsPreview;
     },
   });
 }
@@ -81,10 +103,21 @@ export function useShortsTags() {
   return useQuery<ShortsTags>({
     queryKey: ['shorts', 'tags'],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.shortsTags}`);
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.shortsTags}`, { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch shorts tags');
       const data = await res.json();
-      return data.data;
+      return {
+        tiktok: {
+          tags: data.tiktok?.tags || [],
+          formatted: data.tiktok?.formatted || '',
+          characterCount: (data.tiktok?.formatted || '').length,
+        },
+        youtube: {
+          tags: data.youtube?.tags || [],
+          formatted: data.youtube?.formatted || '',
+          characterCount: (data.youtube?.formatted || '').length,
+        },
+      } satisfies ShortsTags;
     },
     enabled: true,
   });
@@ -95,10 +128,10 @@ export function useShortsBackgrounds() {
   return useQuery<BackgroundImage[]>({
     queryKey: ['shorts', 'backgrounds'],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.shortsBackgrounds}`);
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.shortsBackgrounds}`, { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch backgrounds');
       const data = await res.json();
-      return data.data;
+      return data.backgrounds || [];
     },
   });
 }
@@ -111,6 +144,7 @@ export function useGenerateShort() {
     mutationFn: async () => {
       const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.shortsGenerate}`, {
         method: 'POST',
+        credentials: 'include',
       });
       if (!res.ok) {
         const error = await res.json();
@@ -135,6 +169,7 @@ export function useUploadBackground() {
 
       const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.shortsBackgrounds}`, {
         method: 'POST',
+        credentials: 'include',
         body: formData,
       });
       if (!res.ok) {
@@ -157,6 +192,7 @@ export function useDeleteBackground() {
     mutationFn: async (filename: string) => {
       const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.shortsBackgroundDelete(filename)}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
       if (!res.ok) {
         const error = await res.json();

@@ -35,7 +35,10 @@ export function useCategories() {
 export function useCategory(slug: string) {
   return useQuery({
     queryKey: categoryKeys.detail(slug),
-    queryFn: () => apiClient.get<Category>(API_ENDPOINTS.categoryBySlug(slug)),
+    queryFn: async () => {
+      const response = await apiClient.get<{ data: Category }>(API_ENDPOINTS.categoryBySlug(slug));
+      return response.data;
+    },
     enabled: !!slug,
   });
 }
@@ -44,8 +47,10 @@ export function useCreateCategory() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateCategoryInput) => 
-      apiClient.post<Category>(API_ENDPOINTS.categories, data),
+    mutationFn: async (data: CreateCategoryInput) => {
+      const response = await apiClient.post<{ data: Category }>(API_ENDPOINTS.categories, data);
+      return response.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: categoryKeys.list() });
     },
@@ -56,8 +61,10 @@ export function useUpdateCategory() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateCategoryInput }) => 
-      apiClient.put<Category>(`${API_ENDPOINTS.categories}/${id}`, data),
+    mutationFn: async ({ id, data }: { id: string; data: UpdateCategoryInput }) => {
+      const response = await apiClient.put<{ data: Category }>(`${API_ENDPOINTS.categories}/${id}`, data);
+      return response.data;
+    },
     onSuccess: (category) => {
       queryClient.invalidateQueries({ queryKey: categoryKeys.list() });
       queryClient.setQueryData(categoryKeys.detail(category.slug), category);
@@ -91,7 +98,10 @@ export function useTags() {
 export function useTag(slug: string) {
   return useQuery({
     queryKey: tagKeys.detail(slug),
-    queryFn: () => apiClient.get<Tag>(API_ENDPOINTS.tagBySlug(slug)),
+    queryFn: async () => {
+      const response = await apiClient.get<{ data: Tag }>(API_ENDPOINTS.tagBySlug(slug));
+      return response.data;
+    },
     enabled: !!slug,
   });
 }
@@ -100,8 +110,10 @@ export function useCreateTag() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateTagInput) => 
-      apiClient.post<Tag>(API_ENDPOINTS.tags, data),
+    mutationFn: async (data: CreateTagInput) => {
+      const response = await apiClient.post<{ data: Tag }>(API_ENDPOINTS.tags, data);
+      return response.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: tagKeys.list() });
     },
@@ -112,8 +124,10 @@ export function useUpdateTag() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateTagInput }) => 
-      apiClient.put<Tag>(`${API_ENDPOINTS.tags}/${id}`, data),
+    mutationFn: async ({ id, data }: { id: string; data: UpdateTagInput }) => {
+      const response = await apiClient.put<{ data: Tag }>(`${API_ENDPOINTS.tags}/${id}`, data);
+      return response.data;
+    },
     onSuccess: (tag) => {
       queryClient.invalidateQueries({ queryKey: tagKeys.list() });
       queryClient.setQueryData(tagKeys.detail(tag.slug), tag);

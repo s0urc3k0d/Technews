@@ -54,7 +54,7 @@ const tagsRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.code(404).send({ error: 'Tag not found' });
       }
 
-      return reply.send(tag);
+      return reply.send({ data: tag });
     }
   );
 
@@ -83,7 +83,7 @@ const tagsRoutes: FastifyPluginAsync = async (fastify) => {
 
       const tag = await prisma.tag.create({ data });
 
-      return reply.code(201).send(tag);
+      return reply.code(201).send({ data: tag });
     }
   );
 
@@ -109,7 +109,7 @@ const tagsRoutes: FastifyPluginAsync = async (fastify) => {
         data,
       });
 
-      return reply.send(tag);
+      return reply.send({ data: tag });
     }
   );
 

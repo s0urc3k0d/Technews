@@ -11,7 +11,7 @@ import { Suspense } from 'react';
 import { ArticleList, CardSkeleton } from '@/components';
 import { API_ENDPOINTS } from '@/lib/api-client';
 import { Article, PaginatedResponse } from '@/types';
-import { SITE_NAME } from '@/lib/config';
+import { API_BASE_URL, SITE_NAME } from '@/lib/config';
 
 interface TagPageProps {
   params: Promise<{ slug: string }>;
@@ -22,7 +22,7 @@ interface TagPageProps {
 async function getTag(slug: string): Promise<{ id: string; name: string; slug: string } | null> {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.tagBySlug(slug)}`,
+      `${API_BASE_URL}${API_ENDPOINTS.tagBySlug(slug)}`,
       { next: { revalidate: 300 } }
     );
     
@@ -38,7 +38,7 @@ async function getTag(slug: string): Promise<{ id: string; name: string; slug: s
 async function getTagArticles(tagId: string, page: number = 1): Promise<PaginatedResponse<Article>> {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.articles}?tagId=${tagId}&page=${page}&limit=12&status=PUBLISHED`,
+      `${API_BASE_URL}${API_ENDPOINTS.articles}?tagId=${tagId}&page=${page}&limit=12&status=PUBLISHED`,
       { next: { revalidate: 60 } }
     );
     

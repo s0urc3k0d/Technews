@@ -56,6 +56,9 @@ const envSchema = z.object({
   // Shorts vidéo
   SHORTS_DIR: z.string().default('/var/www/revuetech/shorts'),
 
+  // Cron jobs
+  ENABLE_CRON: z.string().default('true'),
+
   // Frontend URL (for CORS & emails)
   NEXT_PUBLIC_SITE_URL: z.string().url().default('http://localhost:3000'),
 });

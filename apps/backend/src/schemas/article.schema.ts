@@ -51,6 +51,8 @@ export const listArticlesQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(10),
   status: ArticleStatus.optional(),
   type: ArticleType.optional(),
+  categoryId: z.string().optional(),
+  tagId: z.string().optional(),
   categorySlug: z.string().optional(),
   tagSlug: z.string().optional(),
   search: z.string().optional(),

@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 import { onCLS, onINP, onFCP, onLCP, onTTFB, Metric } from 'web-vitals';
 
 const VITALS_ENDPOINT = process.env.NEXT_PUBLIC_API_URL 
-  ? `${process.env.NEXT_PUBLIC_API_URL}/metrics/vitals`
+  ? `${process.env.NEXT_PUBLIC_API_URL}/metrics/web-vitals`
   : null;
 
 interface WebVitalsMetric {

@@ -89,9 +89,8 @@ export default function AdminArticlesPage() {
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Tous les types</option>
-            <option value="ARTICLE">Article</option>
+            <option value="STANDARD">Article</option>
             <option value="PODCAST">Podcast</option>
-            <option value="VIDEO">Vidéo</option>
           </select>
 
           {/* Clear Filters */}
@@ -161,7 +160,7 @@ export default function AdminArticlesPage() {
                       <Link href={`/article/${article.slug}`} target="_blank">
                         <Button variant="ghost" size="sm">👁️</Button>
                       </Link>
-                      <Link href={`/admin/articles/${article.id}`}>
+                      <Link href={`/admin/articles/new?id=${article.id}`}>
                         <Button variant="ghost" size="sm">✏️</Button>
                       </Link>
                       <Button 

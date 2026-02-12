@@ -11,6 +11,18 @@ export default function AdminDashboardPage() {
   const { data: stats, isLoading: statsLoading } = useAdminStats();
   const { data: cronLogs, isLoading: logsLoading } = useCronLogs({ limit: 10 });
 
+  const articleStats = typeof stats?.articles === 'number'
+    ? { total: stats.articles }
+    : stats?.articles;
+
+  const commentStats = typeof stats?.comments === 'number'
+    ? { total: stats.comments, pending: stats.pendingComments ?? 0 }
+    : stats?.comments;
+
+  const subscriberStats = typeof stats?.subscribers === 'number'
+    ? { active: stats.subscribers }
+    : stats?.subscribers;
+
   return (
     <div>
       {/* Header */}
@@ -23,25 +35,25 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
           title="Articles"
-          value={stats?.articles ?? 0}
+          value={articleStats?.total ?? stats?.articlesDetail?.total ?? 0}
           icon="📰"
           loading={statsLoading}
         />
         <StatCard
           title="Commentaires"
-          value={stats?.comments ?? 0}
+          value={commentStats?.total ?? stats?.commentsDetail?.total ?? 0}
           icon="💬"
           loading={statsLoading}
         />
         <StatCard
           title="Abonnés"
-          value={stats?.subscribers ?? 0}
+          value={subscriberStats?.active ?? stats?.subscribersDetail?.active ?? 0}
           icon="📬"
           loading={statsLoading}
         />
         <StatCard
           title="Vues (30j)"
-          value={stats?.views ?? 0}
+          value={stats?.topArticles?.reduce((acc, article) => acc + (article.viewCount || 0), 0) ?? 0}
           icon="👁️"
           loading={statsLoading}
         />
@@ -104,8 +116,8 @@ export default function AdminDashboardPage() {
           <h2 className="text-lg font-semibold mb-4">Commentaires en attente</h2>
           <div className="text-center py-8 text-gray-500">
             <span className="text-4xl mb-2 block">💬</span>
-            <p>{stats?.pendingComments ?? 0} commentaire(s) en attente</p>
-            {(stats?.pendingComments ?? 0) > 0 && (
+            <p>{commentStats?.pending ?? stats?.commentsDetail?.pending ?? 0} commentaire(s) en attente</p>
+            {(commentStats?.pending ?? stats?.commentsDetail?.pending ?? 0) > 0 && (
               <a href="/admin/comments?status=PENDING" className="text-blue-600 hover:underline mt-2 inline-block">
                 Voir les commentaires →
               </a>

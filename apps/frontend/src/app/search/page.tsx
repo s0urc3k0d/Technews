@@ -10,7 +10,7 @@ import { Suspense } from 'react';
 import { ArticleList, CardSkeleton } from '@/components';
 import { API_ENDPOINTS } from '@/lib/api-client';
 import { Article, PaginatedResponse } from '@/types';
-import { SITE_NAME } from '@/lib/config';
+import { API_BASE_URL, SITE_NAME } from '@/lib/config';
 
 interface SearchPageProps {
   searchParams: Promise<{ q?: string; page?: string }>;
@@ -31,7 +31,7 @@ async function searchArticles(query: string, page: number = 1): Promise<Paginate
 
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.articles}?search=${encodeURIComponent(query)}&page=${page}&limit=12&status=PUBLISHED`,
+      `${API_BASE_URL}${API_ENDPOINTS.articles}?search=${encodeURIComponent(query)}&page=${page}&limit=12&status=PUBLISHED`,
       { next: { revalidate: 0 } }
     );
     

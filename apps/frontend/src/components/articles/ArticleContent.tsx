@@ -14,6 +14,8 @@ interface ArticleContentProps {
 
 export function ArticleContent({ article, className }: ArticleContentProps) {
   const typeIcon = getArticleTypeIcon(article.type);
+  const imageUrl = article.imageUrl || article.featuredImage || null;
+  const primaryCategory = article.category || article.categories?.[0] || null;
 
   return (
     <article className={cn('max-w-4xl mx-auto', className)}>
@@ -21,16 +23,16 @@ export function ArticleContent({ article, className }: ArticleContentProps) {
       <header className="mb-8">
         {/* Category & Type */}
         <div className="flex items-center gap-3 mb-4">
-          {article.category && (
+          {primaryCategory && (
             <Link
-              href={`/category/${article.category.slug}`}
+              href={`/category/${primaryCategory.slug}`}
               className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-full hover:bg-blue-200 transition-colors"
             >
-              {article.category.icon && <span className="mr-1">{article.category.icon}</span>}
-              {article.category.name}
+              {primaryCategory.icon && <span className="mr-1">{primaryCategory.icon}</span>}
+              {primaryCategory.name}
             </Link>
           )}
-          {article.type !== 'ARTICLE' && (
+          {article.type !== 'STANDARD' && (
             <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm font-medium rounded-full">
               {typeIcon} {article.type}
             </span>
@@ -76,11 +78,11 @@ export function ArticleContent({ article, className }: ArticleContentProps) {
       </header>
 
       {/* Featured Image */}
-      {article.imageUrl && (
+      {imageUrl && (
         <figure className="mb-8 -mx-4 md:mx-0">
           <div className="relative aspect-[16/9] rounded-lg overflow-hidden">
             <Image
-              src={article.imageUrl}
+              src={imageUrl}
               alt={article.imageAlt || article.title}
               fill
               className="object-cover"
@@ -118,17 +120,6 @@ export function ArticleContent({ article, className }: ArticleContentProps) {
       )}
 
       {/* Video Player */}
-      {article.type === 'VIDEO' && article.videoUrl && (
-        <div className="mb-8 aspect-video rounded-xl overflow-hidden bg-black">
-          <iframe
-            src={article.videoUrl}
-            className="w-full h-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
-      )}
-
       {/* Content */}
       <div 
         className="prose prose-lg max-w-none prose-headings:font-bold prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-lg"

@@ -24,14 +24,14 @@ scrape_configs:
   - job_name: 'technews-backend'
     static_configs:
       - targets: ['backend:3001']
-    metrics_path: '/api/v1/metrics'
+    metrics_path: '/metrics'
     scrape_interval: 10s
 
-  # Frontend metrics (via API endpoint)
+  # Frontend liveness (basic)
   - job_name: 'technews-frontend'
     static_configs:
       - targets: ['frontend:3000']
-    metrics_path: '/api/metrics'
+    metrics_path: '/'
     scrape_interval: 30s
 
   # Redis metrics (via redis_exporter si ajouté)

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { API_BASE_URL, API_ENDPOINTS } from '@/lib/config';
 import { 
   Twitter, 
   Facebook, 
@@ -69,22 +70,20 @@ export default function SocialConnectionsPage() {
   const [blueskyHandle, setBlueskyHandle] = useState('');
   const [blueskyPassword, setBlueskyPassword] = useState('');
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3051';
-
   useEffect(() => {
     fetchConnections();
   }, []);
 
   const fetchConnections = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/v1/social/connections`, {
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.socialConnections}`, {
         credentials: 'include',
       });
       
       if (!res.ok) throw new Error('Erreur lors du chargement des connexions');
       
-      const data = await res.json();
-      setConnections(data);
+      const payload = await res.json();
+      setConnections(payload.connections ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
     } finally {
@@ -101,14 +100,14 @@ export default function SocialConnectionsPage() {
     setConnecting(platform);
     
     try {
-      const res = await fetch(`${API_URL}/api/v1/social/auth/${platform.toLowerCase()}`, {
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.socialAuth(platform.toLowerCase())}`, {
         credentials: 'include',
       });
       
       if (!res.ok) throw new Error('Erreur lors de la connexion');
       
-      const { url } = await res.json();
-      window.location.href = url;
+      const payload = await res.json();
+      window.location.href = payload.authUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur de connexion');
       setConnecting(null);
@@ -119,7 +118,7 @@ export default function SocialConnectionsPage() {
     setConnecting('BLUESKY');
     
     try {
-      const res = await fetch(`${API_URL}/api/v1/social/connect/bluesky`, {
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.socialConnectBluesky}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -151,7 +150,7 @@ export default function SocialConnectionsPage() {
     }
 
     try {
-      const res = await fetch(`${API_URL}/api/v1/social/connections/${platform.toLowerCase()}`, {
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.socialDisconnect(platform.toLowerCase())}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -166,7 +165,7 @@ export default function SocialConnectionsPage() {
 
   const handleToggle = async (platform: string, currentState: boolean) => {
     try {
-      const res = await fetch(`${API_URL}/api/v1/social/connections/${platform.toLowerCase()}/toggle`, {
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.socialToggle(platform.toLowerCase())}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

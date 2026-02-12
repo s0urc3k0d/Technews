@@ -9,7 +9,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { API_ENDPOINTS } from '@/lib/api-client';
 import { Category } from '@/types';
-import { SITE_NAME } from '@/lib/config';
+import { API_BASE_URL, SITE_NAME } from '@/lib/config';
 
 export const metadata: Metadata = {
   title: 'Catégories',
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 async function getCategories(): Promise<Category[]> {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.categories}`,
+      `${API_BASE_URL}${API_ENDPOINTS.categories}`,
       { next: { revalidate: 300 } }
     );
     

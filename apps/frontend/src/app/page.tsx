@@ -10,13 +10,14 @@ import { Suspense } from 'react';
 import { ArticleCard, ArticleList, CardSkeleton } from '@/components';
 import { NewsletterForm } from '@/components/forms';
 import { API_ENDPOINTS } from '@/lib/api-client';
+import { API_BASE_URL } from '@/lib/config';
 import { Article, PaginatedResponse, Category } from '@/types';
 
 // Fetch featured article
 async function getFeaturedArticle(): Promise<Article | null> {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.articleFeatured}`,
+      `${API_BASE_URL}${API_ENDPOINTS.articleFeatured}`,
       { next: { revalidate: 60 } }
     );
     if (!response.ok) return null;
@@ -31,7 +32,7 @@ async function getFeaturedArticle(): Promise<Article | null> {
 async function getLatestArticles(): Promise<Article[]> {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.articles}?limit=6&status=PUBLISHED`,
+      `${API_BASE_URL}${API_ENDPOINTS.articles}?limit=6&status=PUBLISHED`,
       { next: { revalidate: 60 } }
     );
     if (!response.ok) return [];
@@ -46,7 +47,7 @@ async function getLatestArticles(): Promise<Article[]> {
 async function getCategories(): Promise<Category[]> {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.categories}`,
+      `${API_BASE_URL}${API_ENDPOINTS.categories}`,
       { next: { revalidate: 300 } }
     );
     if (!response.ok) return [];
@@ -61,7 +62,7 @@ async function getCategories(): Promise<Category[]> {
 async function getPodcasts(): Promise<Article[]> {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.articles}?type=PODCAST&limit=4&status=PUBLISHED`,
+      `${API_BASE_URL}${API_ENDPOINTS.articles}?type=PODCAST&limit=4&status=PUBLISHED`,
       { next: { revalidate: 60 } }
     );
     if (!response.ok) return [];

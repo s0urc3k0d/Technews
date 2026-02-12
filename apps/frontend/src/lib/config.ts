@@ -2,7 +2,7 @@
 // Configuration API
 // ===========================================
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3051';
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 export const SITE_NAME = 'TechNews';
 export const SITE_DESCRIPTION = 'Actualités tech et podcasts sur les dernières tendances technologiques';
@@ -48,6 +48,16 @@ export const API_ENDPOINTS = {
   adminRssParse: '/api/v1/admin/rss/parse',
   adminNewsletterGenerate: '/api/v1/admin/newsletter/generate',
   adminLogs: '/api/v1/admin/logs',
+
+  // Social
+  socialConnections: '/api/v1/social/connections',
+  socialAuth: (platform: string) => `/api/v1/social/auth/${platform}`,
+  socialCallback: (platform: string) => `/api/v1/social/callback/${platform}`,
+  socialConnectBluesky: '/api/v1/social/connect/bluesky',
+  socialDisconnect: (platform: string) => `/api/v1/social/connections/${platform}`,
+  socialToggle: (platform: string) => `/api/v1/social/connections/${platform}/toggle`,
+  socialShareArticle: (articleId: string) => `/api/v1/social/share/${articleId}`,
+  socialSharesByArticle: (articleId: string) => `/api/v1/social/shares/${articleId}`,
   
   // Shorts
   shorts: '/api/v1/shorts',

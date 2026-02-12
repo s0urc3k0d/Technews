@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { API_ENDPOINTS } from '@/lib/api-client';
 
 // Import dynamique de l'éditeur WYSIWYG (SSR disabled)
 const WysiwygEditor = dynamic(() => import('@/components/admin/WysiwygEditor'), {
@@ -64,6 +65,7 @@ export default function ArticleEditorPage() {
   const searchParams = useSearchParams();
   const editId = searchParams.get('id');
   const isEditing = !!editId;
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3051';
 
   const [formData, setFormData] = useState<ArticleFormData>(initialFormData);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -78,18 +80,18 @@ export default function ArticleEditorPage() {
     const fetchMeta = async () => {
       try {
         const [catRes, tagRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories`),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/tags`),
+          fetch(`${API_URL}${API_ENDPOINTS.categories}`, { credentials: 'include' }),
+          fetch(`${API_URL}${API_ENDPOINTS.tags}`, { credentials: 'include' }),
         ]);
 
         if (catRes.ok) {
           const catData = await catRes.json();
-          setCategories(catData.categories || catData);
+          setCategories(catData.data || catData.categories || catData);
         }
 
         if (tagRes.ok) {
           const tagData = await tagRes.json();
-          setTags(tagData.tags || tagData);
+          setTags(tagData.data || tagData.tags || tagData);
         }
       } catch (err) {
         console.error('Erreur lors du chargement des métadonnées:', err);
@@ -105,16 +107,19 @@ export default function ArticleEditorPage() {
       const fetchArticle = async () => {
         setIsLoading(true);
         try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/articles/${editId}`);
+          const res = await fetch(`${API_URL}${API_ENDPOINTS.articles}/id/${editId}`, {
+            credentials: 'include',
+          });
           if (res.ok) {
-            const article = await res.json();
+            const payload = await res.json();
+            const article = payload.data || payload;
             setFormData({
               title: article.title || '',
               slug: article.slug || '',
               excerpt: article.excerpt || '',
               content: article.content || '',
-              coverImage: article.coverImage || '',
-              categoryId: article.categoryId || '',
+              coverImage: article.featuredImage || article.coverImage || '',
+              categoryId: article.categories?.[0]?.id || '',
               tagIds: article.tags?.map((t: Tag) => t.id) || [],
               status: article.status || 'DRAFT',
               publishedAt: article.publishedAt ? new Date(article.publishedAt).toISOString().slice(0, 16) : '',
@@ -191,8 +196,22 @@ export default function ArticleEditorPage() {
 
     try {
       const url = isEditing
-        ? `${process.env.NEXT_PUBLIC_API_URL}/articles/${editId}`
-        : `${process.env.NEXT_PUBLIC_API_URL}/articles`;
+        ? `${API_URL}${API_ENDPOINTS.articles}/${editId}`
+        : `${API_URL}${API_ENDPOINTS.articles}`;
+
+      const payload = {
+        title: dataToSubmit.title,
+        slug: dataToSubmit.slug,
+        excerpt: dataToSubmit.excerpt || undefined,
+        content: dataToSubmit.content,
+        featuredImage: dataToSubmit.coverImage || undefined,
+        status: dataToSubmit.status,
+        publishedAt: dataToSubmit.publishedAt || null,
+        metaTitle: dataToSubmit.metaTitle || undefined,
+        metaDescription: dataToSubmit.metaDescription || undefined,
+        categoryIds: dataToSubmit.categoryId ? [dataToSubmit.categoryId] : [],
+        tagIds: dataToSubmit.tagIds,
+      };
 
       const res = await fetch(url, {
         method: isEditing ? 'PUT' : 'POST',
@@ -200,11 +219,12 @@ export default function ArticleEditorPage() {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify(dataToSubmit),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
-        const savedArticle = await res.json();
+        const savedPayload = await res.json();
+        const savedArticle = savedPayload.data || savedPayload;
         setSuccessMessage(isEditing ? 'Article mis à jour !' : 'Article créé !');
         
         if (!isEditing) {

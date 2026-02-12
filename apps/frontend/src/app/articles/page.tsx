@@ -10,7 +10,7 @@ import { Metadata } from 'next';
 import { ArticleList, CardSkeleton } from '@/components';
 import { API_ENDPOINTS } from '@/lib/api-client';
 import { Article, PaginatedResponse } from '@/types';
-import { SITE_NAME } from '@/lib/config';
+import { API_BASE_URL, SITE_NAME } from '@/lib/config';
 
 export const metadata: Metadata = {
   title: 'Articles',
@@ -43,7 +43,7 @@ async function getArticles(params: {
 
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.articles}?${searchParams}`,
+      `${API_BASE_URL}${API_ENDPOINTS.articles}?${searchParams}`,
       { next: { revalidate: 60 } }
     );
     
@@ -78,14 +78,11 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
           <FilterButton href="/articles" active={!params.type}>
             Tous
           </FilterButton>
-          <FilterButton href="/articles?type=ARTICLE" active={params.type === 'ARTICLE'}>
+          <FilterButton href="/articles?type=STANDARD" active={params.type === 'STANDARD'}>
             📰 Articles
           </FilterButton>
           <FilterButton href="/articles?type=PODCAST" active={params.type === 'PODCAST'}>
             🎙️ Podcasts
-          </FilterButton>
-          <FilterButton href="/articles?type=VIDEO" active={params.type === 'VIDEO'}>
-            🎬 Vidéos
           </FilterButton>
         </div>
 

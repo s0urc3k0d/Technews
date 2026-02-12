@@ -10,7 +10,7 @@ import { Suspense } from 'react';
 import { ArticleList, CardSkeleton } from '@/components';
 import { API_ENDPOINTS } from '@/lib/api-client';
 import { Article, PaginatedResponse } from '@/types';
-import { SITE_NAME } from '@/lib/config';
+import { API_BASE_URL, SITE_NAME } from '@/lib/config';
 
 export const metadata: Metadata = {
   title: 'Podcasts',
@@ -24,7 +24,7 @@ interface PodcastsPageProps {
 async function getPodcasts(page: number = 1): Promise<PaginatedResponse<Article>> {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.articles}?type=PODCAST&page=${page}&limit=12&status=PUBLISHED`,
+      `${API_BASE_URL}${API_ENDPOINTS.articles}?type=PODCAST&page=${page}&limit=12&status=PUBLISHED`,
       { next: { revalidate: 60 } }
     );
     

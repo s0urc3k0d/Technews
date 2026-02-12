@@ -54,7 +54,7 @@ const categoriesRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.code(404).send({ error: 'Category not found' });
       }
 
-      return reply.send(category);
+      return reply.send({ data: category });
     }
   );
 
@@ -84,7 +84,7 @@ const categoriesRoutes: FastifyPluginAsync = async (fastify) => {
 
       const category = await prisma.category.create({ data });
 
-      return reply.code(201).send(category);
+      return reply.code(201).send({ data: category });
     }
   );
 
@@ -129,7 +129,7 @@ const categoriesRoutes: FastifyPluginAsync = async (fastify) => {
         data,
       });
 
-      return reply.send(category);
+      return reply.send({ data: category });
     }
   );
 

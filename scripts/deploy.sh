@@ -13,6 +13,7 @@ NC='\033[0m' # No Color
 
 echo -e "${GREEN}🚀 TechNews Deployment Script${NC}"
 echo "=================================="
+echo -e "${YELLOW}⚠️  Script legacy VPS/Nginx. Pour Coolify, utiliser docker-compose.coolify.yml + docs/DEPLOYMENT-COOLIFY.md${NC}"
 
 # Check if running as root
 if [ "$EUID" -ne 0 ]; then

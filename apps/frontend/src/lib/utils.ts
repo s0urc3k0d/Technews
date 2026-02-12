@@ -103,21 +103,19 @@ export function debounce<T extends (...args: any[]) => any>(
 }
 
 // Get article type label
-export function getArticleTypeLabel(type: 'ARTICLE' | 'PODCAST' | 'VIDEO'): string {
+export function getArticleTypeLabel(type: 'STANDARD' | 'PODCAST'): string {
   const labels = {
-    ARTICLE: 'Article',
+    STANDARD: 'Article',
     PODCAST: 'Podcast',
-    VIDEO: 'Vidéo',
   };
   return labels[type] || type;
 }
 
 // Get article type icon
-export function getArticleTypeIcon(type: 'ARTICLE' | 'PODCAST' | 'VIDEO'): string {
+export function getArticleTypeIcon(type: 'STANDARD' | 'PODCAST'): string {
   const icons = {
-    ARTICLE: '📰',
+    STANDARD: '📰',
     PODCAST: '🎙️',
-    VIDEO: '🎬',
   };
   return icons[type] || '📄';
 }

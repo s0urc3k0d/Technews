@@ -151,16 +151,21 @@ async function start() {
     const port = parseInt(server.config.PORT, 10);
     const host = server.config.HOST;
 
-    // Setup cron jobs
-    setupCronJobs({
-      prisma: server.prisma,
-      rssUrl: server.config.RSS_FEED_URL,
-      mistralApiKey: server.config.MISTRAL_API_KEY,
-      resendApiKey: server.config.RESEND_API_KEY,
-      resendFromEmail: server.config.RESEND_FROM_EMAIL,
-      siteUrl: server.config.NEXT_PUBLIC_SITE_URL,
-      shortsDir: server.config.SHORTS_DIR,
-    });
+    // Setup cron jobs (single instance recommended in production)
+    if (server.config.ENABLE_CRON === 'true') {
+      setupCronJobs({
+        prisma: server.prisma,
+        rssUrl: server.config.RSS_FEED_URL,
+        mistralApiKey: server.config.MISTRAL_API_KEY,
+        resendApiKey: server.config.RESEND_API_KEY,
+        resendFromEmail: server.config.RESEND_FROM_EMAIL,
+        siteUrl: server.config.NEXT_PUBLIC_SITE_URL,
+        shortsDir: server.config.SHORTS_DIR,
+      });
+      server.log.info('✅ Cron jobs enabled');
+    } else {
+      server.log.info('ℹ️ Cron jobs disabled (ENABLE_CRON=false)');
+    }
 
     await server.listen({ port, host });
     console.log(`🚀 Server running at http://${host}:${port}`);

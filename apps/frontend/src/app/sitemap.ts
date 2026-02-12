@@ -5,7 +5,7 @@
 import { MetadataRoute } from 'next';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://revuetech.fr';
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://revuetech.fr/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://revuetech.fr';
 
 interface Article {
   slug: string;
@@ -23,7 +23,7 @@ interface Tag {
 
 async function getArticles(): Promise<Article[]> {
   try {
-    const res = await fetch(`${API_URL}/v1/articles?status=PUBLISHED&limit=1000`, {
+    const res = await fetch(`${API_URL}/api/v1/articles?status=PUBLISHED&limit=1000`, {
       next: { revalidate: 3600 },
     });
     if (!res.ok) return [];
@@ -36,7 +36,7 @@ async function getArticles(): Promise<Article[]> {
 
 async function getCategories(): Promise<Category[]> {
   try {
-    const res = await fetch(`${API_URL}/v1/categories`, {
+    const res = await fetch(`${API_URL}/api/v1/categories`, {
       next: { revalidate: 3600 },
     });
     if (!res.ok) return [];
@@ -49,7 +49,7 @@ async function getCategories(): Promise<Category[]> {
 
 async function getTags(): Promise<Tag[]> {
   try {
-    const res = await fetch(`${API_URL}/v1/tags`, {
+    const res = await fetch(`${API_URL}/api/v1/tags`, {
       next: { revalidate: 3600 },
     });
     if (!res.ok) return [];

@@ -255,11 +255,11 @@ export class SocialService {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json() as { detail?: string; title?: string };
       throw new Error(`Twitter API error: ${error.detail || error.title || 'Unknown'}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as { data: { id: string } };
     return {
       postId: data.data.id,
       postUrl: `https://twitter.com/i/web/status/${data.data.id}`,
@@ -284,12 +284,12 @@ export class SocialService {
       throw new Error('Failed to get Facebook pages');
     }
 
-    const pages = await meResponse.json();
+    const pages = await meResponse.json() as { data?: Array<{ id: string; access_token: string }> };
     if (!pages.data || pages.data.length === 0) {
       throw new Error('No Facebook pages found');
     }
 
-    const page = pages.data[0];
+    const page = pages.data![0]!;
     const pageAccessToken = page.access_token;
     const pageId = page.id;
 
@@ -310,11 +310,11 @@ export class SocialService {
     );
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json() as { error?: { message?: string } };
       throw new Error(`Facebook API error: ${error.error?.message || 'Unknown'}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as { id: string };
     return {
       postId: data.id,
       postUrl: `https://facebook.com/${data.id}`,
@@ -342,7 +342,7 @@ export class SocialService {
       throw new Error('Failed to get LinkedIn profile');
     }
 
-    const profile = await profileResponse.json();
+    const profile = await profileResponse.json() as { sub: string };
     const authorUrn = `urn:li:person:${profile.sub}`;
 
     // Créer le post avec article
@@ -385,11 +385,11 @@ export class SocialService {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json() as { message?: string };
       throw new Error(`LinkedIn API error: ${error.message || 'Unknown'}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as { id: string };
     const postId = data.id;
     // LinkedIn ne retourne pas directement l'URL du post
     const postUrl = `https://www.linkedin.com/feed/update/${postId}`;
@@ -425,7 +425,7 @@ export class SocialService {
       throw new Error('Failed to authenticate with Bluesky');
     }
 
-    const session = await sessionResponse.json();
+    const session = await sessionResponse.json() as { accessJwt: string; did: string };
 
     // Créer le post avec la facet pour le lien
     const fullText = `${text}\n\n${url}`;
@@ -467,11 +467,11 @@ export class SocialService {
     );
 
     if (!postResponse.ok) {
-      const error = await postResponse.json();
+      const error = await postResponse.json() as { message?: string };
       throw new Error(`Bluesky API error: ${error.message || 'Unknown'}`);
     }
 
-    const postData = await postResponse.json();
+    const postData = await postResponse.json() as { uri: string };
     const rkey = postData.uri.split('/').pop();
     
     return {
@@ -591,18 +591,28 @@ export class SocialService {
     });
 
     if (!tokenResponse.ok) {
-      const error = await tokenResponse.json();
+      const error = await tokenResponse.json() as { error_description?: string; error?: string };
       throw new Error(`Twitter token error: ${error.error_description || error.error}`);
     }
 
-    const tokens = await tokenResponse.json();
+    const tokens = await tokenResponse.json() as {
+      access_token: string;
+      refresh_token?: string;
+      expires_in?: number;
+    };
 
     // Récupérer les infos du compte
     const userResponse = await fetch('https://api.twitter.com/2/users/me?user.fields=profile_image_url', {
       headers: { 'Authorization': `Bearer ${tokens.access_token}` },
     });
 
-    const user = await userResponse.json();
+    const user = await userResponse.json() as {
+      data: {
+        id: string;
+        username: string;
+        profile_image_url?: string;
+      };
+    };
 
     return {
       accessToken: tokens.access_token,
@@ -627,17 +637,20 @@ export class SocialService {
     );
 
     if (!tokenResponse.ok) {
-      const error = await tokenResponse.json();
+      const error = await tokenResponse.json() as { error?: { message?: string } };
       throw new Error(`Facebook token error: ${error.error?.message}`);
     }
 
-    const tokens = await tokenResponse.json();
+    const tokens = await tokenResponse.json() as {
+      access_token: string;
+      expires_in?: number;
+    };
 
     // Récupérer les infos de la page
     const pagesResponse = await fetch(
       `https://graph.facebook.com/v18.0/me/accounts?access_token=${tokens.access_token}`
     );
-    const pages = await pagesResponse.json();
+    const pages = await pagesResponse.json() as { data?: Array<{ id: string; name: string }> };
     const page = pages.data?.[0];
 
     if (!page) {
@@ -669,17 +682,25 @@ export class SocialService {
     });
 
     if (!tokenResponse.ok) {
-      const error = await tokenResponse.json();
+      const error = await tokenResponse.json() as { error_description?: string };
       throw new Error(`LinkedIn token error: ${error.error_description}`);
     }
 
-    const tokens = await tokenResponse.json();
+    const tokens = await tokenResponse.json() as {
+      access_token: string;
+      refresh_token?: string;
+      expires_in?: number;
+    };
 
     // Récupérer les infos du profil
     const profileResponse = await fetch('https://api.linkedin.com/v2/userinfo', {
       headers: { 'Authorization': `Bearer ${tokens.access_token}` },
     });
-    const profile = await profileResponse.json();
+    const profile = await profileResponse.json() as {
+      sub: string;
+      name: string;
+      picture?: string;
+    };
 
     return {
       accessToken: tokens.access_token,

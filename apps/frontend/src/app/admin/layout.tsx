@@ -20,12 +20,11 @@ export const metadata: Metadata = {
 const adminNavigation = [
   { name: 'Dashboard', href: '/admin', icon: '📊' },
   { name: 'Articles', href: '/admin/articles', icon: '📰' },
-  { name: 'Catégories', href: '/admin/categories', icon: '📁' },
   { name: 'Commentaires', href: '/admin/comments', icon: '💬' },
   { name: 'Newsletter', href: '/admin/newsletter', icon: '📬' },
   { name: 'Shorts', href: '/admin/shorts', icon: '🎬' },
+  { name: 'Social', href: '/admin/social', icon: '🌐' },
   { name: 'Images', href: '/admin/images', icon: '🖼️' },
-  { name: 'Paramètres', href: '/admin/settings', icon: '⚙️' },
 ];
 
 export default function AdminLayout({

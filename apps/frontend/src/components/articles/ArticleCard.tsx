@@ -15,6 +15,8 @@ interface ArticleCardProps {
 
 export function ArticleCard({ article, variant = 'default', className }: ArticleCardProps) {
   const typeIcon = getArticleTypeIcon(article.type);
+  const imageUrl = article.imageUrl || article.featuredImage || null;
+  const primaryCategory = article.category || article.categories?.[0] || null;
   
   // Featured variant (large)
   if (variant === 'featured') {
@@ -23,9 +25,9 @@ export function ArticleCard({ article, variant = 'default', className }: Article
         'group relative rounded-2xl overflow-hidden bg-gray-900 aspect-[16/9] md:aspect-[21/9]',
         className
       )}>
-        {article.imageUrl && (
+        {imageUrl && (
           <Image
-            src={article.imageUrl}
+            src={imageUrl}
             alt={article.title}
             fill
             className="object-cover opacity-60 group-hover:opacity-70 transition-opacity"
@@ -35,15 +37,15 @@ export function ArticleCard({ article, variant = 'default', className }: Article
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
         <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-10">
           <div className="flex items-center gap-3 mb-3">
-            {article.category && (
+            {primaryCategory && (
               <Link
-                href={`/category/${article.category.slug}`}
+                href={`/category/${primaryCategory.slug}`}
                 className="px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded-full hover:bg-blue-700 transition-colors"
               >
-                {article.category.name}
+                {primaryCategory.name}
               </Link>
             )}
-            {article.type !== 'ARTICLE' && (
+            {article.type !== 'STANDARD' && (
               <span className="text-white/80 text-sm">{typeIcon} {article.type}</span>
             )}
           </div>
@@ -139,9 +141,9 @@ export function ArticleCard({ article, variant = 'default', className }: Article
     )}>
       <Link href={`/article/${article.slug}`} className="block">
         <div className="relative aspect-[16/9] bg-gray-100">
-          {article.imageUrl ? (
+          {imageUrl ? (
             <Image
-              src={article.imageUrl}
+              src={imageUrl}
               alt={article.title}
               fill
               className="object-cover group-hover:scale-105 transition-transform"
@@ -151,7 +153,7 @@ export function ArticleCard({ article, variant = 'default', className }: Article
               {typeIcon}
             </div>
           )}
-          {article.type !== 'ARTICLE' && (
+          {article.type !== 'STANDARD' && (
             <span className="absolute top-3 left-3 px-2 py-1 bg-black/70 text-white text-xs font-medium rounded">
               {typeIcon} {article.type}
             </span>
@@ -160,13 +162,13 @@ export function ArticleCard({ article, variant = 'default', className }: Article
       </Link>
 
       <div className="p-5">
-        {article.category && (
+        {primaryCategory && (
           <Link
-            href={`/category/${article.category.slug}`}
+            href={`/category/${primaryCategory.slug}`}
             className="inline-block text-xs font-semibold text-blue-600 hover:text-blue-800 mb-2"
           >
-            {article.category.icon && <span className="mr-1">{article.category.icon}</span>}
-            {article.category.name}
+            {primaryCategory.icon && <span className="mr-1">{primaryCategory.icon}</span>}
+            {primaryCategory.name}
           </Link>
         )}
         

@@ -63,7 +63,7 @@ export default function AdminCommentsPage() {
             <option value="">Tous les statuts</option>
             <option value="PENDING">En attente</option>
             <option value="APPROVED">Approuvé</option>
-            <option value="REJECTED">Rejeté</option>
+            <option value="DELETED">Supprimé</option>
             <option value="SPAM">Spam</option>
           </select>
         </div>
@@ -154,7 +154,7 @@ export default function AdminCommentsPage() {
                         ❌ Rejeter
                       </Button>
                     )}
-                    {comment.status === 'REJECTED' && (
+                    {comment.status === 'DELETED' && (
                       <Button 
                         variant="outline" 
                         size="sm"

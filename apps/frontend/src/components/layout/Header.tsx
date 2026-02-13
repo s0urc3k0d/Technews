@@ -167,6 +167,7 @@ export function Header() {
           )}
           <Link
             href={adminHref}
+            prefetch={false}
             className="text-sm font-semibold leading-6 text-gray-900 hover:text-blue-600"
           >
             {isAuthenticated ? 'Admin' : 'Se connecter'} <span aria-hidden="true">&rarr;</span>
@@ -174,6 +175,7 @@ export function Header() {
           {isAuthenticated && !authLoading && (
             <Link
               href={logoutHref}
+              prefetch={false}
               className="text-sm font-semibold leading-6 text-gray-900 hover:text-blue-600"
             >
               Déconnexion
@@ -225,6 +227,7 @@ export function Header() {
                 <div className="py-6">
                   <Link
                     href={adminHref}
+                    prefetch={false}
                     onClick={() => setMobileMenuOpen(false)}
                     className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
                   >
@@ -233,6 +236,7 @@ export function Header() {
                   {isAuthenticated && !authLoading && (
                     <Link
                       href={logoutHref}
+                      prefetch={false}
                       onClick={() => setMobileMenuOpen(false)}
                       className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
                     >

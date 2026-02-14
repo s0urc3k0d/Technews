@@ -70,13 +70,40 @@ async function buildServer() {
     },
   });
 
+  const normalizeOrigin = (value: string): string => {
+    try {
+      const url = new URL(value);
+      return `${url.protocol}//${url.host}`.toLowerCase();
+    } catch {
+      return value.replace(/\/+$/, '').toLowerCase();
+    }
+  };
+
   // CORS
+  const configuredSiteOrigin = normalizeOrigin(fastify.config.NEXT_PUBLIC_SITE_URL);
+  const allowedOrigins = new Set([
+    configuredSiteOrigin,
+    'https://revuetech.fr',
+    'https://www.revuetech.fr',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+  ]);
+
   await fastify.register(cors, {
-    origin: [
-      fastify.config.NEXT_PUBLIC_SITE_URL,
-      'http://localhost:3000',
-    ],
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      const normalized = normalizeOrigin(origin);
+      const isAllowed = allowedOrigins.has(normalized) || normalized.endsWith('.revuetech.fr');
+
+      callback(null, isAllowed);
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   // Rate limiting global

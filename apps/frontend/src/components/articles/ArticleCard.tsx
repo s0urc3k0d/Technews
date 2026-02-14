@@ -15,12 +15,36 @@ interface ArticleCardProps {
 
 export function ArticleCard({ article, variant = 'default', className }: ArticleCardProps) {
   const typeIcon = getArticleTypeIcon(article.type);
+  const normalizeImageUrl = (value: string | null | undefined): string | null => {
+    if (!value) return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    if (trimmed.startsWith('/')) return trimmed;
+    if (trimmed.startsWith('uploads/')) return `/${trimmed}`;
+    if (trimmed.startsWith('//')) return `https:${trimmed}`;
+
+    try {
+      const parsed = new URL(trimmed);
+      if (['backend', 'localhost', '127.0.0.1'].includes(parsed.hostname)) {
+        return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+      }
+      return parsed.toString();
+    } catch {
+      return null;
+    }
+  };
+
   const extractFirstImageFromHtml = (html: string | null | undefined): string | null => {
     if (!html) return null;
     const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
-    return match?.[1] || null;
+    return normalizeImageUrl(match?.[1]);
   };
-  const imageUrl = article.imageUrl || article.featuredImage || extractFirstImageFromHtml(article.content) || null;
+  const imageUrl =
+    normalizeImageUrl(article.featuredImage) ||
+    normalizeImageUrl(article.imageUrl) ||
+    extractFirstImageFromHtml(article.content) ||
+    null;
   const primaryCategory = article.category || article.categories?.[0] || null;
   const isExternalImage = Boolean(imageUrl && /^https?:\/\//i.test(imageUrl));
   

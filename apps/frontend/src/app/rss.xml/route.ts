@@ -5,7 +5,7 @@
 import { NextResponse } from 'next/server';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://revuetech.fr';
-const SITE_NAME = 'RevueTech';
+const SITE_NAME = 'Revue Tech';
 const SITE_DESCRIPTION = 'Actualités tech et podcasts sur les dernières tendances technologiques';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://revuetech.fr';
 

@@ -210,7 +210,14 @@ function SubscribersList({ page, setPage }: { page: number; setPage: (p: number)
             </tr>
           </thead>
           <tbody className="divide-y">
-            {subscribers.map((subscriber) => (
+            {subscribers.map((subscriber) => {
+                const displayStatus = !subscriber.isActive
+                  ? 'UNSUBSCRIBED'
+                  : subscriber.isConfirmed
+                  ? 'ACTIVE'
+                  : 'PENDING';
+
+                return (
               <tr key={subscriber.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 font-medium text-gray-900">
                   {subscriber.email}
@@ -221,11 +228,11 @@ function SubscribersList({ page, setPage }: { page: number; setPage: (p: number)
                 <td className="px-6 py-4">
                   <span className={cn(
                     'px-2 py-1 text-xs font-medium rounded',
-                    subscriber.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
-                    subscriber.status === 'UNSUBSCRIBED' ? 'bg-gray-100 text-gray-800' :
+                    displayStatus === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                    displayStatus === 'UNSUBSCRIBED' ? 'bg-gray-100 text-gray-800' :
                     'bg-yellow-100 text-yellow-800'
                   )}>
-                    {subscriber.status}
+                    {displayStatus}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500">
@@ -235,7 +242,8 @@ function SubscribersList({ page, setPage }: { page: number; setPage: (p: number)
                   {formatDate(subscriber.createdAt)}
                 </td>
               </tr>
-            ))}
+                );
+              })}
           </tbody>
         </table>
       )}

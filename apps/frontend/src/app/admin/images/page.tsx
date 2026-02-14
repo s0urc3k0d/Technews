@@ -33,8 +33,13 @@ export default function AdminImagesPage() {
     }
   };
 
-  const handleDelete = (id: string, filename: string) => {
-    if (confirm(`Supprimer "${filename}" ?`)) {
+  const getImageName = (url: string) => {
+    const parts = url.split('/');
+    return parts[parts.length - 1] || 'image';
+  };
+
+  const handleDelete = (id: string, imageName: string) => {
+    if (confirm(`Supprimer "${imageName}" ?`)) {
       deleteImage(id);
     }
   };
@@ -119,9 +124,13 @@ export default function AdminImagesPage() {
               key={image.id} 
               className="group relative aspect-square bg-gray-100 rounded-lg overflow-hidden"
             >
+              {(() => {
+                const imageName = getImageName(image.url);
+                return (
+                  <>
               <Image
                 src={image.url}
-                alt={image.filename}
+                alt={imageName}
                 fill
                 className="object-cover"
               />
@@ -129,7 +138,7 @@ export default function AdminImagesPage() {
               {/* Overlay */}
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
                 <p className="text-white text-xs text-center truncate w-full">
-                  {image.filename}
+                  {imageName}
                 </p>
                 <div className="flex gap-2">
                   <Button 
@@ -142,12 +151,15 @@ export default function AdminImagesPage() {
                   <Button 
                     variant="danger" 
                     size="sm"
-                    onClick={() => handleDelete(image.id, image.filename)}
+                    onClick={() => handleDelete(image.id, imageName)}
                   >
                     🗑️
                   </Button>
                 </div>
               </div>
+                  </>
+                );
+              })()}
             </div>
           ))}
         </div>

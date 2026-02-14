@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { API_BASE_URL, API_ENDPOINTS } from '@/lib/config';
+import { authFetch, buildAuthHeaders } from '@/lib/auth-client';
 import { 
   Twitter, 
   Facebook, 
@@ -76,9 +77,7 @@ export default function SocialConnectionsPage() {
 
   const fetchConnections = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.socialConnections}`, {
-        credentials: 'include',
-      });
+      const res = await authFetch(`${API_BASE_URL}${API_ENDPOINTS.socialConnections}`);
       
       if (!res.ok) throw new Error('Erreur lors du chargement des connexions');
       
@@ -100,9 +99,7 @@ export default function SocialConnectionsPage() {
     setConnecting(platform);
     
     try {
-      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.socialAuth(platform.toLowerCase())}`, {
-        credentials: 'include',
-      });
+      const res = await authFetch(`${API_BASE_URL}${API_ENDPOINTS.socialAuth(platform.toLowerCase())}`);
       
       if (!res.ok) throw new Error('Erreur lors de la connexion');
       
@@ -120,7 +117,7 @@ export default function SocialConnectionsPage() {
     try {
       const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.socialConnectBluesky}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await buildAuthHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'include',
         body: JSON.stringify({ 
           handle: blueskyHandle, 
@@ -150,9 +147,8 @@ export default function SocialConnectionsPage() {
     }
 
     try {
-      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.socialDisconnect(platform.toLowerCase())}`, {
+      const res = await authFetch(`${API_BASE_URL}${API_ENDPOINTS.socialDisconnect(platform.toLowerCase())}`, {
         method: 'DELETE',
-        credentials: 'include',
       });
       
       if (!res.ok) throw new Error('Erreur lors de la déconnexion');
@@ -167,7 +163,7 @@ export default function SocialConnectionsPage() {
     try {
       const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.socialToggle(platform.toLowerCase())}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await buildAuthHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'include',
         body: JSON.stringify({ isActive: !currentState }),
       });

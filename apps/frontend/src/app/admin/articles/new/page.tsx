@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { API_ENDPOINTS } from '@/lib/api-client';
+import { authFetch, buildAuthHeaders } from '@/lib/auth-client';
 
 // Import dynamique de l'éditeur WYSIWYG (SSR disabled)
 const WysiwygEditor = dynamic(() => import('@/components/admin/WysiwygEditor'), {
@@ -80,8 +81,8 @@ export default function ArticleEditorPage() {
     const fetchMeta = async () => {
       try {
         const [catRes, tagRes] = await Promise.all([
-          fetch(`${API_URL}${API_ENDPOINTS.categories}`, { credentials: 'include' }),
-          fetch(`${API_URL}${API_ENDPOINTS.tags}`, { credentials: 'include' }),
+          authFetch(`${API_URL}${API_ENDPOINTS.categories}`),
+          authFetch(`${API_URL}${API_ENDPOINTS.tags}`),
         ]);
 
         if (catRes.ok) {
@@ -99,7 +100,7 @@ export default function ArticleEditorPage() {
     };
 
     fetchMeta();
-  }, []);
+  }, [API_URL]);
 
   // Charger l'article si en mode édition
   useEffect(() => {
@@ -107,9 +108,7 @@ export default function ArticleEditorPage() {
       const fetchArticle = async () => {
         setIsLoading(true);
         try {
-          const res = await fetch(`${API_URL}${API_ENDPOINTS.articles}/id/${editId}`, {
-            credentials: 'include',
-          });
+          const res = await authFetch(`${API_URL}${API_ENDPOINTS.articles}/id/${editId}`);
           if (res.ok) {
             const payload = await res.json();
             const article = payload.data || payload;
@@ -139,7 +138,7 @@ export default function ArticleEditorPage() {
 
       fetchArticle();
     }
-  }, [editId]);
+  }, [editId, API_URL]);
 
   // Générer le slug à partir du titre
   const generateSlug = (title: string) => {
@@ -215,9 +214,9 @@ export default function ArticleEditorPage() {
 
       const res = await fetch(url, {
         method: isEditing ? 'PUT' : 'POST',
-        headers: {
+        headers: await buildAuthHeaders({
           'Content-Type': 'application/json',
-        },
+        }),
         credentials: 'include',
         body: JSON.stringify(payload),
       });

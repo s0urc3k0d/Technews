@@ -36,7 +36,7 @@ export default function AdminLayout({
     <div className="min-h-screen bg-gray-100">
       <div className="flex">
         {/* Sidebar */}
-        <aside className="fixed left-0 top-0 h-screen w-64 bg-gray-900 text-white p-6 z-40">
+        <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-gray-900 text-white p-6 z-40 overflow-y-auto">
           <Link href="/admin" className="flex items-center gap-2 mb-8">
             <span className="text-2xl">🚀</span>
             <span className="font-bold text-xl">{SITE_NAME}</span>
@@ -55,7 +55,7 @@ export default function AdminLayout({
             ))}
           </nav>
 
-          <div className="absolute bottom-6 left-6 right-6">
+          <div className="mt-8">
             <Link
               href="/"
               className="flex items-center gap-2 px-4 py-3 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"

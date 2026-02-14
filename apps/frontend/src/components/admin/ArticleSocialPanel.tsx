@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { API_BASE_URL, API_ENDPOINTS } from '@/lib/config';
+import { authFetch } from '@/lib/auth-client';
 import { 
   Twitter, 
   Facebook, 
@@ -65,15 +66,11 @@ export default function ArticleSocialPanel({
   const [sharing, setSharing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchData();
-  }, [articleId]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [sharesRes, connectionsRes] = await Promise.all([
-        fetch(`${API_BASE_URL}${API_ENDPOINTS.socialSharesByArticle(articleId)}`, { credentials: 'include' }),
-        fetch(`${API_BASE_URL}${API_ENDPOINTS.socialConnections}`, { credentials: 'include' }),
+        authFetch(`${API_BASE_URL}${API_ENDPOINTS.socialSharesByArticle(articleId)}`),
+        authFetch(`${API_BASE_URL}${API_ENDPOINTS.socialConnections}`),
       ]);
 
       if (sharesRes.ok) {
@@ -90,7 +87,11 @@ export default function ArticleSocialPanel({
     } finally {
       setLoading(false);
     }
-  };
+  }, [articleId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleShare = async (platform?: string) => {
     setSharing(platform || 'all');
@@ -101,9 +102,8 @@ export default function ArticleSocialPanel({
         ? `${API_BASE_URL}${API_ENDPOINTS.socialShareArticle(articleId)}?platform=${platform}`
         : `${API_BASE_URL}${API_ENDPOINTS.socialShareArticle(articleId)}`;
       
-      const res = await fetch(url, {
+      const res = await authFetch(url, {
         method: 'POST',
-        credentials: 'include',
       });
 
       if (!res.ok) {

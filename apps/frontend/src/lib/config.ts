@@ -4,7 +4,7 @@
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3051';
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-export const SITE_NAME = 'TechNews';
+export const SITE_NAME = 'Revue Tech';
 export const SITE_DESCRIPTION = 'Actualités tech et podcasts sur les dernières tendances technologiques';
 
 // API Endpoints
@@ -45,6 +45,7 @@ export const API_ENDPOINTS = {
   
   // Admin
   adminStats: '/api/v1/admin/stats',
+  adminRssStatus: '/api/v1/admin/rss/status',
   adminRssParse: '/api/v1/admin/rss/parse',
   adminNewsletterGenerate: '/api/v1/admin/newsletter/generate',
   adminLogs: '/api/v1/admin/logs',

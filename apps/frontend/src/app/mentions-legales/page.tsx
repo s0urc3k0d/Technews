@@ -6,7 +6,7 @@ import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Mentions Légales',
-  description: 'Mentions légales du site RevueTech',
+  description: 'Mentions légales du site Revue Tech',
 };
 
 export default function MentionsLegalesPage() {
@@ -23,7 +23,7 @@ export default function MentionsLegalesPage() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">1. Éditeur du site</h2>
             <p>
-              Le site <strong>RevueTech</strong> (https://revuetech.fr) est édité par :
+              Le site <strong>Revue Tech</strong> (https://revuetech.fr) est édité par :
             </p>
             <ul className="list-disc pl-6 mt-4">
               <li><strong>Nom / Raison sociale :</strong> [À COMPLÉTER]</li>

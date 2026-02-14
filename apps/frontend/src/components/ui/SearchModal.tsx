@@ -4,12 +4,11 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useUIStore } from '@/lib/store';
 import { useArticles } from '@/hooks';
-import { debounce } from '@/lib/utils';
 
 export function SearchModal() {
   const { isSearchOpen, toggleSearch, closeSearch } = useUIStore();
@@ -19,12 +18,15 @@ export function SearchModal() {
   const router = useRouter();
 
   // Debounce search query
-  const debouncedSetQuery = useCallback(
-    debounce((value: string) => {
-      setDebouncedQuery(value);
-    }, 300),
-    []
-  );
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [query]);
 
   // Search results
   const { data, isLoading } = useArticles({ 
@@ -67,7 +69,6 @@ export function SearchModal() {
   // Handle input change
   const handleInputChange = (value: string) => {
     setQuery(value);
-    debouncedSetQuery(value);
   };
 
   // Handle form submit

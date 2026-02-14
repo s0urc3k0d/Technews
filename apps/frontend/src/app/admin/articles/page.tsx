@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useArticles, useDeleteArticle, useUpdateArticle } from '@/hooks';
+import { useArticles, useDeleteArticle, useUpdateArticle, useRssParse, useRssStatus } from '@/hooks';
 import { useFiltersStore } from '@/lib/store';
 import { formatDate, getStatusColor, getArticleTypeIcon, cn } from '@/lib/utils';
 import { Article, ArticleStatus, ArticleType } from '@/types';
@@ -29,6 +29,8 @@ export default function AdminArticlesPage() {
 
   const { mutate: deleteArticle } = useDeleteArticle();
   const { mutate: updateArticle } = useUpdateArticle();
+  const { data: rssStatus } = useRssStatus();
+  const { mutate: parseRss, isPending: isParsingRss } = useRssParse();
 
   const handleDelete = (article: Article) => {
     if (confirm(`Supprimer "${article.title}" ?`)) {
@@ -41,21 +43,50 @@ export default function AdminArticlesPage() {
     updateArticle({ id: article.id, data: { status: newStatus } });
   };
 
+  const handleRssImport = () => {
+    parseRss(undefined, {
+      onSuccess: (result) => {
+        const imported = result.imported ?? 0;
+        const updated = result.updated ?? 0;
+        const skipped = result.skipped ?? 0;
+        alert(`Import RSS terminé : ${imported} importé(s), ${updated} mis à jour, ${skipped} ignoré(s).`);
+      },
+      onError: (error) => {
+        const message = error instanceof Error ? error.message : 'Erreur inconnue';
+        alert(`Échec de l'import RSS : ${message}`);
+      },
+    });
+  };
+
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Articles</h1>
           <p className="text-gray-600 mt-1">
             {pagination?.total ?? 0} article(s) au total
           </p>
+          {rssStatus?.feedUrl && (
+            <p className="text-xs text-gray-500 mt-1">
+              Flux RSS configuré: {rssStatus.feedUrl}
+            </p>
+          )}
         </div>
-        <Link href="/admin/articles/new">
-          <Button variant="primary">
-            ✍️ Nouvel article
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleRssImport}
+            isLoading={isParsingRss}
+          >
+            📡 Importer depuis RSS
           </Button>
-        </Link>
+          <Link href="/admin/articles/new">
+            <Button variant="primary">
+              ✍️ Nouvel article
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}

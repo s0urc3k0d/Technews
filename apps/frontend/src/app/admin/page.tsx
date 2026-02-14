@@ -64,7 +64,7 @@ export default function AdminDashboardPage() {
         <h2 className="text-lg font-semibold mb-4">Actions rapides</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <ActionButton href="/admin/articles/new" icon="✍️" label="Nouvel article" />
-          <ActionButton href="/admin/newsletter/send" icon="📤" label="Envoyer newsletter" />
+          <ActionButton href="/admin/newsletter" icon="📤" label="Envoyer newsletter" />
           <ActionButton href="/admin/comments?status=PENDING" icon="⏳" label="Modérer commentaires" />
           <ActionButton href="/admin/images" icon="🖼️" label="Gérer images" />
         </div>

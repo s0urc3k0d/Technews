@@ -3,6 +3,7 @@
 // ===========================================
 
 import { API_BASE_URL, API_ENDPOINTS } from './config';
+import { getAccessTokenClient } from './auth-client';
 import type { ApiError } from '@/types';
 
 // Re-export API_ENDPOINTS for convenience
@@ -41,6 +42,10 @@ class ApiClient {
   private async request<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
     const { params, ...fetchOptions } = options;
     const url = this.buildUrl(endpoint, params);
+
+    if (!this.token && typeof window !== 'undefined') {
+      this.token = await getAccessTokenClient();
+    }
 
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
@@ -95,6 +100,10 @@ class ApiClient {
   }
 
   async upload<T>(endpoint: string, formData: FormData): Promise<T> {
+    if (!this.token && typeof window !== 'undefined') {
+      this.token = await getAccessTokenClient();
+    }
+
     const headers: HeadersInit = {};
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;

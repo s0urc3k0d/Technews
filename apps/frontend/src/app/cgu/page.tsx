@@ -6,7 +6,7 @@ import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Conditions Générales d\'Utilisation',
-  description: 'Conditions générales d\'utilisation du site RevueTech',
+  description: 'Conditions générales d\'utilisation du site Revue Tech',
 };
 
 export default function CGUPage() {
@@ -24,7 +24,7 @@ export default function CGUPage() {
             <h2 className="text-2xl font-semibold mb-4">1. Objet</h2>
             <p>
               Les présentes Conditions Générales d&apos;Utilisation (CGU) définissent les règles 
-              d&apos;utilisation du site <strong>RevueTech</strong> (https://revuetech.fr) et de 
+              d&apos;utilisation du site <strong>Revue Tech</strong> (https://revuetech.fr) et de 
               ses services. En accédant au site, vous acceptez sans réserve les présentes CGU.
             </p>
           </section>
@@ -44,7 +44,7 @@ export default function CGUPage() {
 
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">3. Services proposés</h2>
-            <p>Le site RevueTech propose :</p>
+            <p>Le site Revue Tech propose :</p>
             <ul className="list-disc pl-6 mt-4">
               <li>Des articles d&apos;actualité sur la technologie</li>
               <li>Des podcasts tech</li>

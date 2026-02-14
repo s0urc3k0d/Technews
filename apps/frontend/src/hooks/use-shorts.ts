@@ -4,6 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { API_BASE_URL, API_ENDPOINTS } from '@/lib/config';
+import { authFetch } from '@/lib/auth-client';
 
 // Types
 export interface ShortMetadata {
@@ -54,7 +55,7 @@ export function useCurrentShort() {
   return useQuery<ShortMetadata | null>({
     queryKey: ['shorts', 'current'],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.shortsCurrent}`, { credentials: 'include' });
+      const res = await authFetch(`${API_BASE_URL}${API_ENDPOINTS.shortsCurrent}`);
       if (res.status === 404) return null;
       if (!res.ok) throw new Error('Failed to fetch current short');
       const data = await res.json();
@@ -80,7 +81,7 @@ export function useShortsPreview() {
   return useQuery<ShortsPreview>({
     queryKey: ['shorts', 'preview'],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.shortsPreview}`, { credentials: 'include' });
+      const res = await authFetch(`${API_BASE_URL}${API_ENDPOINTS.shortsPreview}`);
       if (!res.ok) throw new Error('Failed to fetch shorts preview');
       const data = await res.json();
 
@@ -103,7 +104,7 @@ export function useShortsTags() {
   return useQuery<ShortsTags>({
     queryKey: ['shorts', 'tags'],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.shortsTags}`, { credentials: 'include' });
+      const res = await authFetch(`${API_BASE_URL}${API_ENDPOINTS.shortsTags}`);
       if (!res.ok) throw new Error('Failed to fetch shorts tags');
       const data = await res.json();
       return {
@@ -128,7 +129,7 @@ export function useShortsBackgrounds() {
   return useQuery<BackgroundImage[]>({
     queryKey: ['shorts', 'backgrounds'],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.shortsBackgrounds}`, { credentials: 'include' });
+      const res = await authFetch(`${API_BASE_URL}${API_ENDPOINTS.shortsBackgrounds}`);
       if (!res.ok) throw new Error('Failed to fetch backgrounds');
       const data = await res.json();
       return data.backgrounds || [];
@@ -142,9 +143,8 @@ export function useGenerateShort() {
 
   return useMutation({
     mutationFn: async () => {
-      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.shortsGenerate}`, {
+      const res = await authFetch(`${API_BASE_URL}${API_ENDPOINTS.shortsGenerate}`, {
         method: 'POST',
-        credentials: 'include',
       });
       if (!res.ok) {
         const error = await res.json();
@@ -167,9 +167,8 @@ export function useUploadBackground() {
       const formData = new FormData();
       formData.append('image', file);
 
-      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.shortsBackgrounds}`, {
+      const res = await authFetch(`${API_BASE_URL}${API_ENDPOINTS.shortsBackgrounds}`, {
         method: 'POST',
-        credentials: 'include',
         body: formData,
       });
       if (!res.ok) {
@@ -190,9 +189,8 @@ export function useDeleteBackground() {
 
   return useMutation({
     mutationFn: async (filename: string) => {
-      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.shortsBackgroundDelete(filename)}`, {
+      const res = await authFetch(`${API_BASE_URL}${API_ENDPOINTS.shortsBackgroundDelete(filename)}`, {
         method: 'DELETE',
-        credentials: 'include',
       });
       if (!res.ok) {
         const error = await res.json();

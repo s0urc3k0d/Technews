@@ -6,11 +6,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import { API_ENDPOINTS, DEFAULT_ADMIN_PAGE_SIZE } from '@/lib/config';
 import type { AdminStats, CronJobLog, PaginatedResponse, ArticleImage } from '@/types';
+import { articleKeys } from './use-articles';
 
 // Query Keys
 export const adminKeys = {
   all: ['admin'] as const,
   stats: () => [...adminKeys.all, 'stats'] as const,
+  rssStatus: () => [...adminKeys.all, 'rss-status'] as const,
   logs: () => [...adminKeys.all, 'logs'] as const,
   logList: (filters: LogFilters) => [...adminKeys.logs(), filters] as const,
 };
@@ -52,17 +54,27 @@ export function useCronLogs(filters: LogFilters = {}) {
   });
 }
 
+// GET RSS Status
+export function useRssStatus() {
+  return useQuery({
+    queryKey: adminKeys.rssStatus(),
+    queryFn: () => apiClient.get<{ feedUrl: string; pendingValidation: number }>(API_ENDPOINTS.adminRssStatus),
+  });
+}
+
 // Trigger RSS Parse Manually
 export function useRssParse() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => apiClient.post<{ imported: number; skipped: number; success: boolean; errors: string[] }>(
+    mutationFn: () => apiClient.post<{ imported: number; updated?: number; skipped: number; success: boolean; errors: string[] }>(
       API_ENDPOINTS.adminRssParse
     ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.stats() });
+      queryClient.invalidateQueries({ queryKey: adminKeys.rssStatus() });
       queryClient.invalidateQueries({ queryKey: adminKeys.logs() });
+      queryClient.invalidateQueries({ queryKey: articleKeys.lists() });
     },
   });
 }

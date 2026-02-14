@@ -6,7 +6,7 @@ import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Politique de Confidentialité',
-  description: 'Politique de confidentialité et protection des données personnelles - RevueTech',
+  description: 'Politique de confidentialité et protection des données personnelles - Revue Tech',
 };
 
 export default function ConfidentialitePage() {
@@ -23,7 +23,7 @@ export default function ConfidentialitePage() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
             <p>
-              La présente politique de confidentialité décrit comment <strong>RevueTech</strong> 
+              La présente politique de confidentialité décrit comment <strong>Revue Tech</strong> 
               (https://revuetech.fr) collecte, utilise et protège vos données personnelles 
               conformément au Règlement Général sur la Protection des Données (RGPD).
             </p>

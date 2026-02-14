@@ -168,23 +168,23 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
     const roles = getClaimArray(user, rolesClaim);
     const permissions = getClaimArray(user, 'permissions');
 
-    if (AUTH0_ADMIN_ROLE && !roles.includes(AUTH0_ADMIN_ROLE)) {
-      reply.code(403).send({ error: 'Forbidden', message: 'Admin role required' });
-      return;
-    }
+    const hasEmailPolicy = allowedEmails.length > 0;
+    const hasSubPolicy = allowedSubs.length > 0;
+    const hasRolePolicy = Boolean(AUTH0_ADMIN_ROLE);
+    const hasPermissionPolicy = Boolean(AUTH0_ADMIN_PERMISSION);
 
-    if (AUTH0_ADMIN_PERMISSION && !permissions.includes(AUTH0_ADMIN_PERMISSION)) {
-      reply.code(403).send({ error: 'Forbidden', message: 'Admin permission required' });
-      return;
-    }
-
-    if (
-      allowedEmails.length === 0 &&
-      allowedSubs.length === 0 &&
-      !AUTH0_ADMIN_ROLE &&
-      !AUTH0_ADMIN_PERMISSION
-    ) {
+    if (!hasEmailPolicy && !hasSubPolicy && !hasRolePolicy && !hasPermissionPolicy) {
       reply.code(403).send({ error: 'Forbidden', message: 'Admin policy not configured' });
+      return;
+    }
+
+    const isAllowedByEmail = hasEmailPolicy && Boolean(email) && allowedEmails.includes(email);
+    const isAllowedBySub = hasSubPolicy && allowedSubs.includes(user.sub.toLowerCase());
+    const isAllowedByRole = hasRolePolicy && roles.includes(AUTH0_ADMIN_ROLE as string);
+    const isAllowedByPermission = hasPermissionPolicy && permissions.includes(AUTH0_ADMIN_PERMISSION as string);
+
+    if (!isAllowedByEmail && !isAllowedBySub && !isAllowedByRole && !isAllowedByPermission) {
+      reply.code(403).send({ error: 'Forbidden', message: 'Admin access denied' });
       return;
     }
   };

@@ -15,6 +15,7 @@ export const articleBaseSchema = z.object({
   slug: z.string().min(1).max(255).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   excerpt: z.string().max(500).optional(),
   content: z.string().min(1),
+  featuredImage: z.string().max(2048).optional().nullable(),
   metaTitle: z.string().max(70).optional(),
   metaDescription: z.string().max(160).optional(),
   type: ArticleType.default('STANDARD'),

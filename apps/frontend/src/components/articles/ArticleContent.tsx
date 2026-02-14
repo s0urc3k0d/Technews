@@ -65,6 +65,10 @@ export function ArticleContent({ article, className }: ArticleContentProps) {
           <time dateTime={article.publishedAt?.toString()}>
             {formatDate(article.publishedAt || article.createdAt)}
           </time>
+          <>
+            <span>•</span>
+            <span>{article.type === 'PODCAST' ? 'Podcast' : 'Article'}</span>
+          </>
           {article.readingTime && (
             <>
               <span>•</span>
@@ -75,12 +79,6 @@ export function ArticleContent({ article, className }: ArticleContentProps) {
             <>
               <span>•</span>
               <span>{article.viewCount} vues</span>
-            </>
-          )}
-          {article.source && (
-            <>
-              <span>•</span>
-              <span>Source: {article.source}</span>
             </>
           )}
         </div>

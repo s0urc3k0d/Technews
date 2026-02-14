@@ -147,35 +147,6 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             {/* Sidebar */}
             <aside className="lg:col-span-1">
               <div className="sticky top-24 space-y-8">
-                {/* Article Info */}
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                  <h3 className="font-semibold mb-4">À propos de cet article</h3>
-                  <dl className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <dt className="text-gray-500">Type</dt>
-                      <dd className="font-medium">
-                        {article.type === 'PODCAST' ? '🎙️ Podcast' : '📰 Article'}
-                      </dd>
-                    </div>
-                    {article.readingTime && (
-                      <div className="flex justify-between">
-                        <dt className="text-gray-500">Temps de lecture</dt>
-                        <dd className="font-medium">{article.readingTime} min</dd>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <dt className="text-gray-500">Vues</dt>
-                      <dd className="font-medium">{article.viewCount}</dd>
-                    </div>
-                    {article.source && (
-                      <div className="flex justify-between">
-                        <dt className="text-gray-500">Source</dt>
-                        <dd className="font-medium">{article.source}</dd>
-                      </div>
-                    )}
-                  </dl>
-                </div>
-
                 {/* Related Articles */}
                 {relatedArticles.length > 0 && (
                   <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">

@@ -79,13 +79,13 @@ export function NewsletterForm({ variant = 'default', className }: NewsletterFor
   // Hero variant (horizontal, large)
   if (variant === 'hero') {
     return (
-      <form onSubmit={handleSubmit} className={cn('grid grid-cols-1 lg:grid-cols-12 gap-3', className)}>
+      <form onSubmit={handleSubmit} className={cn('grid grid-cols-1 md:grid-cols-2 gap-4', className)}>
         <input
           type="text"
           value={firstName}
           onChange={(e) => setFirstName(e.target.value)}
           placeholder="Prénom (optionnel)"
-          className="lg:col-span-3 w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-5 py-4 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
         <input
           type="email"
@@ -93,17 +93,17 @@ export function NewsletterForm({ variant = 'default', className }: NewsletterFor
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Votre email"
           required
-          className="lg:col-span-4 w-full min-w-0 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full min-w-0 px-5 py-4 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
         <button
           type="submit"
           disabled={isPending}
-          className="lg:col-span-5 w-full px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="md:col-span-2 w-full px-6 py-4 text-lg bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isPending ? 'Inscription...' : "S'inscrire gratuitement"}
         </button>
         {isError && (
-          <p className="text-red-600 text-sm lg:col-span-12">{error.message}</p>
+          <p className="text-red-600 text-sm md:col-span-2">{error.message}</p>
         )}
       </form>
     );

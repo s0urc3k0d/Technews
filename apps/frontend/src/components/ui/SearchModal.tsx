@@ -32,6 +32,7 @@ export function SearchModal() {
   const { data, isLoading } = useArticles({ 
     search: debouncedQuery,
     limit: 5,
+    status: 'PUBLISHED',
   }, { enabled: debouncedQuery.length >= 2 });
 
   const results = data?.data ?? [];

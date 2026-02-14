@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { API_ENDPOINTS } from '@/lib/api-client';
+import { API_BASE_URL } from '@/lib/config';
 import { authFetch, buildAuthHeaders } from '@/lib/auth-client';
 
 // Import dynamique de l'éditeur WYSIWYG (SSR disabled)
@@ -68,7 +69,6 @@ export default function ArticleEditorPage() {
   const searchParams = useSearchParams();
   const editId = searchParams.get('id');
   const isEditing = !!editId;
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3051';
 
   const [formData, setFormData] = useState<ArticleFormData>(initialFormData);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -85,8 +85,8 @@ export default function ArticleEditorPage() {
     const fetchMeta = async () => {
       try {
         const [catRes, tagRes] = await Promise.all([
-          authFetch(`${API_URL}${API_ENDPOINTS.categories}`),
-          authFetch(`${API_URL}${API_ENDPOINTS.tags}`),
+          authFetch(`${API_BASE_URL}${API_ENDPOINTS.categories}`),
+          authFetch(`${API_BASE_URL}${API_ENDPOINTS.tags}`),
         ]);
 
         if (catRes.ok) {
@@ -104,7 +104,7 @@ export default function ArticleEditorPage() {
     };
 
     fetchMeta();
-  }, [API_URL]);
+  }, []);
 
   // Charger l'article si en mode édition
   useEffect(() => {
@@ -112,7 +112,7 @@ export default function ArticleEditorPage() {
       const fetchArticle = async () => {
         setIsLoading(true);
         try {
-          const res = await authFetch(`${API_URL}${API_ENDPOINTS.articles}/id/${editId}`);
+          const res = await authFetch(`${API_BASE_URL}${API_ENDPOINTS.articles}/id/${editId}`);
           if (res.ok) {
             const payload = await res.json();
             const article = payload.data || payload;
@@ -142,7 +142,7 @@ export default function ArticleEditorPage() {
 
       fetchArticle();
     }
-  }, [editId, API_URL]);
+  }, [editId]);
 
   // Générer le slug à partir du titre
   const generateSlug = (title: string) => {
@@ -205,8 +205,8 @@ export default function ArticleEditorPage() {
 
     try {
       const url = isEditing
-        ? `${API_URL}${API_ENDPOINTS.articles}/${editId}`
-        : `${API_URL}${API_ENDPOINTS.articles}`;
+        ? `${API_BASE_URL}${API_ENDPOINTS.articles}/${editId}`
+        : `${API_BASE_URL}${API_ENDPOINTS.articles}`;
 
       const payload = {
         title: dataToSubmit.title,
@@ -267,7 +267,7 @@ export default function ArticleEditorPage() {
       formDataUpload.append('file', file);
       formDataUpload.append('format', coverFormat);
 
-      const res = await fetch(`${API_URL}${API_ENDPOINTS.imageUploadCover}`, {
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.imageUploadCover}`, {
         method: 'POST',
         headers: await buildAuthHeaders(),
         credentials: 'include',

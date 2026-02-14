@@ -26,8 +26,41 @@ class ApiClient {
   }
 
   private buildUrl(endpoint: string, params?: Record<string, string | number | boolean | undefined>): string {
+    const isAbsoluteBase = /^https?:\/\//i.test(this.baseUrl);
+    const isAbsoluteEndpoint = /^https?:\/\//i.test(endpoint);
+
+    const appendParamsToPath = (path: string): string => {
+      if (!params) return path;
+      const searchParams = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, String(value));
+        }
+      });
+      const query = searchParams.toString();
+      if (!query) return path;
+      return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
+    };
+
+    if (isAbsoluteEndpoint) {
+      const url = new URL(endpoint);
+      if (params) {
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined) {
+            url.searchParams.append(key, String(value));
+          }
+        });
+      }
+      return url.toString();
+    }
+
+    if (!isAbsoluteBase) {
+      const base = this.baseUrl.endsWith('/') ? this.baseUrl.slice(0, -1) : this.baseUrl;
+      const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+      return appendParamsToPath(`${base}${path}`);
+    }
+
     const url = new URL(endpoint, this.baseUrl);
-    
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined) {
@@ -35,7 +68,6 @@ class ApiClient {
         }
       });
     }
-    
     return url.toString();
   }
 

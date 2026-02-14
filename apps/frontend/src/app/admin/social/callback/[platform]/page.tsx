@@ -35,7 +35,10 @@ export default function SocialCallbackPage() {
 
       try {
         // Le backend gère le callback OAuth puis redirige vers /admin/social
-        const callbackUrl = new URL(`${API_BASE_URL}${API_ENDPOINTS.socialCallback(platform)}`);
+        const callbackUrl = new URL(
+          `${API_BASE_URL}${API_ENDPOINTS.socialCallback(platform)}`,
+          window.location.origin
+        );
         callbackUrl.searchParams.set('code', code);
         if (state) callbackUrl.searchParams.set('state', state);
         window.location.href = callbackUrl.toString();

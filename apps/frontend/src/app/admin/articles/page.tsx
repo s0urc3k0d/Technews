@@ -11,14 +11,13 @@ import { useFiltersStore } from '@/lib/store';
 import { formatDate, getStatusColor, getArticleTypeIcon, cn } from '@/lib/utils';
 import { Article, ArticleStatus, ArticleType } from '@/types';
 import { Button, Pagination } from '@/components';
-import { API_ENDPOINTS } from '@/lib/config';
+import { API_BASE_URL, API_ENDPOINTS } from '@/lib/config';
 import { buildAuthHeaders } from '@/lib/auth-client';
 
 export default function AdminArticlesPage() {
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3051';
   const { status, type, search, setFilter, clearFilters } = useFiltersStore();
   
   const { data, isLoading, refetch } = useArticles({
@@ -68,7 +67,7 @@ export default function AdminArticlesPage() {
 
     setIsBulkDeleting(true);
     try {
-      const res = await fetch(`${API_URL}${API_ENDPOINTS.articlesBulkDelete}`, {
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.articlesBulkDelete}`, {
         method: 'POST',
         headers: await buildAuthHeaders({
           'Content-Type': 'application/json',

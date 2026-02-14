@@ -34,9 +34,10 @@ export default function AdminLayout({
 }) {
   return (
     <div className="min-h-screen bg-gray-100">
-      <div className="flex">
+      <div className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
+        <div className="flex gap-6">
         {/* Sidebar */}
-        <aside className="fixed left-0 top-0 h-screen w-64 bg-gray-900 text-white p-6 z-40 overflow-y-auto">
+        <aside className="sticky top-24 h-[calc(100vh-7rem)] w-64 shrink-0 bg-gray-900 text-white p-6 z-40 overflow-y-auto rounded-xl">
           <Link href="/admin" className="flex items-center gap-2 mb-8">
             <span className="text-2xl">🚀</span>
             <span className="font-bold text-xl">{SITE_NAME}</span>
@@ -67,9 +68,10 @@ export default function AdminLayout({
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 ml-64 p-8">
+        <main className="flex-1 min-w-0">
           {children}
         </main>
+        </div>
       </div>
     </div>
   );

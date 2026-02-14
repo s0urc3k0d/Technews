@@ -24,6 +24,7 @@ declare module 'fastify' {
   }
   interface FastifyRequest {
     user?: JWTPayload;
+    authToken?: string;
   }
 }
 
@@ -77,6 +78,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
     try {
       const payload = await verifyToken(token);
       request.user = payload;
+      request.authToken = token;
     } catch (err) {
       console.error('Token verification failed:', err);
       reply.code(401).send({ error: 'Unauthorized', message: 'Invalid token' });
@@ -132,7 +134,25 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
 
     const allowedEmails = parseList(ADMIN_EMAILS);
     const allowedSubs = parseList(ADMIN_SUBS);
-    const email = (user.email || '').toLowerCase();
+    let email = (user.email || '').toLowerCase();
+
+    if (!email && allowedEmails.length > 0 && AUTH0_DOMAIN && request.authToken) {
+      try {
+        const userInfoResponse = await fetch(`https://${AUTH0_DOMAIN}/userinfo`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${request.authToken}`,
+          },
+        });
+
+        if (userInfoResponse.ok) {
+          const userInfo = (await userInfoResponse.json()) as { email?: string };
+          email = (userInfo.email || '').toLowerCase();
+        }
+      } catch {
+        // Ignore and keep default email from token
+      }
+    }
 
     if (allowedSubs.length > 0 && !allowedSubs.includes(user.sub.toLowerCase())) {
       reply.code(403).send({ error: 'Forbidden', message: 'Admin access denied' });

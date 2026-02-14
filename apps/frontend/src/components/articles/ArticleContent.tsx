@@ -24,14 +24,6 @@ export function ArticleContent({ article, className }: ArticleContentProps) {
   const imageUrl = article.imageUrl || article.featuredImage || extractFirstImageFromHtml(article.content) || null;
   const primaryCategory = article.category || article.categories?.[0] || null;
 
-  const getSourceHostname = (url: string): string => {
-    try {
-      return new URL(url).hostname;
-    } catch {
-      return url;
-    }
-  };
-
   const isExternalImage = Boolean(imageUrl && /^https?:\/\//i.test(imageUrl));
 
   return (
@@ -151,23 +143,6 @@ export function ArticleContent({ article, className }: ArticleContentProps) {
         className="prose prose-lg max-w-none prose-headings:font-bold prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-lg"
         dangerouslySetInnerHTML={{ __html: article.content }}
       />
-
-      {/* Source Link */}
-      {article.sourceUrl && (
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-600">
-            📎 Source originale:{' '}
-            <a
-              href={article.sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
-            >
-              {getSourceHostname(article.sourceUrl)}
-            </a>
-          </p>
-        </div>
-      )}
 
       {/* Tags */}
       {article.tags && article.tags.length > 0 && (

@@ -49,6 +49,7 @@ export function ArticleContent({ article, className }: ArticleContentProps) {
   const primaryCategory = article.category || article.categories?.[0] || null;
 
   const isExternalImage = Boolean(imageUrl && /^https?:\/\//i.test(imageUrl));
+  const useNativeImage = Boolean(imageUrl && (isExternalImage || imageUrl.startsWith('/uploads/')));
 
   return (
     <article className={cn('max-w-4xl mx-auto', className)}>
@@ -112,7 +113,7 @@ export function ArticleContent({ article, className }: ArticleContentProps) {
       {imageUrl && (
         <figure className="mb-8 -mx-4 md:mx-0">
           <div className="relative aspect-[16/9] rounded-lg overflow-hidden">
-            {isExternalImage ? (
+            {useNativeImage ? (
               <img
                 src={imageUrl}
                 alt={article.imageAlt || article.title}

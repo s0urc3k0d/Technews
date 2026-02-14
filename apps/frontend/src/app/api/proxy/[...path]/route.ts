@@ -4,6 +4,7 @@ const resolveUpstream = () => {
   return (
     process.env.API_INTERNAL_URL ||
     process.env.BACKEND_INTERNAL_URL ||
+    process.env.SERVICE_URL_BACKEND ||
     process.env.NEXT_PUBLIC_API_URL ||
     'http://backend:3001'
   );

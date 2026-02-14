@@ -6,7 +6,13 @@ const isBrowser = typeof window !== 'undefined';
 
 export const API_BASE_URL = isBrowser
   ? '/api/proxy'
-  : (process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://backend:3001');
+  : (
+      process.env.API_INTERNAL_URL ||
+      process.env.BACKEND_INTERNAL_URL ||
+      process.env.SERVICE_URL_BACKEND ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      'http://backend:3001'
+    );
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 export const SITE_NAME = 'Revue Tech';
 export const SITE_DESCRIPTION = 'Actualités tech et podcasts sur les dernières tendances technologiques';

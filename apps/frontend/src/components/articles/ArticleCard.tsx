@@ -47,6 +47,7 @@ export function ArticleCard({ article, variant = 'default', className }: Article
     null;
   const primaryCategory = article.category || article.categories?.[0] || null;
   const isExternalImage = Boolean(imageUrl && /^https?:\/\//i.test(imageUrl));
+  const useNativeImage = Boolean(imageUrl && (isExternalImage || imageUrl.startsWith('/uploads/')));
   
   // Featured variant (large)
   if (variant === 'featured') {
@@ -56,7 +57,7 @@ export function ArticleCard({ article, variant = 'default', className }: Article
         className
       )}>
         {imageUrl && (
-          isExternalImage ? (
+          useNativeImage ? (
             <img
               src={imageUrl}
               alt={article.title}
@@ -117,7 +118,7 @@ export function ArticleCard({ article, variant = 'default', className }: Article
         <Link href={`/article/${article.slug}`} className="shrink-0">
           <div className="relative w-32 h-24 md:w-48 md:h-32 rounded-lg overflow-hidden bg-gray-100">
             {imageUrl ? (
-              isExternalImage ? (
+              useNativeImage ? (
                 <img
                   src={imageUrl}
                   alt={article.title}
@@ -188,7 +189,7 @@ export function ArticleCard({ article, variant = 'default', className }: Article
       <Link href={`/article/${article.slug}`} className="block">
         <div className="relative aspect-[16/9] bg-gray-100">
           {imageUrl ? (
-            isExternalImage ? (
+            useNativeImage ? (
               <img
                 src={imageUrl}
                 alt={article.title}

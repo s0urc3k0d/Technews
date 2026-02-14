@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
-const upstreamApi = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const upstreamApi =
+  process.env.API_INTERNAL_URL ||
+  process.env.BACKEND_INTERNAL_URL ||
+  process.env.SERVICE_URL_BACKEND ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  'http://backend:3001';
 
 const nextConfig = {
   // Output standalone for Docker deployment
@@ -15,9 +20,15 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'i.ytimg.com',
       },
+      {
+        protocol: 'http',
+        hostname: 'backend',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
     ],
-    // Images locales servies par le backend
-    domains: ['localhost'],
   },
   async rewrites() {
     return [

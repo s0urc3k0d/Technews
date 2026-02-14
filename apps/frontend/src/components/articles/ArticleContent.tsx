@@ -2,6 +2,8 @@
 // Article Content Component
 // ===========================================
 
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Article } from '@/types';

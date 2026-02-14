@@ -41,7 +41,7 @@ const imagesRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       // Process image
-      const processed = await imageService.processImage(buffer, data.filename);
+      const processed = await imageService.processImage(buffer, data.filename, 'webp');
 
       // Get additional fields from multipart
       const fields = data.fields;
@@ -86,6 +86,49 @@ const imagesRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       return reply.code(201).send(image);
+    }
+  );
+
+  // POST /images/upload-cover - Upload image de couverture optimisée (admin)
+  fastify.post(
+    '/upload-cover',
+    { preHandler: [fastify.requireAdmin] },
+    async (request, reply) => {
+      const data = await request.file();
+
+      if (!data) {
+        return reply.code(400).send({ error: 'No file uploaded' });
+      }
+
+      if (!imageService.validateFileType(data.mimetype)) {
+        return reply.code(400).send({
+          error: 'Invalid file type. Allowed: JPEG, PNG, GIF, WebP, AVIF',
+        });
+      }
+
+      const buffer = await data.toBuffer();
+
+      if (!imageService.validateFileSize(buffer.length)) {
+        return reply.code(400).send({
+          error: `File too large. Maximum size: ${config.UPLOAD_MAX_SIZE_MB}MB`,
+        });
+      }
+
+      const fields = data.fields;
+      const rawFormat = ((fields.format as any)?.value || 'webp') as string;
+      const format = rawFormat === 'avif' || rawFormat === 'both' ? rawFormat : 'webp';
+
+      const processed = await imageService.processImage(buffer, data.filename, format);
+
+      return reply.code(201).send({
+        url: processed.url,
+        thumbnail: processed.thumbnail,
+        medium: processed.medium,
+        mimeType: processed.mimeType,
+        variants: processed.variants,
+        width: processed.width,
+        height: processed.height,
+      });
     }
   );
 

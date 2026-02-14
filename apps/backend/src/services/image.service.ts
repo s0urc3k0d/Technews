@@ -12,11 +12,17 @@ interface ProcessedImage {
   url: string;
   thumbnail: string;
   medium: string;
+  variants?: {
+    webp?: string;
+    avif?: string;
+  };
   width: number;
   height: number;
   size: number;
   mimeType: string;
 }
+
+type OutputFormat = 'webp' | 'avif' | 'both';
 
 interface ImageServiceConfig {
   uploadPath: string;
@@ -44,49 +50,79 @@ export class ImageService {
     }
   }
 
-  async processImage(buffer: Buffer, originalFilename: string): Promise<ProcessedImage> {
+  async processImage(buffer: Buffer, originalFilename: string, outputFormat: OutputFormat = 'webp'): Promise<ProcessedImage> {
     await this.ensureUploadDir();
 
     // Generate unique filename
-    const ext = path.extname(originalFilename).toLowerCase();
     const basename = `${randomUUID()}`;
-    const filename = `${basename}.webp`;
+
+    const makeOriginal = async (format: 'webp' | 'avif') => {
+      const filename = `${basename}.${format}`;
+      const originalPath = path.join(this.config.uploadPath, 'original', filename);
+      const pipeline = sharp(buffer).rotate();
+      const converted = format === 'avif'
+        ? await pipeline.avif({ quality: Math.max(55, this.config.quality - 10) }).toBuffer()
+        : await pipeline.webp({ quality: this.config.quality }).toBuffer();
+
+      await fs.writeFile(originalPath, converted);
+      return {
+        filename,
+        url: `/uploads/original/${filename}`,
+        size: converted.length,
+        mimeType: format === 'avif' ? 'image/avif' : 'image/webp',
+      };
+    };
 
     // Get image metadata
     const metadata = await sharp(buffer).metadata();
     const width = metadata.width || 0;
     const height = metadata.height || 0;
 
-    // Process original (convert to WebP, optimize)
-    const originalPath = path.join(this.config.uploadPath, 'original', filename);
-    const originalBuffer = await sharp(buffer)
-      .webp({ quality: this.config.quality })
-      .toBuffer();
-    await fs.writeFile(originalPath, originalBuffer);
+    const shouldCreateWebp = outputFormat === 'webp' || outputFormat === 'both';
+    const shouldCreateAvif = outputFormat === 'avif' || outputFormat === 'both';
+
+    const webpOriginal = shouldCreateWebp ? await makeOriginal('webp') : null;
+    const avifOriginal = shouldCreateAvif ? await makeOriginal('avif') : null;
+
+    const primaryOriginal = webpOriginal || avifOriginal;
+
+    if (!primaryOriginal) {
+      throw new Error('No output format generated');
+    }
 
     // Generate thumbnail (300px width)
-    const thumbnailPath = path.join(this.config.uploadPath, 'thumbnail', filename);
-    await sharp(buffer)
-      .resize(300, null, { withoutEnlargement: true })
-      .webp({ quality: 80 })
-      .toFile(thumbnailPath);
+    const thumbnailFilename = `${basename}.${outputFormat === 'avif' ? 'avif' : 'webp'}`;
+    const thumbnailPath = path.join(this.config.uploadPath, 'thumbnail', thumbnailFilename);
+    const thumbPipeline = sharp(buffer).rotate().resize(300, null, { withoutEnlargement: true });
+    if (outputFormat === 'avif') {
+      await thumbPipeline.avif({ quality: 70 }).toFile(thumbnailPath);
+    } else {
+      await thumbPipeline.webp({ quality: 80 }).toFile(thumbnailPath);
+    }
 
     // Generate medium (800px width)
-    const mediumPath = path.join(this.config.uploadPath, 'medium', filename);
-    await sharp(buffer)
-      .resize(800, null, { withoutEnlargement: true })
-      .webp({ quality: 85 })
-      .toFile(mediumPath);
+    const mediumFilename = `${basename}.${outputFormat === 'avif' ? 'avif' : 'webp'}`;
+    const mediumPath = path.join(this.config.uploadPath, 'medium', mediumFilename);
+    const mediumPipeline = sharp(buffer).rotate().resize(800, null, { withoutEnlargement: true });
+    if (outputFormat === 'avif') {
+      await mediumPipeline.avif({ quality: 72 }).toFile(mediumPath);
+    } else {
+      await mediumPipeline.webp({ quality: 85 }).toFile(mediumPath);
+    }
 
     return {
-      filename,
-      url: `/uploads/original/${filename}`,
-      thumbnail: `/uploads/thumbnail/${filename}`,
-      medium: `/uploads/medium/${filename}`,
+      filename: primaryOriginal.filename,
+      url: primaryOriginal.url,
+      thumbnail: `/uploads/thumbnail/${thumbnailFilename}`,
+      medium: `/uploads/medium/${mediumFilename}`,
+      variants: {
+        webp: webpOriginal?.url,
+        avif: avifOriginal?.url,
+      },
       width,
       height,
-      size: originalBuffer.length,
-      mimeType: 'image/webp',
+      size: primaryOriginal.size,
+      mimeType: primaryOriginal.mimeType,
     };
   }
 
@@ -107,7 +143,7 @@ export class ImageService {
   }
 
   validateFileType(mimetype: string): boolean {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
     return allowedTypes.includes(mimetype);
   }
 

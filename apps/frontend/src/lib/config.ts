@@ -11,6 +11,7 @@ export const SITE_DESCRIPTION = 'Actualités tech et podcasts sur les dernières
 export const API_ENDPOINTS = {
   // Articles
   articles: '/api/v1/articles',
+  articlesBulkDelete: '/api/v1/articles/bulk-delete',
   articleBySlug: (slug: string) => `/api/v1/articles/${slug}`,
   articleFeatured: '/api/v1/articles/featured',
   articlePublish: (id: string) => `/api/v1/articles/${id}/publish`,
@@ -41,6 +42,7 @@ export const API_ENDPOINTS = {
   // Images
   images: '/api/v1/images',
   imageUpload: '/api/v1/images/upload',
+  imageUploadCover: '/api/v1/images/upload-cover',
   imagesByArticle: (articleId: string) => `/api/v1/images/article/${articleId}`,
   
   // Admin

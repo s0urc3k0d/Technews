@@ -47,6 +47,8 @@ interface ArticleFormData {
   metaDescription: string;
 }
 
+type CoverFormat = 'webp' | 'avif' | 'both';
+
 const initialFormData: ArticleFormData = {
   title: '',
   slug: '',
@@ -75,6 +77,8 @@ export default function ArticleEditorPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [coverFormat, setCoverFormat] = useState<CoverFormat>('webp');
 
   // Charger les catégories et tags au montage
   useEffect(() => {
@@ -185,12 +189,18 @@ export default function ArticleEditorPage() {
     setError(null);
     setSuccessMessage(null);
 
+    const normalizePublishedAt = (value: string | null): string | null => {
+      if (!value) return null;
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+    };
+
     const dataToSubmit = {
       ...formData,
       status: status || formData.status,
       publishedAt: status === 'PUBLISHED' && !formData.publishedAt 
         ? new Date().toISOString() 
-        : formData.publishedAt || null,
+        : normalizePublishedAt(formData.publishedAt),
     };
 
     try {
@@ -231,14 +241,51 @@ export default function ArticleEditorPage() {
           router.push(`/admin/articles/new?id=${savedArticle.id}`);
         }
       } else {
-        const errorData = await res.json();
-        setError(errorData.message || 'Erreur lors de la sauvegarde');
+        const errorData = await res.json().catch(() => ({}));
+        const firstDetail = Array.isArray(errorData?.details) && errorData.details[0]?.message
+          ? ` (${errorData.details[0].message})`
+          : '';
+        setError((errorData.message || errorData.error || 'Erreur lors de la sauvegarde') + firstDetail);
       }
     } catch (err) {
       setError('Erreur réseau lors de la sauvegarde');
       console.error(err);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingCover(true);
+    setError(null);
+
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', file);
+      formDataUpload.append('format', coverFormat);
+
+      const res = await fetch(`${API_URL}${API_ENDPOINTS.imageUploadCover}`, {
+        method: 'POST',
+        headers: await buildAuthHeaders(),
+        credentials: 'include',
+        body: formDataUpload,
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || errorData.error || 'Upload impossible');
+      }
+
+      const uploaded = await res.json();
+      setFormData(prev => ({ ...prev, coverImage: uploaded.url }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur upload image');
+    } finally {
+      setIsUploadingCover(false);
+      e.target.value = '';
     }
   };
 
@@ -412,6 +459,27 @@ export default function ArticleEditorPage() {
               {/* Image de couverture */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h3 className="font-semibold text-gray-900 mb-4">Image de couverture</h3>
+                <div className="flex items-center gap-2 mb-3">
+                  <select
+                    value={coverFormat}
+                    onChange={(e) => setCoverFormat(e.target.value as CoverFormat)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  >
+                    <option value="webp">WebP (recommandé)</option>
+                    <option value="avif">AVIF (plus léger)</option>
+                    <option value="both">WebP + AVIF</option>
+                  </select>
+                  <label className="px-3 py-2 border border-gray-300 rounded-lg text-sm cursor-pointer hover:bg-gray-50">
+                    {isUploadingCover ? 'Upload…' : 'Uploader'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleCoverUpload}
+                      disabled={isUploadingCover}
+                    />
+                  </label>
+                </div>
                 <input
                   type="url"
                   name="coverImage"

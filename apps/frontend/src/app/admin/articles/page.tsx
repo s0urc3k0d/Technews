@@ -11,12 +11,17 @@ import { useFiltersStore } from '@/lib/store';
 import { formatDate, getStatusColor, getArticleTypeIcon, cn } from '@/lib/utils';
 import { Article, ArticleStatus, ArticleType } from '@/types';
 import { Button, Pagination } from '@/components';
+import { API_ENDPOINTS } from '@/lib/config';
+import { buildAuthHeaders } from '@/lib/auth-client';
 
 export default function AdminArticlesPage() {
   const [page, setPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3051';
   const { status, type, search, setFilter, clearFilters } = useFiltersStore();
   
-  const { data, isLoading } = useArticles({
+  const { data, isLoading, refetch } = useArticles({
     page,
     limit: 20,
     status: (status as ArticleStatus) || undefined,
@@ -41,6 +46,49 @@ export default function AdminArticlesPage() {
   const handleToggleStatus = (article: Article) => {
     const newStatus = article.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED';
     updateArticle({ id: article.id, data: { status: newStatus } });
+  };
+
+  const isAllSelected = articles.length > 0 && selectedIds.length === articles.length;
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds([]);
+      return;
+    }
+    setSelectedIds(articles.map(article => article.id));
+  };
+
+  const toggleSelectOne = (id: string) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]));
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Supprimer ${selectedIds.length} article(s) ?`)) return;
+
+    setIsBulkDeleting(true);
+    try {
+      const res = await fetch(`${API_URL}${API_ENDPOINTS.articlesBulkDelete}`, {
+        method: 'POST',
+        headers: await buildAuthHeaders({
+          'Content-Type': 'application/json',
+        }),
+        credentials: 'include',
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || errorData.error || 'Suppression de masse impossible');
+      }
+
+      setSelectedIds([]);
+      await refetch();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erreur suppression de masse');
+    } finally {
+      setIsBulkDeleting(false);
+    }
   };
 
   const handleRssImport = () => {
@@ -128,6 +176,15 @@ export default function AdminArticlesPage() {
           <Button variant="ghost" onClick={clearFilters}>
             Réinitialiser
           </Button>
+
+          <Button
+            variant="danger"
+            onClick={handleBulkDelete}
+            disabled={selectedIds.length === 0}
+            isLoading={isBulkDeleting}
+          >
+            Supprimer la sélection ({selectedIds.length})
+          </Button>
         </div>
       </div>
 
@@ -143,6 +200,13 @@ export default function AdminArticlesPage() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b">
               <tr>
+                <th className="px-4 py-4 text-left">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    onChange={toggleSelectAll}
+                  />
+                </th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Article</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Catégorie</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Statut</th>
@@ -154,6 +218,13 @@ export default function AdminArticlesPage() {
             <tbody className="divide-y">
               {articles.map((article) => (
                 <tr key={article.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(article.id)}
+                      onChange={() => toggleSelectOne(article.id)}
+                    />
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <span className="text-xl">{getArticleTypeIcon(article.type)}</span>

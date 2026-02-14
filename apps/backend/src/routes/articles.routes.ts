@@ -3,6 +3,7 @@
 // ===========================================
 
 import { FastifyPluginAsync } from 'fastify';
+import { z } from 'zod';
 import { 
   createArticleSchema, 
   updateArticleSchema, 
@@ -156,6 +157,33 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
       },
     });
   });
+
+  // POST /articles/bulk-delete - Supprimer plusieurs articles (admin)
+  fastify.post(
+    '/bulk-delete',
+    { preHandler: [fastify.requireAdmin] },
+    async (request, reply) => {
+      const schema = z.object({
+        ids: z.array(z.string().min(1)).min(1),
+      });
+
+      const parsed = schema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.code(400).send({ error: 'Invalid body', details: parsed.error.issues });
+      }
+
+      const { ids } = parsed.data;
+
+      const deleted = await prisma.article.deleteMany({
+        where: { id: { in: ids } },
+      });
+
+      return reply.send({
+        success: true,
+        deleted: deleted.count,
+      });
+    }
+  );
 
   // GET /articles/:slug - Détail article (public)
   fastify.get<{ Params: { slug: string } }>(

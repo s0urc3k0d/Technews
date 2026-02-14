@@ -11,7 +11,7 @@ import { Header, Footer } from '@/components/layout';
 import { SearchModal } from '@/components/ui';
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from '@/lib/config';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'], preload: false, display: 'swap' });
 
 // ID AdSense
 const ADSENSE_ID = process.env.NEXT_PUBLIC_ADSENSE_ID || 'ca-pub-7283351114219521';

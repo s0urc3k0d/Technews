@@ -12,6 +12,15 @@ import { API_ENDPOINTS } from '@/lib/api-client';
 import { Article, PaginatedResponse } from '@/types';
 import { API_BASE_URL, SITE_NAME } from '@/lib/config';
 
+const API_TIMEOUT_MS = 8000;
+
+function withTimeoutSignal(timeoutMs = API_TIMEOUT_MS): AbortSignal {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  controller.signal.addEventListener('abort', () => clearTimeout(timeout), { once: true });
+  return controller.signal;
+}
+
 export const metadata: Metadata = {
   title: 'Articles',
   description: `Tous les articles et actualités tech sur ${SITE_NAME}`,
@@ -44,7 +53,7 @@ async function getArticles(params: {
   try {
     const response = await fetch(
       `${API_BASE_URL}${API_ENDPOINTS.articles}?${searchParams}`,
-      { next: { revalidate: 60 } }
+      { next: { revalidate: 60 }, signal: withTimeoutSignal() }
     );
     
     if (!response.ok) {

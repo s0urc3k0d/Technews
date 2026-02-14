@@ -13,12 +13,21 @@ import { API_ENDPOINTS } from '@/lib/api-client';
 import { API_BASE_URL } from '@/lib/config';
 import { Article, PaginatedResponse, Category } from '@/types';
 
+const API_TIMEOUT_MS = 8000;
+
+function withTimeoutSignal(timeoutMs = API_TIMEOUT_MS): AbortSignal {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  controller.signal.addEventListener('abort', () => clearTimeout(timeout), { once: true });
+  return controller.signal;
+}
+
 // Fetch featured article
 async function getFeaturedArticle(): Promise<Article | null> {
   try {
     const response = await fetch(
       `${API_BASE_URL}${API_ENDPOINTS.articleFeatured}`,
-      { next: { revalidate: 60 } }
+      { next: { revalidate: 60 }, signal: withTimeoutSignal() }
     );
     if (!response.ok) return null;
     const data = await response.json();
@@ -33,7 +42,7 @@ async function getLatestArticles(): Promise<Article[]> {
   try {
     const response = await fetch(
       `${API_BASE_URL}${API_ENDPOINTS.articles}?limit=6&status=PUBLISHED`,
-      { next: { revalidate: 60 } }
+      { next: { revalidate: 60 }, signal: withTimeoutSignal() }
     );
     if (!response.ok) return [];
     const data: PaginatedResponse<Article> = await response.json();
@@ -48,7 +57,7 @@ async function getCategories(): Promise<Category[]> {
   try {
     const response = await fetch(
       `${API_BASE_URL}${API_ENDPOINTS.categories}`,
-      { next: { revalidate: 300 } }
+      { next: { revalidate: 300 }, signal: withTimeoutSignal() }
     );
     if (!response.ok) return [];
     const data = await response.json();
@@ -63,7 +72,7 @@ async function getPodcasts(): Promise<Article[]> {
   try {
     const response = await fetch(
       `${API_BASE_URL}${API_ENDPOINTS.articles}?type=PODCAST&limit=4&status=PUBLISHED`,
-      { next: { revalidate: 60 } }
+      { next: { revalidate: 60 }, signal: withTimeoutSignal() }
     );
     if (!response.ok) return [];
     const data: PaginatedResponse<Article> = await response.json();

@@ -48,12 +48,19 @@ class ApiClient {
     }
 
     const headers: HeadersInit = {
-      'Content-Type': 'application/json',
       ...fetchOptions.headers,
     };
 
+    const hasBody = fetchOptions.body !== undefined && fetchOptions.body !== null;
+    const isFormDataBody = typeof FormData !== 'undefined' && fetchOptions.body instanceof FormData;
+    const normalizedHeaders = headers as Record<string, string>;
+
+    if (hasBody && !isFormDataBody && !normalizedHeaders['Content-Type']) {
+      normalizedHeaders['Content-Type'] = 'application/json';
+    }
+
     if (this.token) {
-      (headers as Record<string, string>)['Authorization'] = `Bearer ${this.token}`;
+      normalizedHeaders['Authorization'] = `Bearer ${this.token}`;
     }
 
     const response = await fetch(url, {

@@ -22,6 +22,7 @@ const navigation = [
 
 export function Header() {
   const pathname = usePathname();
+  const isAdminRoute = pathname.startsWith('/admin');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -79,6 +80,10 @@ export function Header() {
       cancelled = true;
     };
   }, []);
+
+  if (isAdminRoute) {
+    return null;
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">

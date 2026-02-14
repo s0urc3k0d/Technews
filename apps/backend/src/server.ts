@@ -157,6 +157,7 @@ async function start() {
       setupCronJobs({
         prisma: server.prisma,
         rssUrl: server.config.RSS_FEED_URL,
+        rssMaxAgeDays: parseInt(server.config.RSS_MAX_AGE_DAYS, 10) || 10,
         mistralApiKey: server.config.MISTRAL_API_KEY,
         resendApiKey: server.config.RESEND_API_KEY,
         resendFromEmail: server.config.RESEND_FROM_EMAIL,

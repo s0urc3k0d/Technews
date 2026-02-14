@@ -51,6 +51,7 @@ services:
       - RESEND_API_KEY=${RESEND_API_KEY}
       - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL}
       - RSS_FEED_URL=${RSS_FEED_URL}
+      - RSS_MAX_AGE_DAYS=${RSS_MAX_AGE_DAYS:-10}
       - UPLOAD_PATH=/app/uploads
       - UPLOAD_MAX_SIZE_MB=${UPLOAD_MAX_SIZE_MB:-5}
       - SHORTS_DIR=/app/shorts

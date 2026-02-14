@@ -13,6 +13,7 @@ import * as path from 'path';
 interface CronConfig {
   prisma: PrismaClient;
   rssUrl?: string;
+  rssMaxAgeDays?: number;
   mistralApiKey?: string;
   resendApiKey?: string;
   resendFromEmail?: string;
@@ -25,11 +26,12 @@ export const setupCronJobs = (config: CronConfig) => {
   
   // Utiliser l'URL TechPulse par défaut si non spécifiée
   const rssUrl = config.rssUrl || DEFAULT_RSS_FEED_URL;
+  const rssMaxAgeDays = config.rssMaxAgeDays ?? 10;
 
   // RSS Parser - Toutes les 2 heures (pour récupérer les news fraîches)
   cron.schedule('0 */2 * * *', async () => {
     console.log('[CRON] Starting RSS parser (TechPulse)...');
-    const rssService = createRSSParserService(prisma, rssUrl);
+    const rssService = createRSSParserService(prisma, rssUrl, rssMaxAgeDays);
 
     const log = await prisma.cronJobLog.create({
       data: {

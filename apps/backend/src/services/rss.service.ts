@@ -53,8 +53,9 @@ export class RSSParserService {
   private parser: Parser<any, TechPulseItem>;
   private prisma: PrismaClient;
   private feedUrl: string;
+  private maxAgeDays: number;
 
-  constructor(prisma: PrismaClient, feedUrl: string) {
+  constructor(prisma: PrismaClient, feedUrl: string, maxAgeDays = 10) {
     this.parser = new Parser({
       customFields: {
         item: [
@@ -69,6 +70,7 @@ export class RSSParserService {
     });
     this.prisma = prisma;
     this.feedUrl = feedUrl;
+    this.maxAgeDays = Math.max(1, maxAgeDays);
   }
 
   async parseFeed(): Promise<ParseResult> {
@@ -85,8 +87,17 @@ export class RSSParserService {
       const feed = await this.parser.parseURL(this.feedUrl);
       console.log(`[RSS] Found ${feed.items.length} items in feed`);
 
+      const oldestAllowedDate = new Date();
+      oldestAllowedDate.setDate(oldestAllowedDate.getDate() - this.maxAgeDays);
+
       for (const item of feed.items) {
         try {
+          const itemDate = this.extractItemDate(item);
+          if (!itemDate || itemDate < oldestAllowedDate) {
+            result.skipped++;
+            continue;
+          }
+
           const importResult = await this.importItem(item);
           if (importResult === 'imported') {
             result.imported++;
@@ -118,15 +129,43 @@ export class RSSParserService {
       return 'skipped';
     }
 
-    // Vérifier si l'article existe déjà (par sourceUrl)
-    const existing = await this.prisma.article.findUnique({
-      where: { sourceUrl: item.link },
+    const normalizedSourceUrl = this.normalizeSourceUrl(item.link);
+    const sourceName = this.extractSourceName(item);
+    const itemDate = this.extractItemDate(item);
+
+    // Vérifier si l'article existe déjà (URL canonique, URL brute, fallback titre/source/date)
+    let existing = await this.prisma.article.findFirst({
+      where: {
+        OR: [
+          { sourceUrl: normalizedSourceUrl },
+          { sourceUrl: item.link },
+        ],
+      },
     });
+
+    if (!existing && itemDate) {
+      const dayStart = new Date(itemDate);
+      dayStart.setUTCHours(0, 0, 0, 0);
+      const dayEnd = new Date(itemDate);
+      dayEnd.setUTCHours(23, 59, 59, 999);
+
+      existing = await this.prisma.article.findFirst({
+        where: {
+          source: ArticleSource.RSS,
+          title: item.title,
+          sourceName,
+          publishedAt: {
+            gte: dayStart,
+            lte: dayEnd,
+          },
+        },
+      });
+    }
 
     if (existing) {
       // Si l'article existe et est en brouillon, on peut le mettre à jour
       if (existing.status === ArticleStatus.DRAFT) {
-        await this.updateExistingArticle(existing.id, item);
+        await this.updateExistingArticle(existing.id, item, normalizedSourceUrl, sourceName);
         return 'updated';
       }
       return 'skipped'; // Skip published/archived articles
@@ -146,9 +185,6 @@ export class RSSParserService {
     const content = this.cleanContent(rawContent);
     const excerpt = this.generateExcerpt(item.contentSnippet || content);
 
-    // Extraire la source
-    const sourceName = this.extractSourceName(item);
-
     // Créer l'article en brouillon
     const article = await this.prisma.article.create({
       data: {
@@ -158,9 +194,9 @@ export class RSSParserService {
         excerpt,
         status: ArticleStatus.DRAFT,
         source: ArticleSource.RSS,
-        sourceUrl: item.link,
+        sourceUrl: normalizedSourceUrl,
         sourceName,
-        publishedAt: item.pubDate ? new Date(item.pubDate) : null,
+        publishedAt: itemDate,
       },
     });
 
@@ -170,19 +206,54 @@ export class RSSParserService {
     return 'imported';
   }
 
-  private async updateExistingArticle(articleId: string, item: TechPulseItem): Promise<void> {
+  private async updateExistingArticle(
+    articleId: string,
+    item: TechPulseItem,
+    normalizedSourceUrl: string,
+    sourceName: string
+  ): Promise<void> {
     const rawContent = item['content:encoded'] || item.content || item.contentSnippet || '';
     const content = this.cleanContent(rawContent);
     const excerpt = this.generateExcerpt(item.contentSnippet || content);
+    const itemDate = this.extractItemDate(item);
 
     await this.prisma.article.update({
       where: { id: articleId },
       data: {
         content,
         excerpt,
-        publishedAt: item.pubDate ? new Date(item.pubDate) : undefined,
+        sourceUrl: normalizedSourceUrl,
+        sourceName,
+        publishedAt: itemDate ?? undefined,
       },
     });
+  }
+
+  private extractItemDate(item: TechPulseItem): Date | null {
+    const candidates = [item.pubDate, item['techpulse:savedAt']].filter(Boolean) as string[];
+    for (const value of candidates) {
+      const parsed = new Date(value);
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed;
+      }
+    }
+    return null;
+  }
+
+  private normalizeSourceUrl(rawUrl: string): string {
+    try {
+      const url = new URL(rawUrl.trim());
+      const stripParams = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'fbclid'];
+      for (const key of stripParams) {
+        url.searchParams.delete(key);
+      }
+      url.hash = '';
+      const normalizedPath = url.pathname.replace(/\/$/, '');
+      url.pathname = normalizedPath || '/';
+      return url.toString();
+    } catch {
+      return rawUrl.trim();
+    }
   }
 
   private async assignCategory(articleId: string, categoryName?: string): Promise<void> {
@@ -292,9 +363,10 @@ export class RSSParserService {
 
 export const createRSSParserService = (
   prisma: PrismaClient,
-  feedUrl: string
+  feedUrl: string,
+  maxAgeDays = 10
 ): RSSParserService => {
-  return new RSSParserService(prisma, feedUrl);
+  return new RSSParserService(prisma, feedUrl, maxAgeDays);
 };
 
 // URL par défaut du feed TechPulse

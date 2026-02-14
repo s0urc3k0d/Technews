@@ -40,6 +40,7 @@ const envSchema = z.object({
 
   // RSS - TechPulse feed par défaut
   RSS_FEED_URL: z.string().url().default('https://techpulse.sourcekod.fr/api/feeds/all.xml'),
+  RSS_MAX_AGE_DAYS: z.string().default('10'),
 
   // Social Media OAuth (optionnel)
   TWITTER_CLIENT_ID: z.string().optional(),

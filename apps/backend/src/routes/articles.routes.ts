@@ -20,6 +20,7 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /articles - Liste des articles (public)
   fastify.get(
     '/',
+    { preHandler: [fastify.authenticateOptional] },
     async (request, reply) => {
       // Validate query params with Zod
       const parseResult = listArticlesQuerySchema.safeParse(request.query);
@@ -159,6 +160,7 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /articles/:slug - Détail article (public)
   fastify.get<{ Params: { slug: string } }>(
     '/:slug',
+    { preHandler: [fastify.authenticateOptional] },
     async (request, reply) => {
       const { slug } = request.params;
 

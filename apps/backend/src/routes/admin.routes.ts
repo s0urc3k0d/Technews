@@ -134,7 +134,11 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
     // Utiliser l'URL configurée ou TechPulse par défaut
     const rssUrl = config.RSS_FEED_URL || DEFAULT_RSS_FEED_URL;
     
-    const rssService = createRSSParserService(prisma, rssUrl);
+    const rssService = createRSSParserService(
+      prisma,
+      rssUrl,
+      parseInt(config.RSS_MAX_AGE_DAYS, 10) || 10
+    );
     
     // Log start
     const log = await prisma.cronJobLog.create({

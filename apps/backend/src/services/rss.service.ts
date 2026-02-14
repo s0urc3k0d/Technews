@@ -184,6 +184,7 @@ export class RSSParserService {
     const rawContent = item['content:encoded'] || item.content || item.contentSnippet || '';
     const content = this.cleanContent(rawContent);
     const excerpt = this.generateExcerpt(item.contentSnippet || content);
+    const featuredImage = this.extractFirstImageUrl(rawContent);
 
     // Créer l'article en brouillon
     const article = await this.prisma.article.create({
@@ -196,6 +197,7 @@ export class RSSParserService {
         source: ArticleSource.RSS,
         sourceUrl: normalizedSourceUrl,
         sourceName,
+        featuredImage,
         publishedAt: itemDate,
       },
     });
@@ -216,6 +218,7 @@ export class RSSParserService {
     const content = this.cleanContent(rawContent);
     const excerpt = this.generateExcerpt(item.contentSnippet || content);
     const itemDate = this.extractItemDate(item);
+    const featuredImage = this.extractFirstImageUrl(rawContent);
 
     await this.prisma.article.update({
       where: { id: articleId },
@@ -224,9 +227,20 @@ export class RSSParserService {
         excerpt,
         sourceUrl: normalizedSourceUrl,
         sourceName,
+        featuredImage: featuredImage || undefined,
         publishedAt: itemDate ?? undefined,
       },
     });
+  }
+
+  private extractFirstImageUrl(html: string): string | null {
+    if (!html) return null;
+    const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+    if (!match?.[1]) return null;
+
+    const src = match[1].trim();
+    if (!/^https?:\/\//i.test(src)) return null;
+    return src;
   }
 
   private extractItemDate(item: TechPulseItem): Date | null {

@@ -17,6 +17,16 @@ export function ArticleContent({ article, className }: ArticleContentProps) {
   const imageUrl = article.imageUrl || article.featuredImage || null;
   const primaryCategory = article.category || article.categories?.[0] || null;
 
+  const getSourceHostname = (url: string): string => {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return url;
+    }
+  };
+
+  const isExternalImage = Boolean(imageUrl && /^https?:\/\//i.test(imageUrl));
+
   return (
     <article className={cn('max-w-4xl mx-auto', className)}>
       {/* Header */}
@@ -81,13 +91,22 @@ export function ArticleContent({ article, className }: ArticleContentProps) {
       {imageUrl && (
         <figure className="mb-8 -mx-4 md:mx-0">
           <div className="relative aspect-[16/9] rounded-lg overflow-hidden">
-            <Image
-              src={imageUrl}
-              alt={article.imageAlt || article.title}
-              fill
-              className="object-cover"
-              priority
-            />
+            {isExternalImage ? (
+              <img
+                src={imageUrl}
+                alt={article.imageAlt || article.title}
+                className="w-full h-full object-cover"
+                loading="eager"
+              />
+            ) : (
+              <Image
+                src={imageUrl}
+                alt={article.imageAlt || article.title}
+                fill
+                className="object-cover"
+                priority
+              />
+            )}
           </div>
           {article.imageAlt && (
             <figcaption className="text-sm text-gray-500 text-center mt-2">
@@ -137,7 +156,7 @@ export function ArticleContent({ article, className }: ArticleContentProps) {
               rel="noopener noreferrer"
               className="text-blue-600 hover:underline"
             >
-              {new URL(article.sourceUrl).hostname}
+              {getSourceHostname(article.sourceUrl)}
             </a>
           </p>
         </div>

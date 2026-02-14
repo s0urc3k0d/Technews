@@ -17,6 +17,7 @@ export function ArticleCard({ article, variant = 'default', className }: Article
   const typeIcon = getArticleTypeIcon(article.type);
   const imageUrl = article.imageUrl || article.featuredImage || null;
   const primaryCategory = article.category || article.categories?.[0] || null;
+  const isExternalImage = Boolean(imageUrl && /^https?:\/\//i.test(imageUrl));
   
   // Featured variant (large)
   if (variant === 'featured') {
@@ -26,13 +27,21 @@ export function ArticleCard({ article, variant = 'default', className }: Article
         className
       )}>
         {imageUrl && (
-          <Image
-            src={imageUrl}
-            alt={article.title}
-            fill
-            className="object-cover opacity-60 group-hover:opacity-70 transition-opacity"
-            priority
-          />
+          isExternalImage ? (
+            <img
+              src={imageUrl}
+              alt={article.title}
+              className="w-full h-full object-cover opacity-60 group-hover:opacity-70 transition-opacity"
+            />
+          ) : (
+            <Image
+              src={imageUrl}
+              alt={article.title}
+              fill
+              className="object-cover opacity-60 group-hover:opacity-70 transition-opacity"
+              priority
+            />
+          )
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
         <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-10">
@@ -78,13 +87,21 @@ export function ArticleCard({ article, variant = 'default', className }: Article
       <article className={cn('group flex gap-4', className)}>
         <Link href={`/article/${article.slug}`} className="shrink-0">
           <div className="relative w-32 h-24 md:w-48 md:h-32 rounded-lg overflow-hidden bg-gray-100">
-            {article.imageUrl ? (
+            {imageUrl ? (
+              isExternalImage ? (
+                <img
+                  src={imageUrl}
+                  alt={article.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                />
+              ) : (
               <Image
-                src={article.imageUrl}
+                src={imageUrl}
                 alt={article.title}
                 fill
                 className="object-cover group-hover:scale-105 transition-transform"
               />
+              )
             ) : (
               <div className="w-full h-full flex items-center justify-center text-4xl">
                 {typeIcon}
@@ -142,12 +159,20 @@ export function ArticleCard({ article, variant = 'default', className }: Article
       <Link href={`/article/${article.slug}`} className="block">
         <div className="relative aspect-[16/9] bg-gray-100">
           {imageUrl ? (
-            <Image
-              src={imageUrl}
-              alt={article.title}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform"
-            />
+            isExternalImage ? (
+              <img
+                src={imageUrl}
+                alt={article.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+              />
+            ) : (
+              <Image
+                src={imageUrl}
+                alt={article.title}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform"
+              />
+            )
           ) : (
             <div className="w-full h-full flex items-center justify-center text-5xl">
               {typeIcon}

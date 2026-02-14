@@ -3,6 +3,7 @@
 // ===========================================
 
 import { FastifyPluginAsync } from 'fastify';
+import { z } from 'zod';
 import { createRSSParserService, DEFAULT_RSS_FEED_URL } from '../services/rss.service.js';
 import { createNewsletterAIService } from '../services/newsletter-ai.service.js';
 
@@ -266,7 +267,17 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get<{ Querystring: { page?: number; limit?: number; jobName?: string } }>(
     '/logs',
     async (request, reply) => {
-      const { page = 1, limit = 20, jobName } = request.query;
+      const parseResult = z.object({
+        page: z.coerce.number().int().positive().default(1),
+        limit: z.coerce.number().int().positive().max(100).default(20),
+        jobName: z.string().optional(),
+      }).safeParse(request.query);
+
+      if (!parseResult.success) {
+        return reply.code(400).send({ error: 'Invalid query parameters', details: parseResult.error.issues });
+      }
+
+      const { page, limit, jobName } = parseResult.data;
       const skip = (page - 1) * limit;
 
       const where: any = {};

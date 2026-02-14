@@ -15,7 +15,12 @@ interface ArticleCardProps {
 
 export function ArticleCard({ article, variant = 'default', className }: ArticleCardProps) {
   const typeIcon = getArticleTypeIcon(article.type);
-  const imageUrl = article.imageUrl || article.featuredImage || null;
+  const extractFirstImageFromHtml = (html: string | null | undefined): string | null => {
+    if (!html) return null;
+    const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+    return match?.[1] || null;
+  };
+  const imageUrl = article.imageUrl || article.featuredImage || extractFirstImageFromHtml(article.content) || null;
   const primaryCategory = article.category || article.categories?.[0] || null;
   const isExternalImage = Boolean(imageUrl && /^https?:\/\//i.test(imageUrl));
   

@@ -107,6 +107,7 @@ export default function AdminWebhooksPage() {
         method: 'POST',
         headers: await buildAuthHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'include',
+        body: JSON.stringify({}),
       });
 
       if (!res.ok) {

@@ -127,7 +127,7 @@ export function createShortsService(prisma: PrismaClient, config: ShortsConfig) 
     const mistral = await getMistral();
     if (!mistral) {
       // Fallback si pas de Mistral : utiliser le titre
-      return title.length > 80 ? title.substring(0, 77) + '...' : title;
+      return title.trim();
     }
 
     try {
@@ -177,7 +177,7 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
       return summary.replace(/^["']|["']$/g, '').replace(/\.$/, '');
     } catch (error) {
       console.error('Erreur Mistral summary:', error);
-      return title.length > 80 ? title.substring(0, 77) + '...' : title;
+      return title.trim();
     }
   }
 
@@ -282,7 +282,7 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
       .trim();
 
     const candidate = cleaned.length >= 8 ? cleaned : fallback;
-    return candidate.length > 140 ? `${candidate.slice(0, 137)}...` : candidate;
+    return candidate;
   }
 
   /**
@@ -302,6 +302,21 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
     const startY = (VIDEO_CONFIG.height - totalTextHeight) / 2;
     const textPanelTop = Math.max(220, startY - 90);
     const textPanelHeight = Math.min(980, totalTextHeight + 180);
+
+    const rawCategory = category
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toUpperCase();
+    const safeCategory = rawCategory.length > 24 ? `${rawCategory.slice(0, 21)}...` : rawCategory;
+    const categoryLabel = `#${safeCategory}`;
+    const categoryFontSize = 28;
+    const categoryPaddingX = 44;
+    const estimatedCharWidth = 15;
+    const categoryBadgeWidth = Math.min(
+      VIDEO_CONFIG.width - 120,
+      Math.max(220, categoryLabel.length * estimatedCharWidth + categoryPaddingX)
+    );
+    const categoryBadgeX = (VIDEO_CONFIG.width - categoryBadgeWidth) / 2;
 
     // Générer les lignes de texte SVG
     const textLines = lines.map((line, index) => {
@@ -337,11 +352,11 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
         <rect width="100%" height="100%" fill="black" opacity="0.45"/>
         
         <!-- Badge catégorie -->
-        <rect x="${VIDEO_CONFIG.width / 2 - 100}" y="115" width="200" height="50" rx="10" fill="#3b82f6"/>
+        <rect x="${categoryBadgeX}" y="115" width="${categoryBadgeWidth}" height="50" rx="10" fill="#3b82f6"/>
         <text x="${VIDEO_CONFIG.width / 2}" y="145" 
               text-anchor="middle" dominant-baseline="middle"
-              font-family="Noto Sans, DejaVu Sans, Arial, Helvetica, sans-serif" font-size="28" font-weight="700" fill="white">
-          #${escapeXml(category.toUpperCase())}
+              font-family="Noto Sans, DejaVu Sans, Arial, Helvetica, sans-serif" font-size="${categoryFontSize}" font-weight="700" fill="white">
+          ${escapeXml(categoryLabel)}
         </text>
 
           <!-- Panneau contraste pour le texte -->

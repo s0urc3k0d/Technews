@@ -206,10 +206,10 @@ export function useDeleteBackground() {
 
 // Helper to get video URL
 export function getShortsVideoUrl() {
-  return `${API_BASE_URL}${API_ENDPOINTS.shortsVideo}`;
+  return '/api/admin/shorts/video';
 }
 
 // Helper to get thumbnail URL
 export function getShortsThumbnailUrl() {
-  return `${API_BASE_URL}${API_ENDPOINTS.shortsThumbnail}`;
+  return '/api/admin/shorts/thumbnail';
 }

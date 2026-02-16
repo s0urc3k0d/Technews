@@ -188,6 +188,7 @@ async function start() {
         mistralApiKey: server.config.MISTRAL_API_KEY,
         resendApiKey: server.config.RESEND_API_KEY,
         resendFromEmail: server.config.RESEND_FROM_EMAIL,
+        discordWebhookUrl: server.config.DISCORD_WEBHOOK_URL,
         siteUrl: server.config.NEXT_PUBLIC_SITE_URL,
         shortsDir: server.config.SHORTS_DIR,
       });

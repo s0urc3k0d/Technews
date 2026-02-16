@@ -108,7 +108,7 @@ export default async function HomePage() {
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
                 <h2 className="text-lg font-semibold mb-3">Newsletter hebdomadaire</h2>
                 <p className="text-gray-300 text-sm mb-4">
-                  Les meilleurs articles de la semaine, sélectionnés par notre IA.
+                  Les meilleurs articles de la semaine, sélectionnés par la rédaction.
                 </p>
                 <NewsletterForm variant="hero" />
               </div>

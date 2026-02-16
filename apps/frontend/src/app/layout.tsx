@@ -4,11 +4,11 @@
 
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import Script from 'next/script';
 import './globals.css';
 import { Providers } from '@/components/providers';
 import { Header, Footer } from '@/components/layout';
 import { SearchModal } from '@/components/ui';
+import { AdSenseGate } from '@/components/ads';
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from '@/lib/config';
 
 const inter = Inter({ subsets: ['latin'], preload: false, display: 'swap' });
@@ -71,15 +71,8 @@ export default function RootLayout({
         <meta name="google-adsense-account" content={ADSENSE_ID} />
       </head>
       <body className={`${inter.className} min-h-screen flex flex-col bg-gray-50`}>
-        {/* Google AdSense Script */}
-        <Script
-          id="adsense-script"
-          async
-          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_ID}`}
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
         <Providers>
+          <AdSenseGate clientId={ADSENSE_ID} />
           <Header />
           <main className="flex-1">
             {children}

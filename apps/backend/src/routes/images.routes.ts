@@ -12,6 +12,45 @@ const imagesRoutes: FastifyPluginAsync = async (fastify) => {
     parseInt(config.UPLOAD_MAX_SIZE_MB)
   );
 
+  // GET /images - List images (admin)
+  fastify.get(
+    '/',
+    { preHandler: [fastify.requireAdmin] },
+    async (request, reply) => {
+      const query = request.query as {
+        page?: string | number;
+        limit?: string | number;
+        articleId?: string;
+      };
+
+      const page = Math.max(1, Number(query.page || 1));
+      const limit = Math.min(100, Math.max(1, Number(query.limit || 24)));
+      const skip = (page - 1) * limit;
+
+      const where = query.articleId ? { articleId: query.articleId } : undefined;
+
+      const [images, total] = await Promise.all([
+        prisma.articleImage.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+        }),
+        prisma.articleImage.count({ where }),
+      ]);
+
+      return reply.send({
+        data: images,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
+    }
+  );
+
   // POST /images/upload - Upload image (admin)
   fastify.post(
     '/upload',

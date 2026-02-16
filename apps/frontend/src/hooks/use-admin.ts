@@ -142,6 +142,7 @@ export function useUploadImage() {
       return apiClient.upload<ArticleImage>(API_ENDPOINTS.imageUpload, formData);
     },
     onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: imageKeys.all });
       if (variables.articleId) {
         queryClient.invalidateQueries({ queryKey: imageKeys.byArticle(variables.articleId) });
       }

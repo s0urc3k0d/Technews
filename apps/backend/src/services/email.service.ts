@@ -72,7 +72,7 @@ export class EmailService {
 
     return this.send({
       to: email,
-      subject: 'Confirmez votre inscription à la newsletter TechNews',
+      subject: 'Confirmez votre inscription à la newsletter Revue Tech',
       html: `
         <!DOCTYPE html>
         <html>
@@ -82,7 +82,7 @@ export class EmailService {
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #0ea5e9; margin: 0;">TechNews</h1>
+            <h1 style="color: #0ea5e9; margin: 0;">Revue Tech</h1>
           </div>
           
           <h2>Bonjour ${name} ! 👋</h2>
@@ -104,12 +104,12 @@ export class EmailService {
           <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
           
           <p style="color: #999; font-size: 12px; text-align: center;">
-            TechNews - Actualités Tech & Podcasts
+            Revue Tech - Actualités Tech & Podcasts
           </p>
         </body>
         </html>
       `,
-      text: `Bonjour ${name}!\n\nMerci de vous être inscrit à la newsletter TechNews.\n\nConfirmez votre inscription: ${confirmUrl}\n\nSi vous n'avez pas demandé cette inscription, ignorez cet email.`,
+      text: `Bonjour ${name}!\n\nMerci de vous être inscrit à la newsletter Revue Tech.\n\nConfirmez votre inscription: ${confirmUrl}\n\nSi vous n'avez pas demandé cette inscription, ignorez cet email.`,
       tags: [{ name: 'category', value: 'confirmation' }],
     });
   }
@@ -137,7 +137,7 @@ export class EmailService {
         ${personalizedHtml}
         <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
         <p style="color: #999; font-size: 12px; text-align: center;">
-          Vous recevez cet email car vous êtes inscrit à la newsletter TechNews.<br>
+          Vous recevez cet email car vous êtes inscrit à la newsletter Revue Tech.<br>
           <a href="${unsubscribeUrl}" style="color: #999;">Se désinscrire</a>
         </p>
       `,
@@ -154,13 +154,13 @@ export class EmailService {
   ): Promise<SendResult> {
     return this.send({
       to: this.config.fromEmail, // Send to self
-      subject: `[TechNews Admin] ${subject}`,
+      subject: `[Revue Tech Admin] ${subject}`,
       html: `
         <div style="font-family: sans-serif; padding: 20px;">
           <h2>${subject}</h2>
           <p>${message}</p>
           <hr>
-          <p style="color: #666; font-size: 12px;">Notification automatique TechNews</p>
+          <p style="color: #666; font-size: 12px;">Notification automatique Revue Tech</p>
         </div>
       `,
       text: `${subject}\n\n${message}`,

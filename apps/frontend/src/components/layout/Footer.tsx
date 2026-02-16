@@ -36,8 +36,19 @@ export function Footer() {
           {/* Brand & Description */}
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <span className="text-3xl">🚀</span>
-              <span className="font-bold text-2xl">{SITE_NAME}</span>
+              <picture>
+                <source srcSet="/logo-revue-tech-nobg.avif" type="image/avif" />
+                <source srcSet="/logo-revue-tech-nobg.webp" type="image/webp" />
+                <img
+                  src="/logo-revue-tech-nobg.png"
+                  alt={SITE_NAME}
+                  width={220}
+                  height={56}
+                  className="h-10 w-auto"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </picture>
             </Link>
             <p className="text-gray-400 text-sm">
               {SITE_DESCRIPTION}

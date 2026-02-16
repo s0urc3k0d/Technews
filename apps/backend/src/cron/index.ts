@@ -17,12 +17,41 @@ interface CronConfig {
   mistralApiKey?: string;
   resendApiKey?: string;
   resendFromEmail?: string;
+  discordWebhookUrl?: string;
   siteUrl: string;
   shortsDir?: string;
 }
 
+const sendDiscordWebhook = async (
+  webhookUrl: string | undefined,
+  title: string,
+  description: string,
+  color: number = 0x0ea5e9
+) => {
+  if (!webhookUrl) return;
+
+  try {
+    await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        embeds: [
+          {
+            title,
+            description,
+            color,
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      }),
+    });
+  } catch (err) {
+    console.error('[CRON] Discord webhook error:', err);
+  }
+};
+
 export const setupCronJobs = (config: CronConfig) => {
-  const { prisma, mistralApiKey, resendApiKey, resendFromEmail, siteUrl, shortsDir } = config;
+  const { prisma, mistralApiKey, resendApiKey, resendFromEmail, discordWebhookUrl, siteUrl, shortsDir } = config;
   
   // Utiliser l'URL TechPulse par défaut si non spécifiée
   const rssUrl = config.rssUrl || DEFAULT_RSS_FEED_URL;
@@ -67,6 +96,14 @@ export const setupCronJobs = (config: CronConfig) => {
           `Connectez-vous à l'admin pour les valider et publier.`
         );
       }
+
+      if (result.imported > 0) {
+        await sendDiscordWebhook(
+          discordWebhookUrl,
+          'RSS import terminé',
+          `${result.imported} nouveaux articles importés\n${result.updated} mis à jour • ${result.skipped} ignorés`
+        );
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       await prisma.cronJobLog.update({
@@ -79,6 +116,12 @@ export const setupCronJobs = (config: CronConfig) => {
         },
       });
       console.error('[CRON] RSS parser failed:', err);
+      await sendDiscordWebhook(
+        discordWebhookUrl,
+        'RSS import échoué',
+        message,
+        0xef4444
+      );
     }
   });
 
@@ -139,6 +182,11 @@ export const setupCronJobs = (config: CronConfig) => {
       });
 
       console.log('[CRON] Newsletter generated:', newsletter.id);
+      await sendDiscordWebhook(
+        discordWebhookUrl,
+        'Newsletter générée',
+        `Newsletter ${newsletter.id} planifiée avec ${content.selectedArticleIds.length} articles`
+      );
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       await prisma.cronJobLog.update({
@@ -151,6 +199,12 @@ export const setupCronJobs = (config: CronConfig) => {
         },
       });
       console.error('[CRON] Newsletter generation failed:', err);
+      await sendDiscordWebhook(
+        discordWebhookUrl,
+        'Génération newsletter échouée',
+        message,
+        0xef4444
+      );
     }
   });
 
@@ -232,6 +286,11 @@ export const setupCronJobs = (config: CronConfig) => {
           });
 
           console.log(`[CRON] Newsletter sent: ${successful}/${subscribers.length}`);
+          await sendDiscordWebhook(
+            discordWebhookUrl,
+            'Newsletter envoyée',
+            `${successful}/${subscribers.length} emails envoyés (${newsletter.id})`
+          );
         } catch (err) {
           const message = err instanceof Error ? err.message : 'Unknown error';
 
@@ -251,6 +310,12 @@ export const setupCronJobs = (config: CronConfig) => {
           });
 
           console.error('[CRON] Newsletter send failed:', err);
+          await sendDiscordWebhook(
+            discordWebhookUrl,
+            'Envoi newsletter échoué',
+            message,
+            0xef4444
+          );
         }
       }
     });
@@ -293,6 +358,11 @@ export const setupCronJobs = (config: CronConfig) => {
           });
 
           console.log(`[CRON] Shorts video generated: ${result.slides.length} slides, duration: ${result.duration}s`);
+          await sendDiscordWebhook(
+            discordWebhookUrl,
+            'Short généré',
+            `${result.slides.length} slides • durée ${result.duration}s`
+          );
         } else {
           await prisma.cronJobLog.update({
             where: { id: log.id },
@@ -319,6 +389,12 @@ export const setupCronJobs = (config: CronConfig) => {
         });
 
         console.error('[CRON] Shorts generation failed:', err);
+        await sendDiscordWebhook(
+          discordWebhookUrl,
+          'Génération short échouée',
+          message,
+          0xef4444
+        );
       }
     });
 

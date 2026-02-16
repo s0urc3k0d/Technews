@@ -35,6 +35,9 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM_EMAIL: z.string().email().optional(),
 
+  // Webhooks
+  DISCORD_WEBHOOK_URL: z.string().url().optional(),
+
   // Mistral AI
   MISTRAL_API_KEY: z.string().optional(),
 

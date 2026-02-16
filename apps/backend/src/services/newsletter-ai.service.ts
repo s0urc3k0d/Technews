@@ -167,7 +167,7 @@ Réponds UNIQUEMENT avec les IDs des articles sélectionnés, séparés par des 
         day: 'numeric', 
         month: 'long' 
       });
-      return `TechNews du ${today} - ${articles.length} actus tech`;
+      return `Revue Tech du ${today} - ${articles.length} actus tech`;
     }
 
     const prompt = `Génère un objet d'email accrocheur pour une newsletter tech contenant ces articles:
@@ -212,7 +212,7 @@ Réponds UNIQUEMENT avec l'objet, sans guillemets.`;
       day: 'numeric', 
       month: 'long' 
     });
-    return `TechNews du ${today}`;
+    return `Revue Tech du ${today}`;
   }
 
   private generateHtmlContent(
@@ -258,7 +258,7 @@ Réponds UNIQUEMENT avec l'objet, sans guillemets.`;
       <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
         <div style="background-color: white; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 32px;">
-            <h1 style="color: #0ea5e9; margin: 0; font-size: 28px;">TechNews</h1>
+            <h1 style="color: #0ea5e9; margin: 0; font-size: 28px;">Revue Tech</h1>
             <p style="color: #666; margin: 8px 0 0 0;">Votre dose quotidienne d'actualités tech</p>
           </div>
           

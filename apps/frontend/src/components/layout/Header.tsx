@@ -17,7 +17,6 @@ const navigation = [
   { name: 'Accueil', href: '/' },
   { name: 'Articles', href: '/articles' },
   { name: 'Podcasts', href: '/podcasts' },
-  { name: 'Catégories', href: '/categories' },
 ];
 
 export function Header() {
@@ -30,6 +29,7 @@ export function Header() {
   const { toggleSearch } = useUIStore();
   const { data: categoriesData } = useCategories();
   const categories = categoriesData?.data ?? [];
+  const isCategoriesActive = pathname === '/categories' || pathname.startsWith('/category/');
 
   const adminHref = isAuthenticated ? '/admin' : '/api/auth/login?returnTo=/admin';
   const logoutHref = '/api/auth/logout?returnTo=/';
@@ -86,8 +86,19 @@ export function Header() {
         {/* Logo */}
         <div className="flex lg:flex-1">
           <Link href="/" className="-m-1.5 p-1.5 flex items-center gap-2">
-            <span className="text-2xl">🚀</span>
-            <span className="font-bold text-xl text-gray-900">{SITE_NAME}</span>
+            <picture>
+              <source srcSet="/logo-revue-tech-nobg.avif" type="image/avif" />
+              <source srcSet="/logo-revue-tech-nobg.webp" type="image/webp" />
+              <img
+                src="/logo-revue-tech-nobg.png"
+                alt={SITE_NAME}
+                width={180}
+                height={48}
+                className="h-9 w-auto"
+                loading="eager"
+                decoding="async"
+              />
+            </picture>
           </Link>
         </div>
 
@@ -125,14 +136,28 @@ export function Header() {
           {/* Categories Dropdown */}
           {categories.length > 0 && (
             <div className="relative group">
-              <button className="text-sm font-semibold leading-6 text-gray-900 hover:text-blue-600 flex items-center gap-1">
-                Plus
+              <Link
+                href="/categories"
+                className={cn(
+                  'text-sm font-semibold leading-6 transition-colors flex items-center gap-1',
+                  isCategoriesActive
+                    ? 'text-blue-600'
+                    : 'text-gray-900 hover:text-blue-600'
+                )}
+              >
+                Catégories
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
-              </button>
+              </Link>
               <div className="absolute left-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
                 <div className="bg-white rounded-lg shadow-lg ring-1 ring-black/5 p-2 min-w-[200px]">
+                  <Link
+                    href="/categories"
+                    className="block px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 rounded-md"
+                  >
+                    Voir toutes les catégories
+                  </Link>
                   {categories.slice(0, 8).map((category) => (
                     <Link
                       key={category.id}
@@ -191,8 +216,19 @@ export function Header() {
           <div className="fixed inset-y-0 right-0 z-[10000] w-full max-w-sm bg-white px-6 py-6 overflow-y-auto">
             <div className="flex items-center justify-between">
               <Link href="/" className="-m-1.5 p-1.5 flex items-center gap-2">
-                <span className="text-2xl">🚀</span>
-                <span className="font-bold text-xl">{SITE_NAME}</span>
+                <picture>
+                  <source srcSet="/logo-revue-tech-nobg.avif" type="image/avif" />
+                  <source srcSet="/logo-revue-tech-nobg.webp" type="image/webp" />
+                  <img
+                    src="/logo-revue-tech-nobg.png"
+                    alt={SITE_NAME}
+                    width={180}
+                    height={48}
+                    className="h-9 w-auto"
+                    loading="eager"
+                    decoding="async"
+                  />
+                </picture>
               </Link>
               <button
                 type="button"
@@ -223,6 +259,36 @@ export function Header() {
                       {item.name}
                     </Link>
                   ))}
+
+                  {categories.length > 0 && (
+                    <div className="pt-2">
+                      <Link
+                        href="/categories"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={cn(
+                          '-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7',
+                          isCategoriesActive
+                            ? 'bg-blue-50 text-blue-600'
+                            : 'text-gray-900 hover:bg-gray-50'
+                        )}
+                      >
+                        Catégories
+                      </Link>
+                      <div className="mt-2 space-y-1">
+                        {categories.slice(0, 8).map((category) => (
+                          <Link
+                            key={category.id}
+                            href={`/category/${category.slug}`}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="-mx-3 block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            {category.icon && <span className="mr-2">{category.icon}</span>}
+                            {category.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="py-6">
                   <Link

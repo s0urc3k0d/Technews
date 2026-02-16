@@ -39,11 +39,18 @@ interface ArticleFormData {
   slug: string;
   excerpt: string;
   content: string;
+  type: 'STANDARD' | 'PODCAST';
   coverImage: string;
   categoryId: string;
   tagIds: string[];
   status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
   publishedAt: string;
+  youtubeUrl: string;
+  spotifyUrl: string;
+  applePodcastUrl: string;
+  deezerUrl: string;
+  podcastSummary: string;
+  timestamps: string;
   metaTitle: string;
   metaDescription: string;
 }
@@ -55,11 +62,18 @@ const initialFormData: ArticleFormData = {
   slug: '',
   excerpt: '',
   content: '',
+  type: 'STANDARD',
   coverImage: '',
   categoryId: '',
   tagIds: [],
   status: 'DRAFT',
   publishedAt: '',
+  youtubeUrl: '',
+  spotifyUrl: '',
+  applePodcastUrl: '',
+  deezerUrl: '',
+  podcastSummary: '',
+  timestamps: '',
   metaTitle: '',
   metaDescription: '',
 };
@@ -121,11 +135,18 @@ export default function ArticleEditorPage() {
               slug: article.slug || '',
               excerpt: article.excerpt || '',
               content: article.content || '',
+              type: article.type || 'STANDARD',
               coverImage: article.featuredImage || article.coverImage || '',
               categoryId: article.categories?.[0]?.id || '',
               tagIds: article.tags?.map((t: Tag) => t.id) || [],
               status: article.status || 'DRAFT',
               publishedAt: article.publishedAt ? new Date(article.publishedAt).toISOString().slice(0, 16) : '',
+              youtubeUrl: article.youtubeUrl || '',
+              spotifyUrl: article.spotifyUrl || '',
+              applePodcastUrl: article.applePodcastUrl || '',
+              deezerUrl: article.deezerUrl || '',
+              podcastSummary: article.podcastSummary || '',
+              timestamps: article.timestamps || '',
               metaTitle: article.metaTitle || '',
               metaDescription: article.metaDescription || '',
             });
@@ -213,7 +234,14 @@ export default function ArticleEditorPage() {
         slug: dataToSubmit.slug,
         excerpt: dataToSubmit.excerpt || undefined,
         content: dataToSubmit.content,
+        type: dataToSubmit.type,
         featuredImage: dataToSubmit.coverImage || undefined,
+        youtubeUrl: dataToSubmit.youtubeUrl || undefined,
+        spotifyUrl: dataToSubmit.spotifyUrl || undefined,
+        applePodcastUrl: dataToSubmit.applePodcastUrl || undefined,
+        deezerUrl: dataToSubmit.deezerUrl || undefined,
+        podcastSummary: dataToSubmit.podcastSummary || undefined,
+        timestamps: dataToSubmit.timestamps || undefined,
         status: dataToSubmit.status,
         publishedAt: dataToSubmit.publishedAt || null,
         metaTitle: dataToSubmit.metaTitle || undefined,
@@ -408,6 +436,21 @@ export default function ArticleEditorPage() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Type
+                    </label>
+                    <select
+                      name="type"
+                      value={formData.type}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="STANDARD">Article</option>
+                      <option value="PODCAST">Podcast</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Statut
                     </label>
                     <select
@@ -545,6 +588,80 @@ export default function ArticleEditorPage() {
               </div>
 
               {/* SEO */}
+              {formData.type === 'PODCAST' && (
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h3 className="font-semibold text-gray-900 mb-4">Plateformes podcast</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">YouTube URL</label>
+                      <input
+                        type="url"
+                        name="youtubeUrl"
+                        value={formData.youtubeUrl}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="https://youtube.com/watch?v=..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Spotify URL</label>
+                      <input
+                        type="url"
+                        name="spotifyUrl"
+                        value={formData.spotifyUrl}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="https://open.spotify.com/episode/..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Apple Podcasts URL</label>
+                      <input
+                        type="url"
+                        name="applePodcastUrl"
+                        value={formData.applePodcastUrl}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="https://podcasts.apple.com/..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Deezer URL</label>
+                      <input
+                        type="url"
+                        name="deezerUrl"
+                        value={formData.deezerUrl}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="https://www.deezer.com/..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Résumé podcast</label>
+                      <textarea
+                        name="podcastSummary"
+                        value={formData.podcastSummary}
+                        onChange={handleChange}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="Résumé de l'épisode"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Timestamps</label>
+                      <textarea
+                        name="timestamps"
+                        value={formData.timestamps}
+                        onChange={handleChange}
+                        rows={4}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder={"00:00 Intro\n03:12 Sujet 1\n12:40 Sujet 2"}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="bg-white rounded-lg shadow p-6">
                 <h3 className="font-semibold text-gray-900 mb-4">SEO</h3>
                 <div className="space-y-4">

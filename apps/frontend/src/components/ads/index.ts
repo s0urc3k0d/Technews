@@ -11,3 +11,4 @@ export {
   AdSenseScript,
   useAdConsent,
 } from './AdSense';
+export { AdSenseGate } from './AdSenseGate';

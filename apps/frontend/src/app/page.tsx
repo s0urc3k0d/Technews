@@ -127,7 +127,7 @@ export default async function HomePage() {
                 {latestPodcast && (
                   <div>
                     <p className="text-sm uppercase tracking-wide text-purple-300 mb-2">À la une · Podcast</p>
-                    <ArticleCard article={latestPodcast} />
+                    <ArticleCard article={latestPodcast} variant="featured" />
                   </div>
                 )}
               </div>

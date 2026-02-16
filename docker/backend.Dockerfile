@@ -15,7 +15,10 @@ RUN apk add --no-cache \
     build-base \
     g++ \
     ffmpeg \
-    python3
+    python3 \
+    fontconfig \
+    ttf-dejavu \
+    font-noto
 
 # ===========================================
 # Dependencies stage
@@ -67,7 +70,10 @@ RUN apk add --no-cache \
     ffmpeg \
     openssl \
     openssl-dev \
-    wget
+    wget \
+    fontconfig \
+    ttf-dejavu \
+    font-noto
 
 WORKDIR /app
 
@@ -93,6 +99,9 @@ COPY --from=builder --chown=fastify:nodejs /app/scripts ./scripts
 
 # Generate Prisma client with the installed version
 RUN npx prisma@5.22.0 generate --schema=./prisma/schema.prisma
+
+# Refresh font cache for SVG/Pango text rendering in shorts generation
+RUN fc-cache -f -v
 
 # Make post-deploy script executable
 RUN chmod +x /app/scripts/post-deploy.sh

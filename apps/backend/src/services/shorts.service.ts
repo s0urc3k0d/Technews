@@ -77,6 +77,12 @@ interface ShortsConfig {
   tempDir: string;
 }
 
+function formatShortDate(date: Date): string {
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  return `${day}/${month}`;
+}
+
 export function createShortsService(prisma: PrismaClient, config: ShortsConfig) {
   // Mistral client will be loaded lazily
   let mistralPromise: Promise<any> | null = null;
@@ -418,24 +424,118 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
   }
 
   /**
+   * Crée une slide spéciale d'intro ou de fin
+   */
+  async function createSpecialSlideImage(
+    type: 'intro' | 'outro',
+    dateLabel: string,
+    slideNumber: number,
+    totalSlides: number
+  ): Promise<string> {
+    const dotRadius = 8;
+    const dotSpacing = 30;
+    const dotsWidth = (totalSlides - 1) * dotSpacing;
+    const dotsStartX = (VIDEO_CONFIG.width - dotsWidth) / 2;
+    const dotsY = VIDEO_CONFIG.height - 150;
+
+    const dots = Array.from({ length: totalSlides }, (_, i) => {
+      const fill = i === slideNumber ? '#3b82f6' : 'rgba(255, 255, 255, 0.5)';
+      return `<circle cx="${dotsStartX + i * dotSpacing}" cy="${dotsY}" r="${dotRadius}" fill="${fill}"/>`;
+    }).join('\n');
+
+    const isIntro = type === 'intro';
+    const badgeText = isIntro ? `NEWS DU ${dateLabel}` : 'REVUE TECH';
+    const mainText = isIntro ? 'Les actus tech essentielles en 60 secondes' : 'Plus d\'infos sur revuetech.fr';
+    const subText = isIntro ? 'Swipe pour le résumé du jour' : 'Retrouve tous les articles sur le site';
+
+    const overlaySvg = `
+      <svg width="${VIDEO_CONFIG.width}" height="${VIDEO_CONFIG.height}">
+        <rect width="100%" height="100%" fill="black" opacity="0.42"/>
+
+        <rect x="250" y="320" width="580" height="70" rx="14" fill="#3b82f6"/>
+        <text x="${VIDEO_CONFIG.width / 2}" y="365"
+              text-anchor="middle" dominant-baseline="middle"
+              font-family="Noto Sans, DejaVu Sans, Arial, Helvetica, sans-serif" font-size="34" font-weight="800" fill="white">
+          ${escapeXml(badgeText)}
+        </text>
+
+        <rect x="90" y="730" width="900" height="390" rx="30" fill="rgba(10, 17, 32, 0.55)"/>
+        <text x="${VIDEO_CONFIG.width / 2}" y="860"
+              text-anchor="middle"
+              font-family="Noto Sans, DejaVu Sans, Arial, Helvetica, sans-serif" font-size="62" font-weight="800"
+              fill="white" stroke="rgba(0,0,0,0.75)" stroke-width="6" paint-order="stroke fill">
+          ${isIntro ? 'RevueTech' : 'Merci de suivre'}
+        </text>
+        <text x="${VIDEO_CONFIG.width / 2}" y="960"
+              text-anchor="middle"
+              font-family="Noto Sans, DejaVu Sans, Arial, Helvetica, sans-serif" font-size="42" font-weight="700"
+              fill="white">
+          ${escapeXml(mainText)}
+        </text>
+        <text x="${VIDEO_CONFIG.width / 2}" y="1035"
+              text-anchor="middle"
+              font-family="Noto Sans, DejaVu Sans, Arial, Helvetica, sans-serif" font-size="34" font-weight="600"
+              fill="rgba(255,255,255,0.9)">
+          ${escapeXml(subText)}
+        </text>
+
+        ${dots}
+
+        <text x="${VIDEO_CONFIG.width / 2}" y="${VIDEO_CONFIG.height - 80}"
+              text-anchor="middle" font-family="Noto Sans, DejaVu Sans, Arial, Helvetica, sans-serif"
+              font-size="28" font-weight="700" fill="white" opacity="0.7">
+          RevueTech.fr
+        </text>
+      </svg>
+    `;
+
+    const gradientBuffer = await createGradientBackground();
+    const slidePath = path.join(config.tempDir, `${type}_slide.png`);
+
+    await sharp(gradientBuffer)
+      .resize(VIDEO_CONFIG.width, VIDEO_CONFIG.height)
+      .composite([
+        {
+          input: Buffer.from(overlaySvg),
+          top: 0,
+          left: 0,
+        },
+      ])
+      .png()
+      .toFile(slidePath);
+
+    return slidePath;
+  }
+
+  /**
    * Assemble les images en vidéo avec FFmpeg
    */
   async function assembleVideo(slidePaths: string[], outputPath: string): Promise<void> {
-    // Créer le fichier de liste pour FFmpeg
-    const listPath = path.join(config.tempDir, 'slides.txt');
-    const listContent = slidePaths
-      .map(p => `file '${p}'\nduration ${VIDEO_CONFIG.slideDuration}`)
-      .join('\n');
-    // Ajouter la dernière image sans durée (requis par FFmpeg)
-    const fullContent = listContent + `\nfile '${slidePaths[slidePaths.length - 1]}'`;
-    await fs.writeFile(listPath, fullContent);
+    const inputArgs = slidePaths
+      .map(slidePath => `-loop 1 -t ${VIDEO_CONFIG.slideDuration} -i "${slidePath}"`)
+      .join(' ');
 
-    // Commande FFmpeg pour créer la vidéo avec fade entre les slides
-    const ffmpegCmd = `ffmpeg -y -f concat -safe 0 -i "${listPath}" \
-      -vf "fps=${VIDEO_CONFIG.fps},format=yuv420p" \
-      -c:v libx264 -preset medium -crf 23 \
-      -movflags +faststart \
-      "${outputPath}"`;
+    const preprocessed = slidePaths.map((_, index) => {
+      return `[${index}:v]scale=${VIDEO_CONFIG.width}:${VIDEO_CONFIG.height},fps=${VIDEO_CONFIG.fps},format=yuv420p,setsar=1[v${index}]`;
+    }).join(';');
+
+    let transitionChain = '';
+    if (slidePaths.length === 1) {
+      transitionChain = '[v0]format=yuv420p[vout]';
+    } else {
+      let currentLabel = 'v0';
+      for (let i = 1; i < slidePaths.length; i++) {
+        const offset = i * (VIDEO_CONFIG.slideDuration - VIDEO_CONFIG.transitionDuration);
+        const outputLabel = i === slidePaths.length - 1 ? 'vout' : `vx${i}`;
+        transitionChain += `[${currentLabel}][v${i}]xfade=transition=fade:duration=${VIDEO_CONFIG.transitionDuration}:offset=${offset}[${outputLabel}];`;
+        currentLabel = outputLabel;
+      }
+      transitionChain = transitionChain.slice(0, -1);
+    }
+
+    const filterComplex = `${preprocessed};${transitionChain}`;
+
+    const ffmpegCmd = `ffmpeg -y ${inputArgs} -filter_complex "${filterComplex}" -map "[vout]" -c:v libx264 -preset medium -crf 23 -movflags +faststart "${outputPath}"`;
 
     try {
       await execAsync(ffmpegCmd);
@@ -568,8 +668,14 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
 
     // Générer les slides
     const slides: ShortSlide[] = [];
-    const slidePaths: string[] = [];
+    const articleSlidePaths: string[] = [];
+    const allSlidePaths: string[] = [];
     const categories: string[] = [];
+    const totalSlides = articles.length + 2;
+    const dateLabel = formatShortDate(new Date());
+
+    const introSlidePath = await createSpecialSlideImage('intro', dateLabel, 0, totalSlides);
+    allSlidePaths.push(introSlidePath);
 
     for (let i = 0; i < articles.length; i++) {
       const article = articles[i];
@@ -588,8 +694,8 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
         backgroundPath,
         summary,
         category,
-        i,
-        articles.length
+        i + 1,
+        totalSlides
       );
 
       slides.push({
@@ -600,18 +706,22 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
         imagePath: slidePath,
       });
 
-      slidePaths.push(slidePath);
+      articleSlidePaths.push(slidePath);
+      allSlidePaths.push(slidePath);
       console.log(`Slide ${i + 1}/${articles.length} créée: ${summary}`);
     }
 
+    const outroSlidePath = await createSpecialSlideImage('outro', dateLabel, totalSlides - 1, totalSlides);
+    allSlidePaths.push(outroSlidePath);
+
     // Assembler la vidéo
     const videoPath = path.join(config.shortsDir, 'current.mp4');
-    await assembleVideo(slidePaths, videoPath);
+    await assembleVideo(allSlidePaths, videoPath);
     console.log('Vidéo assemblée avec succès');
 
     // Générer la miniature
     const thumbnailPath = path.join(config.shortsDir, 'thumbnail.png');
-    const firstSlide = slidePaths[0];
+    const firstSlide = articleSlidePaths[0] || allSlidePaths[0];
     if (firstSlide) {
       await generateThumbnail(firstSlide, thumbnailPath);
     }
@@ -621,7 +731,9 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
     const tagsYouTube = generateYouTubeTags(categories);
 
     // Calculer la durée
-    const duration = articles.length * VIDEO_CONFIG.slideDuration;
+    const duration =
+      allSlidePaths.length * VIDEO_CONFIG.slideDuration -
+      Math.max(0, allSlidePaths.length - 1) * VIDEO_CONFIG.transitionDuration;
 
     // Sauvegarder les métadonnées
     const metadata: GeneratedShort = {
@@ -638,7 +750,7 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
     await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
 
     // Nettoyer les fichiers temporaires
-    for (const slidePath of slidePaths) {
+    for (const slidePath of allSlidePaths) {
       await fs.unlink(slidePath).catch(() => {});
     }
     await fs.unlink(path.join(config.tempDir, 'slides.txt')).catch(() => {});

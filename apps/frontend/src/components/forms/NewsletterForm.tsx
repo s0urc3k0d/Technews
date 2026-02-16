@@ -85,7 +85,7 @@ export function NewsletterForm({ variant = 'default', className }: NewsletterFor
           value={firstName}
           onChange={(e) => setFirstName(e.target.value)}
           placeholder="Prénom (optionnel)"
-          className="w-full px-5 py-4 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-5 py-4 text-lg bg-white text-gray-900 placeholder-gray-500 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
         <input
           type="email"
@@ -93,7 +93,7 @@ export function NewsletterForm({ variant = 'default', className }: NewsletterFor
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Votre email"
           required
-          className="w-full min-w-0 px-5 py-4 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full min-w-0 px-5 py-4 text-lg bg-white text-gray-900 placeholder-gray-500 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
         <button
           type="submit"
@@ -123,7 +123,7 @@ export function NewsletterForm({ variant = 'default', className }: NewsletterFor
           onChange={(e) => setEmail(e.target.value)}
           placeholder="vous@exemple.com"
           required
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-500 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
       </div>
       <button

@@ -245,6 +245,24 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
   }
 
   /**
+   * Nettoie le texte pour un rendu SVG fiable
+   */
+  function sanitizeSummaryForSlide(summary: string, fallbackTitle: string): string {
+    const source = (summary || '').trim();
+    const fallback = (fallbackTitle || '').trim();
+
+    const cleaned = source
+      .replace(/https?:\/\/\S+/gi, ' ')
+      .replace(/[#*_`~\[\](){}<>|]/g, ' ')
+      .replace(/[\u{1F300}-\u{1FAFF}]/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const candidate = cleaned.length >= 8 ? cleaned : fallback;
+    return candidate.length > 140 ? `${candidate.slice(0, 137)}...` : candidate;
+  }
+
+  /**
    * Crée une image slide avec le texte superposé en utilisant Sharp
    */
   async function createSlideImage(
@@ -259,6 +277,8 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
     const lineHeight = VIDEO_CONFIG.fontSize * 1.4;
     const totalTextHeight = lines.length * lineHeight;
     const startY = (VIDEO_CONFIG.height - totalTextHeight) / 2;
+    const textPanelTop = Math.max(220, startY - 90);
+    const textPanelHeight = Math.min(980, totalTextHeight + 180);
 
     // Générer les lignes de texte SVG
     const textLines = lines.map((line, index) => {
@@ -267,14 +287,9 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
       return `
         <text x="${VIDEO_CONFIG.width / 2}" y="${y}" 
               text-anchor="middle" dominant-baseline="middle"
-              font-family="Arial, sans-serif" font-size="${VIDEO_CONFIG.fontSize}" font-weight="bold"
-              fill="black" opacity="0.8">
-          ${escapedLine}
-        </text>
-        <text x="${VIDEO_CONFIG.width / 2 - 2}" y="${y - 2}" 
-              text-anchor="middle" dominant-baseline="middle"
-              font-family="Arial, sans-serif" font-size="${VIDEO_CONFIG.fontSize}" font-weight="bold"
-              fill="${VIDEO_CONFIG.textColor}">
+              font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="${VIDEO_CONFIG.fontSize}" font-weight="700"
+              fill="${VIDEO_CONFIG.textColor}" stroke="rgba(0,0,0,0.75)" stroke-width="6" paint-order="stroke fill"
+              letter-spacing="0.2">
           ${escapedLine}
         </text>
       `;
@@ -296,15 +311,18 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
     const overlaySvg = `
       <svg width="${VIDEO_CONFIG.width}" height="${VIDEO_CONFIG.height}">
         <!-- Overlay semi-transparent -->
-        <rect width="100%" height="100%" fill="black" opacity="0.5"/>
+        <rect width="100%" height="100%" fill="black" opacity="0.45"/>
         
         <!-- Badge catégorie -->
         <rect x="${VIDEO_CONFIG.width / 2 - 100}" y="115" width="200" height="50" rx="10" fill="#3b82f6"/>
         <text x="${VIDEO_CONFIG.width / 2}" y="145" 
               text-anchor="middle" dominant-baseline="middle"
-              font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white">
+            font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="28" font-weight="700" fill="white">
           #${escapeXml(category.toUpperCase())}
         </text>
+
+          <!-- Panneau contraste pour le texte -->
+          <rect x="80" y="${textPanelTop}" width="920" height="${textPanelHeight}" rx="28" fill="rgba(10, 17, 32, 0.52)"/>
         
         <!-- Texte principal -->
         ${textLines}
@@ -314,8 +332,8 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
         
         <!-- Watermark -->
         <text x="${VIDEO_CONFIG.width / 2}" y="${VIDEO_CONFIG.height - 80}" 
-              text-anchor="middle" font-family="Arial, sans-serif" 
-              font-size="28" font-weight="bold" fill="white" opacity="0.7">
+              text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" 
+              font-size="28" font-weight="700" fill="white" opacity="0.7">
           RevueTech.fr
         </text>
       </svg>
@@ -519,7 +537,8 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
       const article = articles[i];
       if (!article) continue;
       
-      const summary = await generateSummary(article.title, article.excerpt || '');
+      const rawSummary = await generateSummary(article.title, article.excerpt || '');
+      const summary = sanitizeSummaryForSlide(rawSummary, article.title);
       const backgroundPath = await getRandomBackground();
       const category = article.categories?.[0]?.category?.name || 'Tech';
       

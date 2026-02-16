@@ -14,6 +14,7 @@ import {
 } from '../schemas/index.js';
 import { ArticleStatus } from '@prisma/client';
 import { createSocialService } from '../services/social.service.js';
+import { sendDiscordWebhookEvent } from '../services/webhook.service.js';
 
 const articlesRoutes: FastifyPluginAsync = async (fastify) => {
   const { prisma } = fastify;
@@ -311,6 +312,34 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
         },
       });
 
+      if (article.status === ArticleStatus.PUBLISHED) {
+        await sendDiscordWebhookEvent(
+          fastify.redis,
+          fastify.config.DISCORD_WEBHOOK_URL,
+          'article_published',
+          'Article publié',
+          article.title,
+          0x22c55e,
+          {
+            slug: article.slug,
+            url: `${fastify.config.NEXT_PUBLIC_SITE_URL}/article/${article.slug}`,
+          }
+        );
+      } else {
+        await sendDiscordWebhookEvent(
+          fastify.redis,
+          fastify.config.DISCORD_WEBHOOK_URL,
+          'article_created',
+          'Article créé',
+          article.title,
+          0x3b82f6,
+          {
+            slug: article.slug,
+            status: article.status,
+          }
+        );
+      }
+
       return reply.code(201).send({
         data: {
           ...article,
@@ -378,6 +407,35 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
         },
       });
 
+      const becamePublished = article.status === ArticleStatus.PUBLISHED && existing.status !== ArticleStatus.PUBLISHED;
+      if (becamePublished) {
+        await sendDiscordWebhookEvent(
+          fastify.redis,
+          fastify.config.DISCORD_WEBHOOK_URL,
+          'article_published',
+          'Article publié',
+          article.title,
+          0x22c55e,
+          {
+            slug: article.slug,
+            url: `${fastify.config.NEXT_PUBLIC_SITE_URL}/article/${article.slug}`,
+          }
+        );
+      } else {
+        await sendDiscordWebhookEvent(
+          fastify.redis,
+          fastify.config.DISCORD_WEBHOOK_URL,
+          'article_updated',
+          'Article mis à jour',
+          article.title,
+          0x0ea5e9,
+          {
+            slug: article.slug,
+            status: article.status,
+          }
+        );
+      }
+
       return reply.send({
         data: {
           ...article,
@@ -422,6 +480,19 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
           shareOnPublish: shareOnPublish ?? false,
         },
       });
+
+      await sendDiscordWebhookEvent(
+        fastify.redis,
+        fastify.config.DISCORD_WEBHOOK_URL,
+        'article_published',
+        'Article publié',
+        article.title,
+        0x22c55e,
+        {
+          slug: article.slug,
+          url: `${fastify.config.NEXT_PUBLIC_SITE_URL}/article/${article.slug}`,
+        }
+      );
 
       // Partager sur les réseaux sociaux si demandé
       let socialResults = null;

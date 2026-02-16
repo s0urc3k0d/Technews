@@ -6,6 +6,11 @@ import { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { createRSSParserService, DEFAULT_RSS_FEED_URL } from '../services/rss.service.js';
 import { createNewsletterAIService } from '../services/newsletter-ai.service.js';
+import {
+  WEBHOOK_EVENTS,
+  getWebhookSettings,
+  saveWebhookSettings,
+} from '../services/webhook.service.js';
 
 const adminRoutes: FastifyPluginAsync = async (fastify) => {
   const { prisma, config } = fastify;
@@ -304,6 +309,64 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
       });
     }
   );
+
+  // GET /admin/webhooks - Webhook settings
+  fastify.get('/webhooks', async (request, reply) => {
+    const settings = await getWebhookSettings(fastify.redis, config.DISCORD_WEBHOOK_URL);
+    return reply.send({
+      data: settings,
+      events: WEBHOOK_EVENTS,
+    });
+  });
+
+  // PUT /admin/webhooks - Save webhook settings
+  fastify.put('/webhooks', async (request, reply) => {
+    const parseResult = z.object({
+      enabled: z.boolean().default(false),
+      url: z.string().url().or(z.literal('')).default(''),
+      events: z.array(z.enum(WEBHOOK_EVENTS)).default([]),
+    }).safeParse(request.body);
+
+    if (!parseResult.success) {
+      return reply.status(400).send({ error: 'Invalid body', details: parseResult.error.issues });
+    }
+
+    const saved = await saveWebhookSettings(fastify.redis, parseResult.data);
+    return reply.send({ data: saved });
+  });
+
+  // POST /admin/webhooks/test - Send test notification
+  fastify.post('/webhooks/test', async (request, reply) => {
+    const settings = await getWebhookSettings(fastify.redis, config.DISCORD_WEBHOOK_URL);
+    if (!settings.enabled || !settings.url) {
+      return reply.status(400).send({
+        error: 'Webhook not sent',
+        message: 'Vérifiez que le webhook est activé et qu’une URL est configurée.',
+      });
+    }
+
+    try {
+      await fetch(settings.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          embeds: [
+            {
+              title: 'Test webhook Revue Tech',
+              description: 'Ce message confirme que votre webhook Discord est opérationnel.',
+              color: 0x22c55e,
+              timestamp: new Date().toISOString(),
+              footer: { text: 'Revue Tech • manual-test' },
+            },
+          ],
+        }),
+      });
+    } catch {
+      return reply.status(500).send({ error: 'Failed to send test webhook' });
+    }
+
+    return reply.send({ success: true, message: 'Notification de test envoyée.' });
+  });
 };
 
 export default adminRoutes;

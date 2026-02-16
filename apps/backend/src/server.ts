@@ -183,6 +183,7 @@ async function start() {
     if (server.config.ENABLE_CRON === 'true') {
       setupCronJobs({
         prisma: server.prisma,
+        redis: server.redis,
         rssUrl: server.config.RSS_FEED_URL,
         rssMaxAgeDays: parseInt(server.config.RSS_MAX_AGE_DAYS, 10) || 10,
         mistralApiKey: server.config.MISTRAL_API_KEY,

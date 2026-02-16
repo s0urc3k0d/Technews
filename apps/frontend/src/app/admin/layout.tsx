@@ -24,6 +24,7 @@ const adminNavigation = [
   { name: 'Newsletter', href: '/admin/newsletter', icon: '📬' },
   { name: 'Shorts', href: '/admin/shorts', icon: '🎬' },
   { name: 'Social', href: '/admin/social', icon: '🌐' },
+  { name: 'Webhooks', href: '/admin/webhooks', icon: '🔔' },
   { name: 'Images', href: '/admin/images', icon: '🖼️' },
 ];
 

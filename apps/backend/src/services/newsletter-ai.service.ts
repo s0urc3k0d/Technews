@@ -240,10 +240,10 @@ Réponds UNIQUEMENT avec l'objet, sans guillemets.`;
           ${imageUrl ? `<img src="${imageUrl}" alt="${article.title}" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">` : ''}
           <div style="margin-bottom: 8px;">${categoryBadges}</div>
           <h3 style="margin: 0 0 8px 0; font-size: 18px;">
-            <a href="${this.siteUrl}/articles/${article.slug}" style="color: #1a1a1a; text-decoration: none;">${article.title}</a>
+            <a href="${this.siteUrl}/article/${article.slug}" style="color: #1a1a1a; text-decoration: none;">${article.title}</a>
           </h3>
           <p style="color: #666; font-size: 14px; margin: 0 0 12px 0;">${article.excerpt || ''}</p>
-          <a href="${this.siteUrl}/articles/${article.slug}" style="color: #0ea5e9; font-size: 14px; text-decoration: none; font-weight: 500;">Lire l'article →</a>
+          <a href="${this.siteUrl}/article/${article.slug}" style="color: #0ea5e9; font-size: 14px; text-decoration: none; font-weight: 500;">Lire l'article →</a>
         </div>
       `;
     }).join('');

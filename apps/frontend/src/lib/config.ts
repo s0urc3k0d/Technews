@@ -61,6 +61,8 @@ export const API_ENDPOINTS = {
   adminRssParse: '/api/v1/admin/rss/parse',
   adminNewsletterGenerate: '/api/v1/admin/newsletter/generate',
   adminLogs: '/api/v1/admin/logs',
+  adminWebhooks: '/api/v1/admin/webhooks',
+  adminWebhookTest: '/api/v1/admin/webhooks/test',
 
   // Social
   socialConnections: '/api/v1/social/connections',

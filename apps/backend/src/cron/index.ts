@@ -4,14 +4,17 @@
 
 import * as cron from 'node-cron';
 import { PrismaClient } from '@prisma/client';
+import type { Redis } from 'ioredis';
 import { createRSSParserService, DEFAULT_RSS_FEED_URL } from '../services/rss.service.js';
 import { createNewsletterAIService } from '../services/newsletter-ai.service.js';
 import { createEmailService } from '../services/email.service.js';
 import { createShortsService } from '../services/shorts.service.js';
+import { sendDiscordWebhookEvent } from '../services/webhook.service.js';
 import * as path from 'path';
 
 interface CronConfig {
   prisma: PrismaClient;
+  redis: Redis;
   rssUrl?: string;
   rssMaxAgeDays?: number;
   mistralApiKey?: string;
@@ -22,36 +25,8 @@ interface CronConfig {
   shortsDir?: string;
 }
 
-const sendDiscordWebhook = async (
-  webhookUrl: string | undefined,
-  title: string,
-  description: string,
-  color: number = 0x0ea5e9
-) => {
-  if (!webhookUrl) return;
-
-  try {
-    await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        embeds: [
-          {
-            title,
-            description,
-            color,
-            timestamp: new Date().toISOString(),
-          },
-        ],
-      }),
-    });
-  } catch (err) {
-    console.error('[CRON] Discord webhook error:', err);
-  }
-};
-
 export const setupCronJobs = (config: CronConfig) => {
-  const { prisma, mistralApiKey, resendApiKey, resendFromEmail, discordWebhookUrl, siteUrl, shortsDir } = config;
+  const { prisma, redis, mistralApiKey, resendApiKey, resendFromEmail, discordWebhookUrl, siteUrl, shortsDir } = config;
   
   // Utiliser l'URL TechPulse par défaut si non spécifiée
   const rssUrl = config.rssUrl || DEFAULT_RSS_FEED_URL;
@@ -98,8 +73,10 @@ export const setupCronJobs = (config: CronConfig) => {
       }
 
       if (result.imported > 0) {
-        await sendDiscordWebhook(
+        await sendDiscordWebhookEvent(
+          redis,
           discordWebhookUrl,
+          'rss_import',
           'RSS import terminé',
           `${result.imported} nouveaux articles importés\n${result.updated} mis à jour • ${result.skipped} ignorés`
         );
@@ -116,8 +93,10 @@ export const setupCronJobs = (config: CronConfig) => {
         },
       });
       console.error('[CRON] RSS parser failed:', err);
-      await sendDiscordWebhook(
+      await sendDiscordWebhookEvent(
+        redis,
         discordWebhookUrl,
+        'job_failed',
         'RSS import échoué',
         message,
         0xef4444
@@ -182,8 +161,10 @@ export const setupCronJobs = (config: CronConfig) => {
       });
 
       console.log('[CRON] Newsletter generated:', newsletter.id);
-      await sendDiscordWebhook(
+      await sendDiscordWebhookEvent(
+        redis,
         discordWebhookUrl,
+        'newsletter_generated',
         'Newsletter générée',
         `Newsletter ${newsletter.id} planifiée avec ${content.selectedArticleIds.length} articles`
       );
@@ -199,8 +180,10 @@ export const setupCronJobs = (config: CronConfig) => {
         },
       });
       console.error('[CRON] Newsletter generation failed:', err);
-      await sendDiscordWebhook(
+      await sendDiscordWebhookEvent(
+        redis,
         discordWebhookUrl,
+        'job_failed',
         'Génération newsletter échouée',
         message,
         0xef4444
@@ -286,8 +269,10 @@ export const setupCronJobs = (config: CronConfig) => {
           });
 
           console.log(`[CRON] Newsletter sent: ${successful}/${subscribers.length}`);
-          await sendDiscordWebhook(
+          await sendDiscordWebhookEvent(
+            redis,
             discordWebhookUrl,
+            'newsletter_sent',
             'Newsletter envoyée',
             `${successful}/${subscribers.length} emails envoyés (${newsletter.id})`
           );
@@ -310,8 +295,10 @@ export const setupCronJobs = (config: CronConfig) => {
           });
 
           console.error('[CRON] Newsletter send failed:', err);
-          await sendDiscordWebhook(
+          await sendDiscordWebhookEvent(
+            redis,
             discordWebhookUrl,
+            'job_failed',
             'Envoi newsletter échoué',
             message,
             0xef4444
@@ -358,8 +345,10 @@ export const setupCronJobs = (config: CronConfig) => {
           });
 
           console.log(`[CRON] Shorts video generated: ${result.slides.length} slides, duration: ${result.duration}s`);
-          await sendDiscordWebhook(
+          await sendDiscordWebhookEvent(
+            redis,
             discordWebhookUrl,
+            'short_generated',
             'Short généré',
             `${result.slides.length} slides • durée ${result.duration}s`
           );
@@ -389,8 +378,10 @@ export const setupCronJobs = (config: CronConfig) => {
         });
 
         console.error('[CRON] Shorts generation failed:', err);
-        await sendDiscordWebhook(
+        await sendDiscordWebhookEvent(
+          redis,
           discordWebhookUrl,
+          'job_failed',
           'Génération short échouée',
           message,
           0xef4444

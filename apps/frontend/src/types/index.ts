@@ -30,6 +30,12 @@ export interface Article {
   podcastUrl: string | null;
   podcastDuration: number | null;
   videoUrl: string | null;
+  youtubeUrl?: string | null;
+  spotifyUrl?: string | null;
+  applePodcastUrl?: string | null;
+  deezerUrl?: string | null;
+  podcastSummary?: string | null;
+  timestamps?: string | null;
   category?: Category | null;
   categories?: Category[];
   tags: Tag[];

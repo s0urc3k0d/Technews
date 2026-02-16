@@ -16,6 +16,39 @@ interface ArticleContentProps {
 
 export function ArticleContent({ article, className }: ArticleContentProps) {
   const typeIcon = getArticleTypeIcon(article.type);
+  const getYouTubeEmbedUrl = (value: string | null | undefined): string | null => {
+    if (!value) return null;
+
+    try {
+      const url = new URL(value);
+      const host = url.hostname.toLowerCase();
+
+      if (host.includes('youtu.be')) {
+        const videoId = url.pathname.split('/').filter(Boolean)[0];
+        return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+      }
+
+      if (host.includes('youtube.com')) {
+        if (url.pathname.startsWith('/embed/')) {
+          const embedId = url.pathname.split('/embed/')[1]?.split('/')[0];
+          return embedId ? `https://www.youtube.com/embed/${embedId}` : null;
+        }
+
+        if (url.pathname.startsWith('/shorts/')) {
+          const shortsId = url.pathname.split('/shorts/')[1]?.split('/')[0];
+          return shortsId ? `https://www.youtube.com/embed/${shortsId}` : null;
+        }
+
+        const watchId = url.searchParams.get('v');
+        return watchId ? `https://www.youtube.com/embed/${watchId}` : null;
+      }
+
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
   const normalizeImageUrl = (value: string | null | undefined): string | null => {
     if (!value) return null;
     const trimmed = value.trim();
@@ -47,6 +80,15 @@ export function ArticleContent({ article, className }: ArticleContentProps) {
     extractFirstImageFromHtml(article.content) ||
     null;
   const primaryCategory = article.category || article.categories?.[0] || null;
+  const youtubeSource = article.youtubeUrl || article.videoUrl || article.podcastUrl;
+  const youtubeEmbedUrl = getYouTubeEmbedUrl(youtubeSource);
+  const podcastLinks = [
+    article.youtubeUrl && { label: 'YouTube', url: article.youtubeUrl },
+    article.spotifyUrl && { label: 'Spotify', url: article.spotifyUrl },
+    article.applePodcastUrl && { label: 'Apple Podcasts', url: article.applePodcastUrl },
+    article.deezerUrl && { label: 'Deezer', url: article.deezerUrl },
+    article.podcastUrl && { label: 'Lien podcast', url: article.podcastUrl },
+  ].filter((entry): entry is { label: string; url: string } => Boolean(entry?.url));
 
   const isExternalImage = Boolean(imageUrl && /^https?:\/\//i.test(imageUrl));
   const useNativeImage = Boolean(imageUrl && (isExternalImage || imageUrl.startsWith('/uploads/')));
@@ -139,19 +181,60 @@ export function ArticleContent({ article, className }: ArticleContentProps) {
       )}
 
       {/* Podcast Player */}
-      {article.type === 'PODCAST' && article.podcastUrl && (
+      {article.type === 'PODCAST' && (youtubeEmbedUrl || article.podcastUrl || podcastLinks.length > 0) && (
         <div className="mb-8 p-6 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-100">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-3xl">🎙️</span>
             <h2 className="font-semibold text-lg">Écouter l'épisode</h2>
           </div>
-          <audio 
-            controls 
-            className="w-full"
-            src={article.podcastUrl}
-          >
-            Votre navigateur ne supporte pas l'élément audio.
-          </audio>
+
+          {youtubeEmbedUrl ? (
+            <div className="mb-4 overflow-hidden rounded-lg border border-purple-200 bg-black">
+              <div className="relative aspect-video w-full">
+                <iframe
+                  src={youtubeEmbedUrl}
+                  title={`YouTube - ${article.title}`}
+                  className="absolute inset-0 h-full w-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          ) : (
+            article.podcastUrl && (
+              <audio
+                controls
+                className="w-full"
+                src={article.podcastUrl}
+              >
+                Votre navigateur ne supporte pas l'élément audio.
+              </audio>
+            )
+          )}
+
+          {podcastLinks.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {podcastLinks.map((link) => (
+                <a
+                  key={`${link.label}-${link.url}`}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center rounded-full bg-white px-3 py-1.5 text-sm font-medium text-gray-700 ring-1 ring-purple-200 transition-colors hover:bg-purple-100 hover:text-purple-800"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          )}
+
+          {article.podcastSummary && (
+            <p className="text-sm text-gray-700 mt-4">
+              {article.podcastSummary}
+            </p>
+          )}
+
           {article.podcastDuration && (
             <p className="text-sm text-gray-600 mt-2">
               Durée: {Math.floor(article.podcastDuration / 60)} minutes

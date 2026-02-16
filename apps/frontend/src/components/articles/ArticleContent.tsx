@@ -82,13 +82,12 @@ export function ArticleContent({ article, className }: ArticleContentProps) {
   const primaryCategory = article.category || article.categories?.[0] || null;
   const youtubeSource = article.youtubeUrl || article.videoUrl || article.podcastUrl;
   const youtubeEmbedUrl = getYouTubeEmbedUrl(youtubeSource);
-  const podcastLinks = [
-    article.youtubeUrl && { label: 'YouTube', url: article.youtubeUrl },
-    article.spotifyUrl && { label: 'Spotify', url: article.spotifyUrl },
-    article.applePodcastUrl && { label: 'Apple Podcasts', url: article.applePodcastUrl },
-    article.deezerUrl && { label: 'Deezer', url: article.deezerUrl },
-    article.podcastUrl && { label: 'Lien podcast', url: article.podcastUrl },
-  ].filter((entry): entry is { label: string; url: string } => Boolean(entry?.url));
+  const podcastLinks: Array<{ label: string; url: string }> = [];
+  if (article.youtubeUrl) podcastLinks.push({ label: 'YouTube', url: article.youtubeUrl });
+  if (article.spotifyUrl) podcastLinks.push({ label: 'Spotify', url: article.spotifyUrl });
+  if (article.applePodcastUrl) podcastLinks.push({ label: 'Apple Podcasts', url: article.applePodcastUrl });
+  if (article.deezerUrl) podcastLinks.push({ label: 'Deezer', url: article.deezerUrl });
+  if (article.podcastUrl) podcastLinks.push({ label: 'Lien podcast', url: article.podcastUrl });
 
   const isExternalImage = Boolean(imageUrl && /^https?:\/\//i.test(imageUrl));
   const useNativeImage = Boolean(imageUrl && (isExternalImage || imageUrl.startsWith('/uploads/')));

@@ -35,16 +35,16 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand & Description */}
           <div className="lg:col-span-1">
-            <Link href="/" className="flex items-center gap-2 mb-4">
+            <Link href="/" className="mb-3 inline-flex items-center">
               <picture>
-                <source srcSet="/logo-revue-tech-nobg.avif" type="image/avif" />
-                <source srcSet="/logo-revue-tech-nobg.webp" type="image/webp" />
+                <source srcSet="/logo-revue-tech.avif" type="image/avif" />
+                <source srcSet="/logo-revue-tech.webp" type="image/webp" />
                 <img
-                  src="/logo-revue-tech-nobg.png"
+                  src="/logo-revue-tech.png"
                   alt={SITE_NAME}
-                  width={220}
-                  height={56}
-                  className="h-10 w-auto"
+                  width={260}
+                  height={68}
+                  className="h-14 w-auto"
                   loading="lazy"
                   decoding="async"
                 />

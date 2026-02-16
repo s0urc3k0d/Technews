@@ -85,16 +85,16 @@ export function Header() {
       <nav className="mx-auto flex max-w-7xl items-center justify-between p-4 lg:px-8">
         {/* Logo */}
         <div className="flex lg:flex-1">
-          <Link href="/" className="-m-1.5 p-1.5 flex items-center gap-2">
+          <Link href="/" className="-m-1.5 p-1.5 flex items-center">
             <picture>
-              <source srcSet="/logo-revue-tech-nobg.avif" type="image/avif" />
-              <source srcSet="/logo-revue-tech-nobg.webp" type="image/webp" />
+              <source srcSet="/logo-revue-tech.avif" type="image/avif" />
+              <source srcSet="/logo-revue-tech.webp" type="image/webp" />
               <img
-                src="/logo-revue-tech-nobg.png"
+                src="/logo-revue-tech.png"
                 alt={SITE_NAME}
-                width={180}
-                height={48}
-                className="h-9 w-auto"
+                width={240}
+                height={64}
+                className="h-11 w-auto"
                 loading="eager"
                 decoding="async"
               />
@@ -193,9 +193,10 @@ export function Header() {
           <Link
             href={adminHref}
             prefetch={false}
-            className="text-sm font-semibold leading-6 text-gray-900 hover:text-blue-600"
+            className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-semibold leading-6 text-gray-900 hover:text-blue-600"
           >
-            {isAuthenticated ? 'Admin' : 'Se connecter'} <span aria-hidden="true">&rarr;</span>
+            <span>{isAuthenticated ? 'Admin' : 'Se connecter'}</span>
+            <span aria-hidden="true">&rarr;</span>
           </Link>
           {isAuthenticated && !authLoading && (
             <Link
@@ -215,16 +216,16 @@ export function Header() {
           <div className="fixed inset-0 bg-black/20" onClick={() => setMobileMenuOpen(false)} />
           <div className="fixed inset-y-0 right-0 z-[10000] w-full max-w-sm bg-white px-6 py-6 overflow-y-auto">
             <div className="flex items-center justify-between">
-              <Link href="/" className="-m-1.5 p-1.5 flex items-center gap-2">
+              <Link href="/" className="-m-1.5 p-1.5 flex items-center">
                 <picture>
-                  <source srcSet="/logo-revue-tech-nobg.avif" type="image/avif" />
-                  <source srcSet="/logo-revue-tech-nobg.webp" type="image/webp" />
+                  <source srcSet="/logo-revue-tech.avif" type="image/avif" />
+                  <source srcSet="/logo-revue-tech.webp" type="image/webp" />
                   <img
-                    src="/logo-revue-tech-nobg.png"
+                    src="/logo-revue-tech.png"
                     alt={SITE_NAME}
-                    width={180}
-                    height={48}
-                    className="h-9 w-auto"
+                    width={220}
+                    height={58}
+                    className="h-10 w-auto"
                     loading="eager"
                     decoding="async"
                   />

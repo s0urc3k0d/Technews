@@ -131,10 +131,13 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
 
   // GET /articles/featured - Article en une (public)
   fastify.get('/featured', async (request, reply) => {
-    const article = await prisma.article.findFirst({
+    let article = await prisma.article.findFirst({
       where: {
         isFeatured: true,
         status: ArticleStatus.PUBLISHED,
+      },
+      orderBy: {
+        publishedAt: 'desc',
       },
       include: {
         categories: {
@@ -145,6 +148,25 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
         },
       },
     });
+
+    if (!article) {
+      article = await prisma.article.findFirst({
+        where: {
+          status: ArticleStatus.PUBLISHED,
+        },
+        orderBy: {
+          publishedAt: 'desc',
+        },
+        include: {
+          categories: {
+            include: { category: true },
+          },
+          tags: {
+            include: { tag: true },
+          },
+        },
+      });
+    }
 
     if (!article) {
       return reply.code(404).send({ error: 'No featured article found' });

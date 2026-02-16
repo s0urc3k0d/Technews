@@ -131,7 +131,7 @@ export function createShortsService(prisma: PrismaClient, config: ShortsConfig) 
     }
 
     try {
-      const response = await mistral.chat.complete({
+      const payload = {
         model: 'mistral-small-latest',
         messages: [
           {
@@ -148,9 +148,32 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
         ],
         maxTokens: 50,
         temperature: 0.7,
-      });
+      };
 
-      const summary = response.choices?.[0]?.message?.content?.trim() || title;
+      let response: any;
+
+      if (typeof mistral?.chat?.complete === 'function') {
+        response = await mistral.chat.complete(payload);
+      } else if (typeof mistral?.chat?.completions?.create === 'function') {
+        response = await mistral.chat.completions.create(payload);
+      } else {
+        const httpResponse = await fetch('https://api.mistral.ai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${config.mistralApiKey}`,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!httpResponse.ok) {
+          throw new Error(`Mistral API error: ${httpResponse.status}`);
+        }
+
+        response = await httpResponse.json();
+      }
+
+      const summary = response?.choices?.[0]?.message?.content?.trim() || title;
       return summary.replace(/^["']|["']$/g, '').replace(/\.$/, '');
     } catch (error) {
       console.error('Erreur Mistral summary:', error);

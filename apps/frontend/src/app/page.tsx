@@ -22,16 +22,16 @@ function withTimeoutSignal(timeoutMs = API_TIMEOUT_MS): AbortSignal {
   return controller.signal;
 }
 
-// Fetch featured article
-async function getFeaturedArticle(): Promise<Article | null> {
+// Fetch latest standard article
+async function getLatestArticle(): Promise<Article | null> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}${API_ENDPOINTS.articleFeatured}`,
+      `${API_BASE_URL}${API_ENDPOINTS.articles}?type=STANDARD&limit=1&status=PUBLISHED`,
       { next: { revalidate: 60 }, signal: withTimeoutSignal() }
     );
     if (!response.ok) return null;
-    const data = await response.json();
-    return data.data;
+    const data: PaginatedResponse<Article> = await response.json();
+    return data.data[0] ?? null;
   } catch {
     return null;
   }
@@ -83,12 +83,13 @@ async function getPodcasts(): Promise<Article[]> {
 }
 
 export default async function HomePage() {
-  const [featuredArticle, latestArticles, categories, podcasts] = await Promise.all([
-    getFeaturedArticle(),
+  const [latestArticle, latestArticles, categories, podcasts] = await Promise.all([
+    getLatestArticle(),
     getLatestArticles(),
     getCategories(),
     getPodcasts(),
   ]);
+  const latestPodcast = podcasts[0] ?? null;
 
   return (
     <div className="min-h-screen">
@@ -114,10 +115,21 @@ export default async function HomePage() {
               </div>
             </div>
 
-            {/* Featured Article */}
-            {featuredArticle && (
-              <div>
-                <ArticleCard article={featuredArticle} variant="featured" />
+            {/* Hero highlights */}
+            {(latestArticle || latestPodcast) && (
+              <div className="space-y-4">
+                {latestArticle && (
+                  <div>
+                    <p className="text-sm uppercase tracking-wide text-blue-300 mb-2">À la une · Article</p>
+                    <ArticleCard article={latestArticle} variant="featured" />
+                  </div>
+                )}
+                {latestPodcast && (
+                  <div>
+                    <p className="text-sm uppercase tracking-wide text-purple-300 mb-2">À la une · Podcast</p>
+                    <ArticleCard article={latestPodcast} />
+                  </div>
+                )}
               </div>
             )}
           </div>

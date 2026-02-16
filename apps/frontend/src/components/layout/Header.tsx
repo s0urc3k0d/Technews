@@ -87,14 +87,14 @@ export function Header() {
         <div className="flex lg:flex-1">
           <Link href="/" className="-m-1.5 p-1.5 flex items-center">
             <picture>
-              <source srcSet="/logo-revue-tech.avif" type="image/avif" />
-              <source srcSet="/logo-revue-tech.webp" type="image/webp" />
+              <source srcSet="/logo-revue-tech-nobg.avif" type="image/avif" />
+              <source srcSet="/logo-revue-tech-nobg.webp" type="image/webp" />
               <img
-                src="/logo-revue-tech.png"
+                src="/logo-revue-tech-nobg.png"
                 alt={SITE_NAME}
-                width={240}
-                height={64}
-                className="h-11 w-auto"
+                width={260}
+                height={68}
+                className="h-12 w-auto"
                 loading="eager"
                 decoding="async"
               />
@@ -175,7 +175,7 @@ export function Header() {
         </div>
 
         {/* Search & Auth */}
-        <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-x-4">
+        <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-end lg:gap-x-4">
           <button
             onClick={toggleSearch}
             className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
@@ -202,7 +202,7 @@ export function Header() {
             <Link
               href={logoutHref}
               prefetch={false}
-              className="text-sm font-semibold leading-6 text-gray-900 hover:text-blue-600"
+              className="inline-flex items-center whitespace-nowrap text-sm font-semibold leading-6 text-gray-900 hover:text-blue-600"
             >
               Déconnexion
             </Link>
@@ -218,14 +218,14 @@ export function Header() {
             <div className="flex items-center justify-between">
               <Link href="/" className="-m-1.5 p-1.5 flex items-center">
                 <picture>
-                  <source srcSet="/logo-revue-tech.avif" type="image/avif" />
-                  <source srcSet="/logo-revue-tech.webp" type="image/webp" />
+                  <source srcSet="/logo-revue-tech-nobg.avif" type="image/avif" />
+                  <source srcSet="/logo-revue-tech-nobg.webp" type="image/webp" />
                   <img
-                    src="/logo-revue-tech.png"
+                    src="/logo-revue-tech-nobg.png"
                     alt={SITE_NAME}
-                    width={220}
-                    height={58}
-                    className="h-10 w-auto"
+                    width={240}
+                    height={64}
+                    className="h-11 w-auto"
                     loading="eager"
                     decoding="async"
                   />

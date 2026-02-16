@@ -46,7 +46,7 @@ const VIDEO_CONFIG = {
   height: 1920,
   fps: 30,
   slideDuration: 6, // secondes par slide
-  transitionDuration: 0.5, // durée du fade
+  transitionDuration: 0.5, // durée de transition
   fontSize: 48,
   textColor: '#FFFFFF',
   maxCharsPerLine: 30,
@@ -446,7 +446,7 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
     const isIntro = type === 'intro';
     const badgeText = isIntro ? `NEWS DU ${dateLabel}` : 'REVUE TECH';
     const mainText = isIntro ? 'Les actus tech essentielles du jour' : 'Plus d\'infos sur revuetech.fr';
-    const subText = isIntro ? 'Swipe pour le résumé du jour' : 'Retrouve tous les articles sur le site';
+    const subText = isIntro ? 'Top actus sélectionnées pour toi' : 'Retrouve tous les articles sur le site';
 
     const overlaySvg = `
       <svg width="${VIDEO_CONFIG.width}" height="${VIDEO_CONFIG.height}">
@@ -527,7 +527,7 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
       for (let i = 1; i < slidePaths.length; i++) {
         const offset = i * (VIDEO_CONFIG.slideDuration - VIDEO_CONFIG.transitionDuration);
         const outputLabel = i === slidePaths.length - 1 ? 'vout' : `vx${i}`;
-        transitionChain += `[${currentLabel}][v${i}]xfade=transition=fade:duration=${VIDEO_CONFIG.transitionDuration}:offset=${offset}[${outputLabel}];`;
+        transitionChain += `[${currentLabel}][v${i}]xfade=transition=smoothleft:duration=${VIDEO_CONFIG.transitionDuration}:offset=${offset}[${outputLabel}];`;
         currentLabel = outputLabel;
       }
       transitionChain = transitionChain.slice(0, -1);

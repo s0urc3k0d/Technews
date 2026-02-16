@@ -45,7 +45,7 @@ const VIDEO_CONFIG = {
   width: 1080,
   height: 1920,
   fps: 30,
-  slideDuration: 5, // secondes par slide
+  slideDuration: 6, // secondes par slide
   transitionDuration: 0.5, // durée du fade
   fontSize: 48,
   textColor: '#FFFFFF',
@@ -445,7 +445,7 @@ Réponds UNIQUEMENT avec la phrase résumé, rien d'autre.`,
 
     const isIntro = type === 'intro';
     const badgeText = isIntro ? `NEWS DU ${dateLabel}` : 'REVUE TECH';
-    const mainText = isIntro ? 'Les actus tech essentielles en 60 secondes' : 'Plus d\'infos sur revuetech.fr';
+    const mainText = isIntro ? 'Les actus tech essentielles du jour' : 'Plus d\'infos sur revuetech.fr';
     const subText = isIntro ? 'Swipe pour le résumé du jour' : 'Retrouve tous les articles sur le site';
 
     const overlaySvg = `

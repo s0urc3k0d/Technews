@@ -15,6 +15,19 @@ const categoriesRoutes: FastifyPluginAsync = async (fastify) => {
 
   // GET /categories - Liste des catégories (public)
   fastify.get('/', async (request, reply) => {
+    await prisma.category.upsert({
+      where: { slug: 'podcast' },
+      update: {},
+      create: {
+        name: 'Podcast',
+        slug: 'podcast',
+        description: 'Épisodes podcast et formats audio/vidéo',
+        color: '#6366F1',
+        icon: '🎙️',
+        order: 7,
+      },
+    });
+
     const categories = await prisma.category.findMany({
       orderBy: { order: 'asc' },
       include: {

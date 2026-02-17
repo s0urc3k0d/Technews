@@ -225,6 +225,13 @@ Réponds UNIQUEMENT avec l'objet, sans guillemets.`;
       categories: Array<{ category: { name: string; color: string | null } }>;
     }>
   ): string {
+    const logoUrl = `${this.siteUrl}/logo-revue-tech-nobg.png`;
+    const formattedDate = new Date().toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    });
+
     const articleCards = articles.map(article => {
       const categoryBadges = article.categories
         .slice(0, 2)
@@ -236,14 +243,14 @@ Réponds UNIQUEMENT avec l'objet, sans guillemets.`;
         : '';
 
       return `
-        <div style="margin-bottom: 24px; border-bottom: 1px solid #eee; padding-bottom: 24px;">
+        <div style="margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; background: #ffffff;">
           ${imageUrl ? `<img src="${imageUrl}" alt="${article.title}" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">` : ''}
-          <div style="margin-bottom: 8px;">${categoryBadges}</div>
-          <h3 style="margin: 0 0 8px 0; font-size: 18px;">
-            <a href="${this.siteUrl}/article/${article.slug}" style="color: #1a1a1a; text-decoration: none;">${article.title}</a>
+          <div style="margin-bottom: 10px;">${categoryBadges}</div>
+          <h3 style="margin: 0 0 10px 0; font-size: 18px; line-height: 1.35;">
+            <a href="${this.siteUrl}/article/${article.slug}" style="color: #0f172a; text-decoration: none;">${article.title}</a>
           </h3>
-          <p style="color: #666; font-size: 14px; margin: 0 0 12px 0;">${article.excerpt || ''}</p>
-          <a href="${this.siteUrl}/article/${article.slug}" style="color: #0ea5e9; font-size: 14px; text-decoration: none; font-weight: 500;">Lire l'article →</a>
+          <p style="color: #475569; font-size: 14px; margin: 0 0 12px 0;">${article.excerpt || 'Résumé indisponible, mais cet article vaut le détour.'}</p>
+          <a href="${this.siteUrl}/article/${article.slug}" style="display: inline-block; color: #2563eb; font-size: 14px; text-decoration: none; font-weight: 600;">Lire l'article →</a>
         </div>
       `;
     }).join('');
@@ -255,26 +262,35 @@ Réponds UNIQUEMENT avec l'objet, sans guillemets.`;
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
       </head>
-      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
-        <div style="background-color: white; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-          <div style="text-align: center; margin-bottom: 32px;">
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #334155; max-width: 620px; margin: 0 auto; padding: 20px; background-color: #f8fafc;">
+        <div style="background-color: white; border-radius: 14px; padding: 28px; border: 1px solid #e2e8f0;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <img src="${logoUrl}" alt="Revue Tech" style="height: 52px; width: auto; margin-bottom: 10px;" />
             <h1 style="color: #0ea5e9; margin: 0; font-size: 28px;">Revue Tech</h1>
-            <p style="color: #666; margin: 8px 0 0 0;">Votre dose quotidienne d'actualités tech</p>
+            <p style="color: #64748b; margin: 8px 0 0 0;">Votre récap' tech du ${formattedDate}</p>
           </div>
           
-          <p style="font-size: 16px;">Bonjour {{firstName}} ! 👋</p>
+          <p style="font-size: 16px; margin: 0 0 10px 0;">Bonjour {{firstName}} 👋</p>
           
-          <p>Voici les ${articles.length} articles sélectionnés pour vous aujourd'hui :</p>
+          <p style="margin: 0 0 18px 0;">On vous a préparé une sélection claire et utile des actus à ne pas manquer aujourd'hui.</p>
+
+          <div style="background: #eff6ff; color: #1d4ed8; border-radius: 10px; padding: 10px 12px; font-size: 13px; margin-bottom: 18px;">
+            📌 ${articles.length} sujets sélectionnés pour vous faire gagner du temps
+          </div>
           
-          <div style="margin-top: 24px;">
+          <div style="margin-top: 10px;">
             ${articleCards}
           </div>
           
           <div style="text-align: center; margin-top: 32px;">
-            <a href="${this.siteUrl}" style="background-color: #0ea5e9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+            <a href="${this.siteUrl}" style="background: linear-gradient(90deg,#2563eb,#0ea5e9); color: white; padding: 12px 24px; text-decoration: none; border-radius: 10px; font-weight: 700; display: inline-block;">
               Voir tous les articles
             </a>
           </div>
+
+          <p style="text-align: center; color: #94a3b8; font-size: 12px; margin-top: 20px;">
+            Merci de faire partie de la communauté Revue Tech 💙
+          </p>
         </div>
       </body>
       </html>

@@ -29,6 +29,17 @@ const DEFAULT_EVENTS: WebhookEvent[] = [
   'job_failed',
 ];
 
+const EVENT_STYLES: Record<WebhookEvent, { emoji: string; label: string; color: number }> = {
+  article_created: { emoji: '📝', label: 'Article créé', color: 0x3b82f6 },
+  article_updated: { emoji: '✏️', label: 'Article mis à jour', color: 0x0ea5e9 },
+  article_published: { emoji: '🚀', label: 'Article publié', color: 0x22c55e },
+  rss_import: { emoji: '📰', label: 'Import RSS', color: 0x8b5cf6 },
+  newsletter_generated: { emoji: '📬', label: 'Newsletter générée', color: 0x0ea5e9 },
+  newsletter_sent: { emoji: '✅', label: 'Newsletter envoyée', color: 0x22c55e },
+  short_generated: { emoji: '🎬', label: 'Short généré', color: 0xf59e0b },
+  job_failed: { emoji: '⚠️', label: 'Échec job', color: 0xef4444 },
+};
+
 function sanitizeEvents(events: unknown): WebhookEvent[] {
   if (!Array.isArray(events)) return [];
   const allowed = new Set(WEBHOOK_EVENTS);
@@ -105,19 +116,47 @@ export async function sendDiscordWebhookEvent(
     return false;
   }
 
+  const style = EVENT_STYLES[event];
+  const titleWithEmoji = `${style.emoji} ${title || style.label}`;
+  const safeDescription = description && description.trim()
+    ? description.trim()
+    : 'Mise à jour disponible.';
+
+  const extraEntries = extra
+    ? Object.entries(extra).filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== '')
+    : [];
+
+  const articleUrl = extraEntries.find(([name]) => name === 'url')?.[1];
+  const imageUrl = extraEntries.find(([name]) => name === 'imageUrl' || name === 'thumbnailUrl')?.[1];
+  const fields = extraEntries
+    .filter(([name]) => name !== 'url' && name !== 'imageUrl' && name !== 'thumbnailUrl')
+    .slice(0, 8)
+    .map(([name, value]) => ({
+      name: name.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()),
+      value: String(value),
+      inline: true,
+    }));
+
   try {
     await fetch(settings.url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        username: 'Revue Tech Bot',
         embeds: [
           {
-            title,
-            description,
-            color,
+            title: titleWithEmoji,
+            description: safeDescription,
+            color: style.color || color,
+            ...(articleUrl ? { url: String(articleUrl) } : {}),
+            author: {
+              name: 'Revue Tech · Notifications',
+              icon_url: 'https://revuetech.fr/logo-revue-tech-nobg.png',
+            },
             timestamp: new Date().toISOString(),
-            footer: { text: `Revue Tech • ${event}` },
-            ...(extra ? { fields: Object.entries(extra).slice(0, 8).map(([name, value]) => ({ name, value: String(value), inline: true })) } : {}),
+            footer: { text: `Revue Tech • ${style.label}` },
+            ...(fields.length > 0 ? { fields } : {}),
+            ...(imageUrl ? { thumbnail: { url: String(imageUrl) } } : {}),
           },
         ],
       }),

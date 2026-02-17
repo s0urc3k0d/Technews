@@ -12,12 +12,29 @@ import {
   UpdateArticleInput,
   ListArticlesQuery,
 } from '../schemas/index.js';
-import { ArticleStatus } from '@prisma/client';
+import { ArticleStatus, ArticleType } from '@prisma/client';
 import { createSocialService } from '../services/social.service.js';
 import { sendDiscordWebhookEvent } from '../services/webhook.service.js';
 
 const articlesRoutes: FastifyPluginAsync = async (fastify) => {
   const { prisma } = fastify;
+
+  async function ensurePodcastCategoryId(): Promise<string> {
+    const category = await prisma.category.upsert({
+      where: { slug: 'podcast' },
+      update: {},
+      create: {
+        name: 'Podcast',
+        slug: 'podcast',
+        description: 'Épisodes podcast et formats audio/vidéo',
+        color: '#6366F1',
+        icon: '🎙️',
+        order: 7,
+      },
+    });
+
+    return category.id;
+  }
 
   // GET /articles - Liste des articles (public)
   fastify.get(
@@ -307,6 +324,14 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(400).send({ error: 'Invalid body', details: parseResult.error.issues });
       }
       const { categoryIds, tagIds, ...data } = parseResult.data;
+      const resolvedCategoryIds = categoryIds ? [...categoryIds] : [];
+
+      if (data.type === ArticleType.PODCAST) {
+        const podcastCategoryId = await ensurePodcastCategoryId();
+        if (!resolvedCategoryIds.includes(podcastCategoryId)) {
+          resolvedCategoryIds.push(podcastCategoryId);
+        }
+      }
 
       // If setting as featured, unset other featured articles
       if (data.isFeatured) {
@@ -321,8 +346,8 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
           ...data,
           featuredAt: data.isFeatured ? new Date() : null,
           publishedAt: data.status === 'PUBLISHED' ? new Date() : data.publishedAt ? new Date(data.publishedAt) : null,
-          categories: categoryIds ? {
-            create: categoryIds.map(categoryId => ({ categoryId })),
+          categories: resolvedCategoryIds.length > 0 ? {
+            create: resolvedCategoryIds.map(categoryId => ({ categoryId })),
           } : undefined,
           tags: tagIds ? {
             create: tagIds.map(tagId => ({ tagId })),
@@ -398,6 +423,31 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
         });
       }
 
+      const targetType = data.type ?? existing.type;
+      let resolvedCategoryIds = categoryIds ? [...categoryIds] : categoryIds;
+
+      if (targetType === ArticleType.PODCAST) {
+        const podcastCategoryId = await ensurePodcastCategoryId();
+
+        if (resolvedCategoryIds === undefined) {
+          await prisma.categoriesOnArticles.upsert({
+            where: {
+              articleId_categoryId: {
+                articleId: id,
+                categoryId: podcastCategoryId,
+              },
+            },
+            update: {},
+            create: {
+              articleId: id,
+              categoryId: podcastCategoryId,
+            },
+          });
+        } else if (!resolvedCategoryIds.includes(podcastCategoryId)) {
+          resolvedCategoryIds.push(podcastCategoryId);
+        }
+      }
+
       // Handle category updates
       if (categoryIds !== undefined) {
         await prisma.categoriesOnArticles.deleteMany({ where: { articleId: id } });
@@ -416,8 +466,8 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
           publishedAt: data.status === 'PUBLISHED' && !existing.publishedAt 
             ? new Date() 
             : data.publishedAt ? new Date(data.publishedAt) : undefined,
-          categories: categoryIds ? {
-            create: categoryIds.map(categoryId => ({ categoryId })),
+          categories: resolvedCategoryIds ? {
+            create: resolvedCategoryIds.map(categoryId => ({ categoryId })),
           } : undefined,
           tags: tagIds ? {
             create: tagIds.map(tagId => ({ tagId })),

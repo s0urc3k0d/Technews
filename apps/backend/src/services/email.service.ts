@@ -29,6 +29,10 @@ export class EmailService {
   private resend: Resend | null;
   private config: EmailConfig;
 
+  private getLogoUrl(): string {
+    return `${this.config.siteUrl}/logo-revue-tech-nobg.png`;
+  }
+
   constructor(config: EmailConfig) {
     this.config = config;
     this.resend = config.apiKey ? new Resend(config.apiKey) : null;
@@ -68,7 +72,8 @@ export class EmailService {
     confirmToken: string
   ): Promise<SendResult> {
     const confirmUrl = `${this.config.siteUrl}/newsletter/confirm?token=${confirmToken}`;
-    const name = firstName || 'there';
+    const name = firstName || 'ami tech';
+    const logoUrl = this.getLogoUrl();
 
     return this.send({
       to: email,
@@ -80,36 +85,39 @@ export class EmailService {
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
         </head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #0ea5e9; margin: 0;">Revue Tech</h1>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #0f172a; max-width: 620px; margin: 0 auto; padding: 20px; background: #f8fafc;">
+          <div style="background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 28px;">
+            <div style="text-align: center; margin-bottom: 24px;">
+              <img src="${logoUrl}" alt="Revue Tech" style="height: 48px; width: auto; margin-bottom: 12px;" />
+              <h1 style="color: #0ea5e9; margin: 0; font-size: 26px;">Revue Tech</h1>
+              <p style="margin: 8px 0 0 0; color: #64748b; font-size: 14px;">Le meilleur de l'actualité tech, sans bruit</p>
+            </div>
+
+            <h2 style="margin: 0 0 12px 0;">Bonjour ${name} 👋</h2>
+
+            <p style="margin: 0 0 12px 0;">Ravi de vous compter parmi nous !</p>
+            <p style="margin: 0 0 20px 0;">Un dernier clic suffit pour activer votre inscription et recevoir nos sélections hebdo :</p>
+
+            <div style="text-align: center; margin: 26px 0;">
+              <a href="${confirmUrl}" style="background: linear-gradient(90deg,#2563eb,#0ea5e9); color: white; padding: 14px 28px; text-decoration: none; border-radius: 10px; font-weight: 700; display: inline-block;">
+                ✅ Confirmer mon inscription
+              </a>
+            </div>
+
+            <p style="color: #64748b; font-size: 14px; margin: 0;">
+              Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer ce message.
+            </p>
+
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+
+            <p style="color: #94a3b8; font-size: 12px; text-align: center; margin: 0;">
+              Revue Tech · News, analyses & podcasts
+            </p>
           </div>
-          
-          <h2>Bonjour ${name} ! 👋</h2>
-          
-          <p>Merci de vous être inscrit à notre newsletter tech !</p>
-          
-          <p>Pour confirmer votre inscription et commencer à recevoir nos actualités, cliquez sur le bouton ci-dessous :</p>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${confirmUrl}" style="background-color: #0ea5e9; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
-              Confirmer mon inscription
-            </a>
-          </div>
-          
-          <p style="color: #666; font-size: 14px;">
-            Si vous n'avez pas demandé cette inscription, vous pouvez ignorer cet email.
-          </p>
-          
-          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-          
-          <p style="color: #999; font-size: 12px; text-align: center;">
-            Revue Tech - Actualités Tech & Podcasts
-          </p>
         </body>
         </html>
       `,
-      text: `Bonjour ${name}!\n\nMerci de vous être inscrit à la newsletter Revue Tech.\n\nConfirmez votre inscription: ${confirmUrl}\n\nSi vous n'avez pas demandé cette inscription, ignorez cet email.`,
+      text: `Bonjour ${name},\n\nBienvenue chez Revue Tech !\n\nConfirmez votre inscription en cliquant ici : ${confirmUrl}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email.`,
       tags: [{ name: 'category', value: 'confirmation' }],
     });
   }
@@ -135,11 +143,13 @@ export class EmailService {
       subject,
       html: `
         ${personalizedHtml}
-        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-        <p style="color: #999; font-size: 12px; text-align: center;">
-          Vous recevez cet email car vous êtes inscrit à la newsletter Revue Tech.<br>
-          <a href="${unsubscribeUrl}" style="color: #999;">Se désinscrire</a>
-        </p>
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center;">
+          <p style="color: #64748b; font-size: 13px; margin: 0 0 8px 0;">Merci de lire Revue Tech 💙</p>
+          <p style="color: #94a3b8; font-size: 12px; margin: 0;">
+            Vous recevez cet email car vous êtes inscrit à la newsletter.<br>
+            <a href="${unsubscribeUrl}" style="color: #94a3b8;">Se désinscrire en 1 clic</a>
+          </p>
+        </div>
       `,
       tags: [
         { name: 'category', value: 'newsletter' },
@@ -152,15 +162,23 @@ export class EmailService {
     subject: string,
     message: string
   ): Promise<SendResult> {
+    const logoUrl = this.getLogoUrl();
+
     return this.send({
       to: this.config.fromEmail, // Send to self
       subject: `[Revue Tech Admin] ${subject}`,
       html: `
-        <div style="font-family: sans-serif; padding: 20px;">
-          <h2>${subject}</h2>
-          <p>${message}</p>
-          <hr>
-          <p style="color: #666; font-size: 12px;">Notification automatique Revue Tech</p>
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 620px; margin: 0 auto; background: #f8fafc; padding: 20px;">
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+              <img src="${logoUrl}" alt="Revue Tech" style="height: 28px; width: auto;" />
+              <strong style="font-size: 16px; color: #0f172a;">Notification Admin</strong>
+            </div>
+            <h2 style="margin: 0 0 10px 0; color: #0f172a; font-size: 20px;">${subject}</h2>
+            <p style="margin: 0; color: #334155; white-space: pre-line;">${message}</p>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 18px 0;">
+            <p style="color: #94a3b8; font-size: 12px; margin: 0;">Message automatique · Revue Tech Admin</p>
+          </div>
         </div>
       `,
       text: `${subject}\n\n${message}`,

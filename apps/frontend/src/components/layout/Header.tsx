@@ -87,14 +87,14 @@ export function Header() {
         <div className="flex lg:flex-1">
           <Link href="/" className="-m-1.5 p-1.5 flex items-center">
             <picture>
-              <source srcSet="/logo-revue-tech-nobg.avif" type="image/avif" />
-              <source srcSet="/logo-revue-tech-nobg.webp" type="image/webp" />
+              <source srcSet="/logo-revue-tech.avif" type="image/avif" />
+              <source srcSet="/logo-revue-tech.webp" type="image/webp" />
               <img
-                src="/logo-revue-tech-nobg.png"
+                src="/logo-revue-tech.png"
                 alt={SITE_NAME}
-                width={260}
-                height={68}
-                className="h-12 w-auto"
+                width={320}
+                height={84}
+                className="h-14 w-auto"
                 loading="eager"
                 decoding="async"
               />
@@ -218,14 +218,14 @@ export function Header() {
             <div className="flex items-center justify-between">
               <Link href="/" className="-m-1.5 p-1.5 flex items-center">
                 <picture>
-                  <source srcSet="/logo-revue-tech-nobg.avif" type="image/avif" />
-                  <source srcSet="/logo-revue-tech-nobg.webp" type="image/webp" />
+                  <source srcSet="/logo-revue-tech.avif" type="image/avif" />
+                  <source srcSet="/logo-revue-tech.webp" type="image/webp" />
                   <img
-                    src="/logo-revue-tech-nobg.png"
+                    src="/logo-revue-tech.png"
                     alt={SITE_NAME}
-                    width={240}
-                    height={64}
-                    className="h-11 w-auto"
+                    width={280}
+                    height={74}
+                    className="h-12 w-auto"
                     loading="eager"
                     decoding="async"
                   />

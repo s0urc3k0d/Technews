@@ -10,10 +10,11 @@ import { formatRelativeTime, truncate, getArticleTypeIcon, cn } from '@/lib/util
 interface ArticleCardProps {
   article: Article;
   variant?: 'default' | 'compact' | 'featured' | 'horizontal';
+  featuredMinimal?: boolean;
   className?: string;
 }
 
-export function ArticleCard({ article, variant = 'default', className }: ArticleCardProps) {
+export function ArticleCard({ article, variant = 'default', featuredMinimal = false, className }: ArticleCardProps) {
   const typeIcon = getArticleTypeIcon(article.type);
   const normalizeImageUrl = (value: string | null | undefined): string | null => {
     if (!value) return null;
@@ -75,25 +76,27 @@ export function ArticleCard({ article, variant = 'default', className }: Article
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
         <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-10">
-          <div className="flex items-center gap-3 mb-3">
-            {primaryCategory && (
-              <Link
-                href={`/category/${primaryCategory.slug}`}
-                className="px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded-full hover:bg-blue-700 transition-colors"
-              >
-                {primaryCategory.name}
-              </Link>
-            )}
-            {article.type !== 'STANDARD' && (
-              <span className="text-white/80 text-sm">{typeIcon} {article.type}</span>
-            )}
-          </div>
+          {!featuredMinimal && (
+            <div className="flex items-center gap-3 mb-3">
+              {primaryCategory && (
+                <Link
+                  href={`/category/${primaryCategory.slug}`}
+                  className="px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded-full hover:bg-blue-700 transition-colors"
+                >
+                  {primaryCategory.name}
+                </Link>
+              )}
+              {article.type !== 'STANDARD' && (
+                <span className="text-white/80 text-sm">{typeIcon} {article.type}</span>
+              )}
+            </div>
+          )}
           <Link href={`/article/${article.slug}`}>
             <h2 className="text-2xl md:text-4xl font-bold text-white group-hover:text-blue-300 transition-colors mb-3">
               {article.title}
             </h2>
           </Link>
-          {article.excerpt && (
+          {!featuredMinimal && article.excerpt && (
             <p className="text-gray-300 text-sm md:text-base mb-4 max-w-3xl line-clamp-2">
               {article.excerpt}
             </p>

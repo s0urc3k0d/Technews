@@ -65,7 +65,12 @@ Ensuite invalider les sessions applicatives actives.
 ```bash
 docker ps
 docker stats --no-stream
-for c in $(docker ps -q); do docker top "$c" -eo user,cmd | grep -Ei "javae|XIN-unix|/tmp/" && echo "FOUND in $c"; done
+for c in $(docker ps -q); do
+  docker top "$c" -eo pid,user,args \
+    | grep -Eiv "docker-buildx|compose-build-metadataFile" \
+    | grep -Ei "\[javae\]|/tmp/\.XIN-unix|/dev/shm/duet|chattr \+i /tmp/\.XIN-unix" \
+    && echo "FOUND in $c"
+done
 ```
 
 Vérifier aussi:
@@ -78,7 +83,7 @@ Vérifier aussi:
 
 - Exécuter les services en utilisateur non-root
 - `security_opt: ["no-new-privileges:true"]`
-- `cap_drop: ["ALL"]` quand possible
+- `cap_drop: ["ALL"]` quand possible (éviter sur `redis`/`postgres` qui font des opérations d'init volume au démarrage)
 - `read_only: true` + `tmpfs: ["/tmp:rw,noexec,nosuid,size=64m"]` pour services stateless
 - ne pas exposer de ports publiquement sans nécessité
 - SSH en clés uniquement + fail2ban + mises à jour OS/Docker régulières

@@ -13,6 +13,14 @@ services:
       dockerfile: ./docker/frontend.Dockerfile
     container_name: technews-frontend
     restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
     ports:
       - "127.0.0.1:3030:3000"
     environment:
@@ -46,6 +54,14 @@ services:
       dockerfile: ./docker/backend.Dockerfile
     container_name: technews-backend
     restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m
     ports:
       - "127.0.0.1:3031:3001"
     extra_hosts:
@@ -89,6 +105,10 @@ services:
     image: redis:7-alpine
     container_name: technews-redis
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     volumes:
       - redis-data:/data
     command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
@@ -107,6 +127,10 @@ services:
     image: prom/prometheus:v2.50.0
     container_name: technews-prometheus
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     ports:
       - "127.0.0.1:9090:9090"
     volumes:
@@ -130,6 +154,10 @@ services:
     image: grafana/grafana:10.3.0
     container_name: technews-grafana
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     ports:
       - "127.0.0.1:3052:3000"
     environment:

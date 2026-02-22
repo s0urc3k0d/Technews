@@ -124,6 +124,9 @@ async function buildServer() {
     root: fastify.config.UPLOAD_PATH,
     prefix: '/uploads/',
     decorateReply: false,
+    setHeaders: (res) => {
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    },
   });
 
   // Track response times for metrics

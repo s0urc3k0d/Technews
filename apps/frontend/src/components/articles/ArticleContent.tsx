@@ -16,6 +16,19 @@ interface ArticleContentProps {
 
 export function ArticleContent({ article, className }: ArticleContentProps) {
   const typeIcon = getArticleTypeIcon(article.type);
+  const sanitizeHtml = (value: string | null | undefined): string => {
+    if (!value) return '';
+
+    return value
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '')
+      .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '')
+      .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '')
+      .replace(/javascript:/gi, '');
+  };
+
+  const sanitizedContent = sanitizeHtml(article.content);
+
   const getYouTubeEmbedUrl = (value: string | null | undefined): string | null => {
     if (!value) return null;
 
@@ -77,7 +90,7 @@ export function ArticleContent({ article, className }: ArticleContentProps) {
   const imageUrl =
     normalizeImageUrl(article.featuredImage) ||
     normalizeImageUrl(article.imageUrl) ||
-    extractFirstImageFromHtml(article.content) ||
+    extractFirstImageFromHtml(sanitizedContent) ||
     null;
   const primaryCategory = article.category || article.categories?.[0] || null;
   const youtubeSource = article.youtubeUrl || article.videoUrl || article.podcastUrl;
@@ -246,7 +259,7 @@ export function ArticleContent({ article, className }: ArticleContentProps) {
       {/* Content */}
       <div 
         className="prose prose-lg max-w-none prose-headings:font-bold prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-lg"
-        dangerouslySetInnerHTML={{ __html: article.content }}
+        dangerouslySetInnerHTML={{ __html: sanitizedContent }}
       />
 
       {/* Tags */}

@@ -1,5 +1,5 @@
 import { withMiddlewareAuthRequired } from '@auth0/nextjs-auth0/edge';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextFetchEvent, NextRequest, NextResponse } from 'next/server';
 
 const requireAdminAuth = withMiddlewareAuthRequired();
 
@@ -24,13 +24,13 @@ function hasAttackSignature(req: NextRequest): boolean {
   return ATTACK_PATTERNS.some((pattern) => pattern.test(payload));
 }
 
-export default function middleware(req: NextRequest) {
+export default function middleware(req: NextRequest, event: NextFetchEvent) {
   if (hasAttackSignature(req)) {
     return new NextResponse('Forbidden', { status: 403 });
   }
 
   if (req.nextUrl.pathname.startsWith('/admin')) {
-    return requireAdminAuth(req);
+    return requireAdminAuth(req, event);
   }
 
   return NextResponse.next();

@@ -11,6 +11,7 @@ const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -19,6 +20,10 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'i.ytimg.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'api.revuetech.fr',
       },
       {
         protocol: 'http',

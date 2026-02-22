@@ -5,7 +5,6 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import Image from 'next/image';
 import { useUploadImage, useImages, useDeleteImage } from '@/hooks';
 import { Button, Pagination } from '@/components';
 
@@ -128,11 +127,11 @@ export default function AdminImagesPage() {
                 const imageName = getImageName(image.url);
                 return (
                   <>
-              <Image
+              <img
                 src={image.url}
                 alt={imageName}
-                fill
-                className="object-cover"
+                className="w-full h-full object-cover"
+                loading="lazy"
               />
               
               {/* Overlay */}

@@ -13,7 +13,7 @@ import { API_ENDPOINTS } from '@/lib/api-client';
 import { API_BASE_URL } from '@/lib/config';
 import { Article, PaginatedResponse, Category } from '@/types';
 
-const API_TIMEOUT_MS = 8000;
+const API_TIMEOUT_MS = 2500;
 
 function withTimeoutSignal(timeoutMs = API_TIMEOUT_MS): AbortSignal {
   const controller = new AbortController();

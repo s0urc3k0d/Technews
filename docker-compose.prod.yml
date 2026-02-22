@@ -21,6 +21,7 @@ services:
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m
+      - /app/apps/frontend/.next/cache:rw,noexec,nosuid,size=128m
     ports:
       - "127.0.0.1:3030:3000"
     environment:

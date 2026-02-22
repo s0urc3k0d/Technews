@@ -8,19 +8,19 @@
   "theme_color": "#2563eb",
   "icons": [
     {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
+      "src": "/logo-revue-tech.avif",
+      "sizes": "512x512",
+      "type": "image/avif"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/logo-revue-tech-nobg.avif",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/avif"
     },
     {
-      "src": "/icon-maskable.png",
+      "src": "/logo-revue-tech-nobg.avif",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/avif",
       "purpose": "maskable"
     }
   ]

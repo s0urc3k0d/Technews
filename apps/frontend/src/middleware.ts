@@ -74,6 +74,16 @@ function isStaticBypassPath(pathname: string): boolean {
   return STATIC_FILE_EXTENSIONS.test(pathname);
 }
 
+function getPublicApiOrigin(): string {
+  const configured = process.env.NEXT_PUBLIC_API_URL || 'https://api.revuetech.fr';
+  try {
+    const url = new URL(configured);
+    return `${url.protocol}//${url.host}`;
+  } catch {
+    return 'https://api.revuetech.fr';
+  }
+}
+
 function hasAttackSignature(req: NextRequest): boolean {
   const payload = buildPayload(req);
   return ATTACK_PATTERNS.some((pattern) => pattern.test(payload));
@@ -91,6 +101,16 @@ function hasBlockedMethod(req: NextRequest): boolean {
 }
 
 export default function middleware(req: NextRequest, event: NextFetchEvent) {
+  if (req.nextUrl.pathname.startsWith('/uploads/')) {
+    const apiOrigin = getPublicApiOrigin();
+    const currentOrigin = `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+
+    if (apiOrigin !== currentOrigin) {
+      const redirectUrl = new URL(`${apiOrigin}${req.nextUrl.pathname}${req.nextUrl.search}`);
+      return NextResponse.redirect(redirectUrl, 307);
+    }
+  }
+
   if (isStaticBypassPath(req.nextUrl.pathname)) {
     return NextResponse.next();
   }

@@ -40,6 +40,13 @@ async function proxy(req: NextRequest, path: string[]) {
     }
   });
 
+  if (!headers.has('x-forwarded-for')) {
+    const realIp = req.headers.get('x-real-ip');
+    if (realIp) {
+      headers.set('x-forwarded-for', realIp);
+    }
+  }
+
   const method = req.method.toUpperCase();
   const hasBody = !['GET', 'HEAD'].includes(method);
 

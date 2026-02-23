@@ -49,6 +49,7 @@ const environment = (process.env.NODE_ENV || 'development') as keyof typeof envT
 const fastify = Fastify({
   logger: envToLogger[environment] ?? true,
   pluginTimeout: 60000,
+  trustProxy: true,
 });
 
 async function buildServer() {
@@ -108,8 +109,26 @@ async function buildServer() {
 
   // Rate limiting global
   await fastify.register(rateLimit, {
-    max: 100,
+    max: 600,
     timeWindow: '1 minute',
+    keyGenerator: (request) => {
+      const forwarded = request.headers['x-forwarded-for'];
+      const realIp = request.headers['x-real-ip'];
+
+      if (typeof forwarded === 'string' && forwarded.length > 0) {
+        return forwarded.split(',')[0]!.trim();
+      }
+
+      if (Array.isArray(forwarded) && forwarded.length > 0) {
+        return forwarded[0]!.split(',')[0]!.trim();
+      }
+
+      if (typeof realIp === 'string' && realIp.length > 0) {
+        return realIp.trim();
+      }
+
+      return request.ip;
+    },
   });
 
   // File uploads
@@ -133,7 +152,7 @@ async function buildServer() {
   trackResponseTime(fastify);
 
   // Health check
-  fastify.get('/health', async () => {
+  fastify.get('/health', { config: { rateLimit: false } }, async () => {
     return { 
       status: 'ok', 
       timestamp: new Date().toISOString(),
@@ -142,7 +161,7 @@ async function buildServer() {
   });
 
   // API v1 info
-  fastify.get('/api/v1', async () => {
+  fastify.get('/api/v1', { config: { rateLimit: false } }, async () => {
     return { 
       message: 'RevueTech API v1',
       version: '1.0.0',

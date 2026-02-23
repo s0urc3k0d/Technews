@@ -1,4 +1,5 @@
 import { getSession } from '@auth0/nextjs-auth0';
+import { isAdminUser } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -24,6 +25,8 @@ export async function GET() {
       nickname?: string;
       email?: string;
       picture?: string;
+      permissions?: unknown;
+      [key: string]: unknown;
     };
 
     return Response.json(
@@ -33,6 +36,7 @@ export async function GET() {
         nickname: user.nickname ?? null,
         email: user.email ?? null,
         picture: user.picture ?? null,
+        isAdmin: isAdminUser(user),
       },
       { headers: noStoreHeaders }
     );

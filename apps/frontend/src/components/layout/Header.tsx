@@ -24,6 +24,7 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [userLabel, setUserLabel] = useState<string | null>(null);
   const { toggleSearch } = useUIStore();
@@ -31,7 +32,8 @@ export function Header() {
   const categories = categoriesData?.data ?? [];
   const isCategoriesActive = pathname === '/categories' || pathname.startsWith('/category/');
 
-  const adminHref = isAuthenticated ? '/admin' : '/api/auth/login?returnTo=/admin';
+  const adminHref = '/admin';
+  const loginHref = '/api/auth/login?returnTo=/admin';
   const logoutHref = '/api/auth/logout?returnTo=/';
 
   useEffect(() => {
@@ -51,6 +53,7 @@ export function Header() {
         if (!response.ok) {
           if (!cancelled) {
             setIsAuthenticated(false);
+            setIsAdmin(false);
             setUserLabel(null);
           }
           return;
@@ -59,11 +62,13 @@ export function Header() {
         const session = await response.json();
         if (!cancelled) {
           setIsAuthenticated(true);
+          setIsAdmin(Boolean(session?.isAdmin));
           setUserLabel(session?.name || session?.nickname || session?.email || null);
         }
       } catch {
         if (!cancelled) {
           setIsAuthenticated(false);
+          setIsAdmin(false);
           setUserLabel(null);
         }
       } finally {
@@ -190,14 +195,26 @@ export function Header() {
               Connecté {userLabel ? `: ${userLabel}` : ''}
             </span>
           )}
-          <Link
-            href={adminHref}
-            prefetch={false}
-            className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-semibold leading-6 text-gray-900 hover:text-blue-600"
-          >
-            <span>{isAuthenticated ? 'Admin' : 'Se connecter'}</span>
-            <span aria-hidden="true">&rarr;</span>
-          </Link>
+          {!authLoading && !isAuthenticated && (
+            <Link
+              href={loginHref}
+              prefetch={false}
+              className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-semibold leading-6 text-gray-900 hover:text-blue-600"
+            >
+              <span>Se connecter</span>
+              <span aria-hidden="true">&rarr;</span>
+            </Link>
+          )}
+          {isAuthenticated && isAdmin && !authLoading && (
+            <Link
+              href={adminHref}
+              prefetch={false}
+              className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-semibold leading-6 text-gray-900 hover:text-blue-600"
+            >
+              <span>Admin</span>
+              <span aria-hidden="true">&rarr;</span>
+            </Link>
+          )}
           {isAuthenticated && !authLoading && (
             <Link
               href={logoutHref}

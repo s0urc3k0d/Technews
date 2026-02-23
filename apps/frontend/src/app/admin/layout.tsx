@@ -4,7 +4,13 @@
 
 import { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { getSession } from '@auth0/nextjs-auth0';
 import { SITE_NAME } from '@/lib/config';
+import { isAdminUser } from '@/lib/admin-auth';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: {
@@ -28,11 +34,21 @@ const adminNavigation = [
   { name: 'Images', href: '/admin/images', icon: '🖼️' },
 ];
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await getSession();
+
+  if (!session?.user) {
+    redirect('/api/auth/login?returnTo=/admin');
+  }
+
+  if (!isAdminUser(session.user as Record<string, unknown>)) {
+    redirect('/');
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="flex">

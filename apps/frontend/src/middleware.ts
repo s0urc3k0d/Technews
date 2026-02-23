@@ -100,7 +100,7 @@ function hasBlockedMethod(req: NextRequest): boolean {
   return !['GET', 'HEAD'].includes(method);
 }
 
-export default function middleware(req: NextRequest, event: NextFetchEvent) {
+export default async function middleware(req: NextRequest, event: NextFetchEvent) {
   if (req.nextUrl.pathname.startsWith('/uploads/')) {
     const apiOrigin = getPublicApiOrigin();
     const currentOrigin = `${req.nextUrl.protocol}//${req.nextUrl.host}`;
@@ -124,7 +124,22 @@ export default function middleware(req: NextRequest, event: NextFetchEvent) {
   }
 
   if (req.nextUrl.pathname.startsWith('/admin')) {
-    return requireAdminAuth(req, event);
+    const response = await requireAdminAuth(req, event);
+
+    if (response) {
+      response.headers.set('Cache-Control', 'private, no-store, no-cache, must-revalidate, max-age=0, s-maxage=0');
+      response.headers.set('Pragma', 'no-cache');
+      response.headers.set('Expires', '0');
+      response.headers.set('Vary', 'Cookie, Authorization');
+      return response;
+    }
+
+    const fallback = NextResponse.next();
+    fallback.headers.set('Cache-Control', 'private, no-store, no-cache, must-revalidate, max-age=0, s-maxage=0');
+    fallback.headers.set('Pragma', 'no-cache');
+    fallback.headers.set('Expires', '0');
+    fallback.headers.set('Vary', 'Cookie, Authorization');
+    return fallback;
   }
 
   return NextResponse.next();

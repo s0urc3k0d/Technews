@@ -27,7 +27,7 @@ export function ArticleCard({ article, variant = 'default', featuredMinimal = fa
 
     try {
       const parsed = new URL(trimmed);
-      if (['backend', 'localhost', '127.0.0.1'].includes(parsed.hostname)) {
+      if (['backend', 'localhost', '127.0.0.1', 'api.revuetech.fr', 'www.api.revuetech.fr'].includes(parsed.hostname)) {
         return `${parsed.pathname}${parsed.search}${parsed.hash}`;
       }
       return parsed.toString();

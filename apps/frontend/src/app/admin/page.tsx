@@ -183,6 +183,15 @@ export default function AdminDashboardPage() {
                   {lastAutoPublishRun.articleId ? ` (${lastAutoPublishRun.articleId})` : ''}
                 </p>
               )}
+              {typeof lastAutoPublishRun.details?.imageGenerated === 'boolean' && (
+                <p>
+                  <span className="font-medium">Image générée:</span>{' '}
+                  {lastAutoPublishRun.details.imageGenerated ? 'oui' : 'non'}
+                  {typeof lastAutoPublishRun.details?.imageSource === 'string'
+                    ? ` (${lastAutoPublishRun.details.imageSource})`
+                    : ''}
+                </p>
+              )}
               {lastAutoPublishRun.articleId && (
                 <p>
                   <a

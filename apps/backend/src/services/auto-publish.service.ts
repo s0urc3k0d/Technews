@@ -61,6 +61,11 @@ interface AutoPublishRunOptions {
   setCooldown?: boolean;
 }
 
+interface GeneratedImageResult {
+  buffer: Buffer | null;
+  source: 'mistral' | 'fallback' | 'none';
+}
+
 const ARTICLE_PROMPT_PATH = path.join(process.cwd(), 'assets', 'prompt-article.txt');
 const IMAGE_PROMPT_PATH = path.join(process.cwd(), 'assets', 'prompt-image.txt');
 const REDIS_COOLDOWN_KEY = 'autopublish:next_allowed_at';
@@ -177,7 +182,7 @@ export class AutoPublishService {
     }
 
     const generated = await this.generateArticlePayload(candidate);
-    const imageBuffer = await this.generateImageBuffer(generated, candidate);
+    const generatedImage = await this.generateImageBuffer(generated, candidate);
 
     if (this.dryRun) {
       if (setCooldown) {
@@ -192,12 +197,13 @@ export class AutoPublishService {
         details: {
           generatedTitle: generated.title,
           generatedSlug: generated.slug,
-          imageGenerated: Boolean(imageBuffer),
+          imageGenerated: Boolean(generatedImage.buffer),
+          imageSource: generatedImage.source,
         },
       };
     }
 
-    const publishedArticle = await this.applyPublication(candidate, generated, imageBuffer);
+    const publishedArticle = await this.applyPublication(candidate, generated, generatedImage.buffer);
     if (setCooldown) {
       await this.setCooldown();
     }
@@ -211,6 +217,8 @@ export class AutoPublishService {
       details: {
         slug: publishedArticle.slug,
         sourceUrl: publishedArticle.sourceUrl,
+        imageGenerated: Boolean(generatedImage.buffer),
+        imageSource: generatedImage.source,
       },
     };
   }
@@ -433,24 +441,25 @@ ${candidate.content}`;
   private async generateImageBuffer(
     generated: GeneratedArticlePayload,
     candidate: CandidateArticle
-  ): Promise<Buffer | null> {
+  ): Promise<GeneratedImageResult> {
     const imagePromptTemplate = await fs.readFile(IMAGE_PROMPT_PATH, 'utf-8');
 
     const imagePrompt = `${imagePromptTemplate}\n\nContexte de l'article:\nTitre: ${generated.title}\nChapeau: ${generated.excerpt}\nCorps:\n${stripHtml(generated.content).slice(0, 1400)}`;
 
     const fromMistral = await this.callMistralImage(imagePrompt);
-    if (fromMistral) return fromMistral;
+    if (fromMistral) return { buffer: fromMistral, source: 'mistral' };
 
-    if (!candidate.featuredImage) return null;
+    if (!candidate.featuredImage) return { buffer: null, source: 'none' };
 
     const fallbackUrl = candidate.featuredImage.startsWith('http')
       ? candidate.featuredImage
       : `${this.siteUrl.replace(/\/$/, '')}${candidate.featuredImage.startsWith('/') ? '' : '/'}${candidate.featuredImage}`;
 
     try {
-      return await this.fetchBinary(fallbackUrl);
+      const fallbackBuffer = await this.fetchBinary(fallbackUrl);
+      return { buffer: fallbackBuffer, source: 'fallback' };
     } catch {
-      return null;
+      return { buffer: null, source: 'none' };
     }
   }
 

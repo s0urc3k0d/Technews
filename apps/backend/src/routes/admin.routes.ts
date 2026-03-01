@@ -11,6 +11,7 @@ import {
   WEBHOOK_EVENTS,
   getWebhookSettings,
   saveWebhookSettings,
+  sendDiscordWebhookEvent,
 } from '../services/webhook.service.js';
 
 const adminRoutes: FastifyPluginAsync = async (fastify) => {
@@ -315,6 +316,26 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
           details: result as object,
         },
       });
+
+      if (result.status === 'published' && result.articleTitle) {
+        const slug = typeof result.details?.slug === 'string' ? result.details.slug : undefined;
+        const imageGenerated = result.details?.imageGenerated;
+
+        await sendDiscordWebhookEvent(
+          fastify.redis,
+          config.DISCORD_WEBHOOK_URL,
+          'article_published',
+          'Auto-publication IA (manuel)',
+          result.articleTitle,
+          0x22c55e,
+          {
+            articleId: result.articleId,
+            trigger: 'manual',
+            imageGenerated: typeof imageGenerated === 'boolean' ? String(imageGenerated) : undefined,
+            url: slug ? `${config.NEXT_PUBLIC_SITE_URL.replace(/\/$/, '')}/articles/${slug}` : undefined,
+          }
+        );
+      }
 
       return reply.send({ data: result });
     } catch (err) {

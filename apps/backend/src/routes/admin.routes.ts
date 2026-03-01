@@ -325,14 +325,13 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
           fastify.redis,
           config.DISCORD_WEBHOOK_URL,
           'article_published',
-          'Auto-publication IA (manuel)',
+          'Article publié',
           result.articleTitle,
           0x22c55e,
           {
             articleId: result.articleId,
-            trigger: 'manual',
             imageGenerated: typeof imageGenerated === 'boolean' ? String(imageGenerated) : undefined,
-            url: slug ? `${config.NEXT_PUBLIC_SITE_URL.replace(/\/$/, '')}/articles/${slug}` : undefined,
+            url: slug ? `${config.NEXT_PUBLIC_SITE_URL.replace(/\/$/, '')}/article/${slug}` : undefined,
           }
         );
       }

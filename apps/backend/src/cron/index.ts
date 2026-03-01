@@ -168,7 +168,7 @@ export const setupCronJobs = (config: CronConfig) => {
             redis,
             discordWebhookUrl,
             'article_published',
-            'Auto-publication IA',
+            'Article publié',
             result.articleTitle,
             0x22c55e,
             {

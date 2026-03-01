@@ -64,6 +64,7 @@ interface AutoPublishRunOptions {
 interface GeneratedImageResult {
   buffer: Buffer | null;
   source: 'mistral' | 'fallback' | 'none';
+  failureReason?: string;
 }
 
 const ARTICLE_PROMPT_PATH = path.join(process.cwd(), 'assets', 'prompt-article.txt');
@@ -199,6 +200,7 @@ export class AutoPublishService {
           generatedSlug: generated.slug,
           imageGenerated: Boolean(generatedImage.buffer),
           imageSource: generatedImage.source,
+          imageFailureReason: generatedImage.failureReason,
         },
       };
     }
@@ -219,6 +221,7 @@ export class AutoPublishService {
         sourceUrl: publishedArticle.sourceUrl,
         imageGenerated: Boolean(generatedImage.buffer),
         imageSource: generatedImage.source,
+        imageFailureReason: generatedImage.failureReason,
       },
     };
   }
@@ -446,21 +449,59 @@ ${candidate.content}`;
 
     const imagePrompt = `${imagePromptTemplate}\n\nContexte de l'article:\nTitre: ${generated.title}\nChapeau: ${generated.excerpt}\nCorps:\n${stripHtml(generated.content).slice(0, 1400)}`;
 
-    const fromMistral = await this.callMistralImage(imagePrompt);
-    if (fromMistral) return { buffer: fromMistral, source: 'mistral' };
+    const mistralResult = await this.callMistralImage(imagePrompt);
+    if (mistralResult.buffer) return { buffer: mistralResult.buffer, source: 'mistral' };
 
-    if (!candidate.featuredImage) return { buffer: null, source: 'none' };
+    if (!candidate.featuredImage) {
+      return {
+        buffer: null,
+        source: 'none',
+        failureReason: mistralResult.error || 'mistral_no_image_and_no_fallback',
+      };
+    }
 
-    const fallbackUrl = candidate.featuredImage.startsWith('http')
-      ? candidate.featuredImage
-      : `${this.siteUrl.replace(/\/$/, '')}${candidate.featuredImage.startsWith('/') ? '' : '/'}${candidate.featuredImage}`;
+    const fallbackUrl = this.resolveFeaturedImageUrl(candidate.featuredImage, candidate.sourceUrl);
 
     try {
       const fallbackBuffer = await this.fetchBinary(fallbackUrl);
       return { buffer: fallbackBuffer, source: 'fallback' };
-    } catch {
-      return { buffer: null, source: 'none' };
+    } catch (error) {
+      const fallbackError = error instanceof Error ? error.message : 'fallback_fetch_failed';
+      return {
+        buffer: null,
+        source: 'none',
+        failureReason: mistralResult.error
+          ? `${mistralResult.error}; fallback: ${fallbackError}`
+          : `fallback: ${fallbackError}`,
+      };
     }
+  }
+
+  private resolveFeaturedImageUrl(featuredImage: string, sourceUrl: string | null): string {
+    if (featuredImage.startsWith('http://') || featuredImage.startsWith('https://')) {
+      return featuredImage;
+    }
+
+    if (featuredImage.startsWith('/')) {
+      if (sourceUrl) {
+        try {
+          const sourceOrigin = new URL(sourceUrl).origin;
+          return `${sourceOrigin}${featuredImage}`;
+        } catch {
+        }
+      }
+
+      return `${this.siteUrl.replace(/\/$/, '')}${featuredImage}`;
+    }
+
+    if (sourceUrl) {
+      try {
+        return new URL(featuredImage, sourceUrl).toString();
+      } catch {
+      }
+    }
+
+    return `${this.siteUrl.replace(/\/$/, '')}/${featuredImage.replace(/^\/+/, '')}`;
   }
 
   private async applyPublication(
@@ -569,7 +610,7 @@ ${candidate.content}`;
     return content;
   }
 
-  private async callMistralImage(prompt: string): Promise<Buffer | null> {
+  private async callMistralImage(prompt: string): Promise<{ buffer: Buffer | null; error?: string }> {
     try {
       const response = await fetch('https://api.mistral.ai/v1/images/generations', {
         method: 'POST',
@@ -585,7 +626,11 @@ ${candidate.content}`;
       });
 
       if (!response.ok) {
-        return null;
+        const errorBody = await response.text().catch(() => '');
+        return {
+          buffer: null,
+          error: `mistral_image_http_${response.status}${errorBody ? `: ${errorBody.slice(0, 240)}` : ''}`,
+        };
       }
 
       const data = (await response.json()) as {
@@ -593,23 +638,26 @@ ${candidate.content}`;
       };
 
       const imageData = data.data?.[0];
-      if (!imageData) return null;
+      if (!imageData) return { buffer: null, error: 'mistral_image_empty_data' };
 
       if (imageData.b64_json) {
-        return Buffer.from(imageData.b64_json, 'base64');
+        return { buffer: Buffer.from(imageData.b64_json, 'base64') };
       }
 
       if (imageData.image_base64) {
-        return Buffer.from(imageData.image_base64, 'base64');
+        return { buffer: Buffer.from(imageData.image_base64, 'base64') };
       }
 
       if (imageData.url) {
-        return this.fetchBinary(imageData.url);
+        return { buffer: await this.fetchBinary(imageData.url) };
       }
 
-      return null;
-    } catch {
-      return null;
+      return { buffer: null, error: 'mistral_image_no_supported_payload' };
+    } catch (error) {
+      return {
+        buffer: null,
+        error: error instanceof Error ? `mistral_image_exception: ${error.message}` : 'mistral_image_exception',
+      };
     }
   }
 
@@ -620,6 +668,10 @@ ${candidate.content}`;
     try {
       const response = await fetch(url, {
         method: 'GET',
+        headers: {
+          'User-Agent': 'TechNewsBot/1.0 (+https://revuetech.fr)',
+          Accept: 'image/*,*/*;q=0.8',
+        },
         signal: controller.signal,
       });
 

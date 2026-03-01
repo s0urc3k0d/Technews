@@ -192,6 +192,11 @@ export default function AdminDashboardPage() {
                     : ''}
                 </p>
               )}
+              {typeof lastAutoPublishRun.details?.imageFailureReason === 'string' && (
+                <p>
+                  <span className="font-medium">Raison image:</span> {lastAutoPublishRun.details.imageFailureReason}
+                </p>
+              )}
               {lastAutoPublishRun.articleId && (
                 <p>
                   <a

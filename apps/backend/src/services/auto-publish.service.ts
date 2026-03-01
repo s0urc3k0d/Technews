@@ -56,6 +56,11 @@ interface AutoPublishResult {
   details?: Record<string, unknown>;
 }
 
+interface AutoPublishRunOptions {
+  ignoreCooldown?: boolean;
+  setCooldown?: boolean;
+}
+
 const ARTICLE_PROMPT_PATH = path.join(process.cwd(), 'assets', 'prompt-article.txt');
 const IMAGE_PROMPT_PATH = path.join(process.cwd(), 'assets', 'prompt-image.txt');
 const REDIS_COOLDOWN_KEY = 'autopublish:next_allowed_at';
@@ -123,9 +128,12 @@ export class AutoPublishService {
     this.dryRun = config.dryRun;
   }
 
-  async run(): Promise<AutoPublishResult> {
+  async run(options: AutoPublishRunOptions = {}): Promise<AutoPublishResult> {
+    const ignoreCooldown = options.ignoreCooldown ?? false;
+    const setCooldown = options.setCooldown ?? true;
+
     const cooldownUntil = await this.getCooldownUntil();
-    if (cooldownUntil && cooldownUntil.getTime() > Date.now()) {
+    if (!ignoreCooldown && cooldownUntil && cooldownUntil.getTime() > Date.now()) {
       return {
         success: true,
         status: 'skipped',
@@ -145,7 +153,9 @@ export class AutoPublishService {
 
     const duplicate = await this.detectDuplicate(candidate);
     if (duplicate) {
-      await this.setCooldown();
+      if (setCooldown) {
+        await this.setCooldown();
+      }
       return {
         success: true,
         status: 'skipped',
@@ -153,7 +163,7 @@ export class AutoPublishService {
         articleId: candidate.id,
         articleTitle: candidate.title,
         details: { duplicateArticleId: duplicate.id, duplicateSlug: duplicate.slug },
-        cooldownUntil: (await this.getCooldownUntil()) || undefined,
+        cooldownUntil: setCooldown ? (await this.getCooldownUntil()) || undefined : undefined,
       };
     }
 
@@ -170,13 +180,15 @@ export class AutoPublishService {
     const imageBuffer = await this.generateImageBuffer(generated, candidate);
 
     if (this.dryRun) {
-      await this.setCooldown();
+      if (setCooldown) {
+        await this.setCooldown();
+      }
       return {
         success: true,
         status: 'dry-run',
         articleId: candidate.id,
         articleTitle: candidate.title,
-        cooldownUntil: (await this.getCooldownUntil()) || undefined,
+        cooldownUntil: setCooldown ? (await this.getCooldownUntil()) || undefined : undefined,
         details: {
           generatedTitle: generated.title,
           generatedSlug: generated.slug,
@@ -186,14 +198,16 @@ export class AutoPublishService {
     }
 
     const publishedArticle = await this.applyPublication(candidate, generated, imageBuffer);
-    await this.setCooldown();
+    if (setCooldown) {
+      await this.setCooldown();
+    }
 
     return {
       success: true,
       status: 'published',
       articleId: publishedArticle.id,
       articleTitle: publishedArticle.title,
-      cooldownUntil: (await this.getCooldownUntil()) || undefined,
+      cooldownUntil: setCooldown ? (await this.getCooldownUntil()) || undefined : undefined,
       details: {
         slug: publishedArticle.slug,
         sourceUrl: publishedArticle.sourceUrl,

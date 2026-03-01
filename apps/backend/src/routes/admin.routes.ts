@@ -300,7 +300,10 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
     });
 
     try {
-      const result = await autoPublishService.run();
+      const result = await autoPublishService.run({
+        ignoreCooldown: true,
+        setCooldown: false,
+      });
 
       await prisma.cronJobLog.update({
         where: { id: log.id },

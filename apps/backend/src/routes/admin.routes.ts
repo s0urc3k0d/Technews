@@ -284,6 +284,7 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
       prisma,
       redis: fastify.redis,
       mistralApiKey: config.MISTRAL_API_KEY,
+      mistralImageEndpoint: config.MISTRAL_IMAGE_ENDPOINT,
       uploadPath: config.UPLOAD_PATH,
       siteUrl: config.NEXT_PUBLIC_SITE_URL,
       lookbackHours: parseInt(config.AUTO_PUBLISH_LOOKBACK_HOURS, 10) || 3,

@@ -9,6 +9,7 @@ interface AutoPublishConfig {
   prisma: PrismaClient;
   redis: Redis;
   mistralApiKey?: string;
+  mistralImageEndpoint?: string;
   uploadPath: string;
   siteUrl: string;
   lookbackHours: number;
@@ -70,7 +71,8 @@ interface GeneratedImageResult {
 const ARTICLE_PROMPT_PATH = path.join(process.cwd(), 'assets', 'prompt-article.txt');
 const IMAGE_PROMPT_PATH = path.join(process.cwd(), 'assets', 'prompt-image.txt');
 const REDIS_COOLDOWN_KEY = 'autopublish:next_allowed_at';
-const MIN_ARTICLE_TEXT_LENGTH = 1400;
+const MIN_ARTICLE_TEXT_LENGTH = 2200;
+const MIN_H2_SECTIONS = 6;
 
 const generatedPayloadSchema = z.object({
   title: z.string().min(8).max(255),
@@ -86,6 +88,11 @@ const generatedPayloadSchema = z.object({
 type GeneratedPayloadRaw = z.infer<typeof generatedPayloadSchema>;
 
 const stripHtml = (value: string): string => value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+
+const countH2Sections = (value: string): number => {
+  const matches = value.match(/<h2\b[^>]*>/gi);
+  return matches ? matches.length : 0;
+};
 
 const slugify = (value: string, max = 30): string =>
   value
@@ -118,6 +125,7 @@ export class AutoPublishService {
   private readonly prisma: PrismaClient;
   private readonly redis: Redis;
   private readonly mistralApiKey: string;
+  private readonly mistralImageEndpoint: string;
   private readonly uploadPath: string;
   private readonly siteUrl: string;
   private readonly lookbackHours: number;
@@ -129,6 +137,7 @@ export class AutoPublishService {
     this.prisma = config.prisma;
     this.redis = config.redis;
     this.mistralApiKey = config.mistralApiKey || '';
+    this.mistralImageEndpoint = config.mistralImageEndpoint || 'https://api.mistral.ai/v1/images/generations';
     this.uploadPath = config.uploadPath;
     this.siteUrl = config.siteUrl;
     this.lookbackHours = Math.max(1, config.lookbackHours);
@@ -322,8 +331,9 @@ Contraintes de sortie strictes:
 - metaTitle <= 60 caractères
 - metaDescription <= 160 caractères
   - content doit contenir des intertitres H2 en HTML (<h2>)
-  - content doit contenir au moins 1400 caractères de texte utile (hors balises)
-  - content doit proposer au minimum 4 sections H2
+  - content doit contenir au moins ${MIN_ARTICLE_TEXT_LENGTH} caractères de texte utile (hors balises)
+  - content doit proposer au minimum ${MIN_H2_SECTIONS} sections H2
+  - chaque section doit apporter des éléments techniques concrets (implémentation, architecture, performances, sécurité, limites)
 
 Catégories disponibles:
 ${categoryList}
@@ -378,12 +388,26 @@ ${candidate.content}`;
   ): Promise<GeneratedPayloadRaw> {
     let refined = { ...draft };
 
-    const contentLength = stripHtml(refined.content).length;
-    if (contentLength < MIN_ARTICLE_TEXT_LENGTH) {
-      const expanded = await this.expandArticleInFrench(candidate, refined);
-      if (expanded) {
-        refined = expanded;
+    for (let pass = 1; pass <= 2; pass += 1) {
+      const contentLength = stripHtml(refined.content).length;
+      const h2Count = countH2Sections(refined.content);
+      const needsExpansion = contentLength < MIN_ARTICLE_TEXT_LENGTH || h2Count < MIN_H2_SECTIONS;
+
+      if (!needsExpansion) {
+        break;
       }
+
+      const expanded = await this.expandArticleInFrench(candidate, refined, {
+        contentLength,
+        h2Count,
+        pass,
+      });
+
+      if (!expanded) {
+        break;
+      }
+
+      refined = expanded;
     }
 
     if (!this.isLikelyFrench(refined.title)) {
@@ -398,7 +422,8 @@ ${candidate.content}`;
 
   private async expandArticleInFrench(
     candidate: CandidateArticle,
-    current: GeneratedPayloadRaw
+    current: GeneratedPayloadRaw,
+    context: { contentLength: number; h2Count: number; pass: number }
   ): Promise<GeneratedPayloadRaw | null> {
     const prompt = `Tu es un éditeur web francophone. Tu dois enrichir l'article suivant en français.
 
@@ -406,9 +431,16 @@ Contraintes:
 - Réponds UNIQUEMENT en JSON strict
 - Conserve la même thématique et les mêmes faits
 - Garde les champs: title, slug, excerpt, content, metaTitle, metaDescription, category, tags
-- content en HTML avec au moins 4 sections <h2>
+- content en HTML avec au moins ${MIN_H2_SECTIONS} sections <h2>
 - content doit contenir au minimum ${MIN_ARTICLE_TEXT_LENGTH} caractères de texte utile (hors balises)
 - title, excerpt, content, metaTitle, metaDescription en français
+- ajoute des détails techniques concrets dans chaque section (architecture, protocoles, performances, sécurité, trade-offs, limites)
+- évite les sections courtes: chaque section doit contenir une explication substantielle
+
+État actuel à corriger:
+- longueur actuelle: ${context.contentLength} caractères
+- sections H2 actuelles: ${context.h2Count}
+- passe d'enrichissement: ${context.pass}
 
 Article source (JSON):
 ${JSON.stringify(current)}
@@ -420,10 +452,14 @@ Contexte source:
     try {
       const response = await this.callMistralChat(prompt, 5200, 0.35);
       const expanded = this.parseGeneratedPayload(response);
-      if (stripHtml(expanded.content).length >= MIN_ARTICLE_TEXT_LENGTH) {
+      if (
+        stripHtml(expanded.content).length >= MIN_ARTICLE_TEXT_LENGTH
+        && countH2Sections(expanded.content) >= MIN_H2_SECTIONS
+      ) {
         return expanded;
       }
-      return null;
+
+      return expanded;
     } catch {
       return null;
     }
@@ -735,7 +771,7 @@ Titre source original: ${candidate.title}`;
 
   private async callMistralImage(prompt: string): Promise<{ buffer: Buffer | null; error?: string }> {
     try {
-      const response = await fetch('https://api.mistral.ai/v1/images/generations', {
+      const response = await fetch(this.mistralImageEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

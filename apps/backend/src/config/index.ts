@@ -40,6 +40,7 @@ const envSchema = z.object({
 
   // Mistral AI
   MISTRAL_API_KEY: z.string().optional(),
+  MISTRAL_IMAGE_ENDPOINT: z.string().url().optional(),
 
   // RSS - TechPulse feed par défaut
   RSS_FEED_URL: z.string().url().default('https://techpulse.sourcekod.fr/api/feeds/all.xml'),

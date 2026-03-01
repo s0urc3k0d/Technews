@@ -19,6 +19,7 @@ interface CronConfig {
   rssUrl?: string;
   rssMaxAgeDays?: number;
   mistralApiKey?: string;
+  mistralImageEndpoint?: string;
   resendApiKey?: string;
   resendFromEmail?: string;
   discordWebhookUrl?: string;
@@ -142,6 +143,7 @@ export const setupCronJobs = (config: CronConfig) => {
           prisma,
           redis,
           mistralApiKey,
+          mistralImageEndpoint: config.mistralImageEndpoint,
           uploadPath,
           siteUrl,
           lookbackHours: config.autoPublishLookbackHours ?? 3,

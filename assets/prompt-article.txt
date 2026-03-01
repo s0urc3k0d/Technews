@@ -12,8 +12,9 @@ Chapeau (Leads) : Max 300 caractères. Résume l'impact direct de la news pour l
 
 Corps de l'article :
 - Réalise un résumé structuré avec des intertitres (H2).
-- Minimum 1400 caractères de texte utile.
-- Minimum 4 sections H2.
+- Minimum 2200 caractères de texte utile.
+- Minimum 6 sections H2.
+- Chaque section doit contenir des détails techniques concrets (architecture, performances, sécurité, limites, implications).
 - Texte dense et informatif, sans remplissage.
 
 Impératif : Conserve toutes les données techniques cruciales (performances, protocoles, chiffres, langages, etc.). Ne simplifie pas au point de perdre la précision d'expert.

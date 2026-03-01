@@ -9,6 +9,7 @@ import { createRSSParserService, DEFAULT_RSS_FEED_URL } from '../services/rss.se
 import { createNewsletterAIService } from '../services/newsletter-ai.service.js';
 import { createEmailService } from '../services/email.service.js';
 import { createShortsService } from '../services/shorts.service.js';
+import { createAutoPublishService } from '../services/auto-publish.service.js';
 import { sendDiscordWebhookEvent } from '../services/webhook.service.js';
 import * as path from 'path';
 
@@ -23,10 +24,26 @@ interface CronConfig {
   discordWebhookUrl?: string;
   siteUrl: string;
   shortsDir?: string;
+  uploadPath: string;
+  autoPublishEnabled?: string;
+  autoPublishDryRun?: string;
+  autoPublishLookbackHours?: number;
+  autoPublishIntervalMinMinutes?: number;
+  autoPublishIntervalMaxMinutes?: number;
 }
 
 export const setupCronJobs = (config: CronConfig) => {
-  const { prisma, redis, mistralApiKey, resendApiKey, resendFromEmail, discordWebhookUrl, siteUrl, shortsDir } = config;
+  const {
+    prisma,
+    redis,
+    mistralApiKey,
+    resendApiKey,
+    resendFromEmail,
+    discordWebhookUrl,
+    siteUrl,
+    shortsDir,
+    uploadPath,
+  } = config;
   
   // Utiliser l'URL TechPulse par défaut si non spécifiée
   const rssUrl = config.rssUrl || DEFAULT_RSS_FEED_URL;
@@ -105,6 +122,91 @@ export const setupCronJobs = (config: CronConfig) => {
   });
 
   console.log(`📰 RSS Parser cron job scheduled (every 2 hours) - Source: ${rssUrl}`);
+
+  const autoPublishEnabled = String(config.autoPublishEnabled || '').toLowerCase() === 'true';
+  if (autoPublishEnabled) {
+    cron.schedule('*/15 * * * *', async () => {
+      const lockAcquired = await redis.set('autopublish:lock', String(Date.now()), 'NX', 'EX', 10 * 60);
+      if (!lockAcquired) return;
+
+      const log = await prisma.cronJobLog.create({
+        data: {
+          jobName: 'auto-publish',
+          status: 'RUNNING',
+          startedAt: new Date(),
+        },
+      });
+
+      try {
+        const autoPublishService = createAutoPublishService({
+          prisma,
+          redis,
+          mistralApiKey,
+          uploadPath,
+          siteUrl,
+          lookbackHours: config.autoPublishLookbackHours ?? 3,
+          intervalMinMinutes: config.autoPublishIntervalMinMinutes ?? 90,
+          intervalMaxMinutes: config.autoPublishIntervalMaxMinutes ?? 120,
+          dryRun: String(config.autoPublishDryRun || '').toLowerCase() === 'true',
+        });
+
+        const result = await autoPublishService.run();
+
+        await prisma.cronJobLog.update({
+          where: { id: log.id },
+          data: {
+            status: result.success ? 'SUCCESS' : 'FAILED',
+            completedAt: new Date(),
+            duration: Date.now() - log.startedAt.getTime(),
+            message: result.reason || result.status,
+            details: result as object,
+          },
+        });
+
+        if (result.status === 'published' && result.articleTitle) {
+          await sendDiscordWebhookEvent(
+            redis,
+            discordWebhookUrl,
+            'article_published',
+            'Auto-publication IA',
+            result.articleTitle,
+            0x22c55e,
+            {
+              articleId: result.articleId,
+              cooldownUntil: result.cooldownUntil?.toISOString() || null,
+            }
+          );
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+
+        await prisma.cronJobLog.update({
+          where: { id: log.id },
+          data: {
+            status: 'FAILED',
+            completedAt: new Date(),
+            duration: Date.now() - log.startedAt.getTime(),
+            message,
+          },
+        });
+
+        await sendDiscordWebhookEvent(
+          redis,
+          discordWebhookUrl,
+          'job_failed',
+          'Auto-publication IA échouée',
+          message,
+          0xef4444
+        );
+      } finally {
+        await redis.del('autopublish:lock');
+      }
+    });
+
+    console.log('🤖 Auto-publish cron job scheduled (every 15 minutes, cooldown 90-120m)');
+  } else {
+    console.log('ℹ️ Auto-publish cron job disabled (AUTO_PUBLISH_ENABLED=false)');
+  }
 
   // Newsletter Generation - Daily at 5:30 PM
   cron.schedule('30 17 * * *', async () => {

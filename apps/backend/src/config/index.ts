@@ -63,6 +63,13 @@ const envSchema = z.object({
   // Cron jobs
   ENABLE_CRON: z.string().default('true'),
 
+  // Auto publish (IA)
+  AUTO_PUBLISH_ENABLED: z.string().default('false'),
+  AUTO_PUBLISH_DRY_RUN: z.string().default('true'),
+  AUTO_PUBLISH_LOOKBACK_HOURS: z.string().default('3'),
+  AUTO_PUBLISH_INTERVAL_MIN_MINUTES: z.string().default('90'),
+  AUTO_PUBLISH_INTERVAL_MAX_MINUTES: z.string().default('120'),
+
   // Frontend URL (for CORS & emails)
   NEXT_PUBLIC_SITE_URL: z.string().url().default('http://localhost:3000'),
 });

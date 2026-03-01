@@ -29,6 +29,30 @@ export interface LogFilters {
   jobName?: string;
 }
 
+interface AutoPublishRunResponse {
+  data: {
+    success: boolean;
+    status: 'published' | 'dry-run' | 'skipped' | 'failed';
+    reason?: string;
+    articleId?: string;
+    articleTitle?: string;
+    cooldownUntil?: string;
+    details?: Record<string, unknown>;
+  };
+}
+
+interface AutoPublishStatusResponse {
+  data: {
+    enabled: boolean;
+    dryRun: boolean;
+    lookbackHours: number;
+    intervalMinMinutes: number;
+    intervalMaxMinutes: number;
+    cooldownUntil: string | null;
+    mistralConfigured: boolean;
+  };
+}
+
 // ============================================
 // ADMIN STATS & ACTIONS
 // ============================================
@@ -91,6 +115,28 @@ export function useGenerateNewsletter() {
       queryClient.invalidateQueries({ queryKey: ['newsletter'] });
       queryClient.invalidateQueries({ queryKey: adminKeys.logs() });
     },
+  });
+}
+
+export function useRunAutoPublish() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload?: { dryRun?: boolean }) =>
+      apiClient.post<AutoPublishRunResponse>(API_ENDPOINTS.adminAutoPublishRun, payload || {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.logs() });
+      queryClient.invalidateQueries({ queryKey: adminKeys.stats() });
+      queryClient.invalidateQueries({ queryKey: articleKeys.lists() });
+    },
+  });
+}
+
+export function useAutoPublishStatus() {
+  return useQuery({
+    queryKey: [...adminKeys.all, 'auto-publish-status'],
+    queryFn: () => apiClient.get<AutoPublishStatusResponse>(API_ENDPOINTS.adminAutoPublishStatus),
+    refetchInterval: 30000,
   });
 }
 

@@ -6,6 +6,7 @@ import { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { createRSSParserService, DEFAULT_RSS_FEED_URL } from '../services/rss.service.js';
 import { createNewsletterAIService } from '../services/newsletter-ai.service.js';
+import { createAutoPublishService } from '../services/auto-publish.service.js';
 import {
   WEBHOOK_EVENTS,
   getWebhookSettings,
@@ -266,6 +267,93 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
 
       return reply.code(500).send({ error: message });
     }
+  });
+
+  // POST /admin/auto-publish/run - Déclencher auto-publication IA manuellement
+  fastify.post('/auto-publish/run', async (request, reply) => {
+    const parseResult = z.object({
+      dryRun: z.boolean().optional(),
+    }).safeParse(request.body || {});
+
+    if (!parseResult.success) {
+      return reply.status(400).send({ error: 'Invalid body', details: parseResult.error.issues });
+    }
+
+    const autoPublishService = createAutoPublishService({
+      prisma,
+      redis: fastify.redis,
+      mistralApiKey: config.MISTRAL_API_KEY,
+      uploadPath: config.UPLOAD_PATH,
+      siteUrl: config.NEXT_PUBLIC_SITE_URL,
+      lookbackHours: parseInt(config.AUTO_PUBLISH_LOOKBACK_HOURS, 10) || 3,
+      intervalMinMinutes: parseInt(config.AUTO_PUBLISH_INTERVAL_MIN_MINUTES, 10) || 90,
+      intervalMaxMinutes: parseInt(config.AUTO_PUBLISH_INTERVAL_MAX_MINUTES, 10) || 120,
+      dryRun: parseResult.data.dryRun ?? (String(config.AUTO_PUBLISH_DRY_RUN).toLowerCase() === 'true'),
+    });
+
+    const log = await prisma.cronJobLog.create({
+      data: {
+        jobName: 'auto-publish-manual',
+        status: 'RUNNING',
+        startedAt: new Date(),
+      },
+    });
+
+    try {
+      const result = await autoPublishService.run();
+
+      await prisma.cronJobLog.update({
+        where: { id: log.id },
+        data: {
+          status: result.success ? 'SUCCESS' : 'FAILED',
+          completedAt: new Date(),
+          duration: Date.now() - log.startedAt.getTime(),
+          message: result.reason || result.status,
+          details: result as object,
+        },
+      });
+
+      return reply.send({ data: result });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+
+      await prisma.cronJobLog.update({
+        where: { id: log.id },
+        data: {
+          status: 'FAILED',
+          completedAt: new Date(),
+          duration: Date.now() - log.startedAt.getTime(),
+          message,
+        },
+      });
+
+      return reply.status(500).send({ error: message });
+    }
+  });
+
+  // GET /admin/auto-publish/status - Voir la configuration active auto-publish
+  fastify.get('/auto-publish/status', async (request, reply) => {
+    const enabled = String(config.AUTO_PUBLISH_ENABLED).toLowerCase() === 'true';
+    const dryRun = String(config.AUTO_PUBLISH_DRY_RUN).toLowerCase() === 'true';
+    const lookbackHours = parseInt(config.AUTO_PUBLISH_LOOKBACK_HOURS, 10) || 3;
+    const intervalMinMinutes = parseInt(config.AUTO_PUBLISH_INTERVAL_MIN_MINUTES, 10) || 90;
+    const intervalMaxMinutes = parseInt(config.AUTO_PUBLISH_INTERVAL_MAX_MINUTES, 10) || 120;
+
+    const cooldownValue = await fastify.redis.get('autopublish:next_allowed_at');
+    const cooldownUntil = cooldownValue ? new Date(Number(cooldownValue)) : null;
+    const hasValidCooldown = Boolean(cooldownUntil && !Number.isNaN(cooldownUntil.getTime()));
+
+    return reply.send({
+      data: {
+        enabled,
+        dryRun,
+        lookbackHours,
+        intervalMinMinutes,
+        intervalMaxMinutes,
+        cooldownUntil: hasValidCooldown ? cooldownUntil?.toISOString() : null,
+        mistralConfigured: Boolean(config.MISTRAL_API_KEY),
+      },
+    });
   });
 
   // GET /admin/logs - Logs des cron jobs

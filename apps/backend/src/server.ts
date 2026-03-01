@@ -214,6 +214,12 @@ async function start() {
         discordWebhookUrl: server.config.DISCORD_WEBHOOK_URL,
         siteUrl: server.config.NEXT_PUBLIC_SITE_URL,
         shortsDir: server.config.SHORTS_DIR,
+        uploadPath: server.config.UPLOAD_PATH,
+        autoPublishEnabled: server.config.AUTO_PUBLISH_ENABLED,
+        autoPublishDryRun: server.config.AUTO_PUBLISH_DRY_RUN,
+        autoPublishLookbackHours: parseInt(server.config.AUTO_PUBLISH_LOOKBACK_HOURS, 10) || 3,
+        autoPublishIntervalMinMinutes: parseInt(server.config.AUTO_PUBLISH_INTERVAL_MIN_MINUTES, 10) || 90,
+        autoPublishIntervalMaxMinutes: parseInt(server.config.AUTO_PUBLISH_INTERVAL_MAX_MINUTES, 10) || 120,
       });
       server.log.info('✅ Cron jobs enabled');
     } else {

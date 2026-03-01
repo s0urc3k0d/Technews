@@ -97,6 +97,9 @@ COPY --from=builder --chown=fastify:nodejs /app/packages/database/prisma ./prism
 # Copy deployment scripts
 COPY --from=builder --chown=fastify:nodejs /app/scripts ./scripts
 
+# Copy AI prompts used by auto-publish
+COPY --from=builder --chown=fastify:nodejs /app/assets ./assets
+
 # Generate Prisma client with the installed version
 RUN npx prisma@5.22.0 generate --schema=./prisma/schema.prisma
 

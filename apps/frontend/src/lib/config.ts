@@ -60,6 +60,8 @@ export const API_ENDPOINTS = {
   adminRssStatus: '/api/v1/admin/rss/status',
   adminRssParse: '/api/v1/admin/rss/parse',
   adminNewsletterGenerate: '/api/v1/admin/newsletter/generate',
+  adminAutoPublishRun: '/api/v1/admin/auto-publish/run',
+  adminAutoPublishStatus: '/api/v1/admin/auto-publish/status',
   adminLogs: '/api/v1/admin/logs',
   adminWebhooks: '/api/v1/admin/webhooks',
   adminWebhookTest: '/api/v1/admin/webhooks/test',

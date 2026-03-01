@@ -4,12 +4,14 @@
 
 'use client';
 
-import { useAdminStats, useCronLogs } from '@/hooks';
+import { useAdminStats, useAutoPublishStatus, useCronLogs, useRunAutoPublish } from '@/hooks';
 import { formatDate, formatNumber, cn } from '@/lib/utils';
 
 export default function AdminDashboardPage() {
   const { data: stats, isLoading: statsLoading } = useAdminStats();
   const { data: cronLogs, isLoading: logsLoading } = useCronLogs({ limit: 10 });
+  const { data: autoPublishStatusData, isLoading: autoPublishStatusLoading } = useAutoPublishStatus();
+  const autoPublishMutation = useRunAutoPublish();
 
   const articleStats = typeof stats?.articles === 'number'
     ? { total: stats.articles }
@@ -22,6 +24,19 @@ export default function AdminDashboardPage() {
   const subscriberStats = typeof stats?.subscribers === 'number'
     ? { active: stats.subscribers }
     : stats?.subscribers;
+
+  const latestAutoPublishLog = cronLogs?.data?.find((log) =>
+    log.jobName === 'auto-publish' || log.jobName === 'auto-publish-manual'
+  );
+  const autoPublishStatus = autoPublishStatusData?.data;
+
+  const handleRunAutoPublish = async (dryRun: boolean) => {
+    try {
+      await autoPublishMutation.mutateAsync({ dryRun });
+    } catch {
+      // handled by mutation state in UI
+    }
+  };
 
   return (
     <div>
@@ -67,6 +82,100 @@ export default function AdminDashboardPage() {
           <ActionButton href="/admin/newsletter" icon="📤" label="Envoyer newsletter" />
           <ActionButton href="/admin/comments?status=PENDING" icon="⏳" label="Modérer commentaires" />
           <ActionButton href="/admin/images" icon="🖼️" label="Gérer images" />
+        </div>
+      </div>
+
+      {/* Auto Publish IA */}
+      <div className="bg-white rounded-xl p-6 shadow-sm mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold">Auto-publication IA</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Lance un run manuel pour tester ou publier immédiatement un draft RSS éligible.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleRunAutoPublish(true)}
+              disabled={autoPublishMutation.isPending}
+              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              Dry run
+            </button>
+            <button
+              onClick={() => handleRunAutoPublish(false)}
+              disabled={autoPublishMutation.isPending}
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              Publier maintenant
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 text-sm">
+          <div className="mb-3 rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-700">
+            {autoPublishStatusLoading ? (
+              <p>Chargement de la configuration auto-publish...</p>
+            ) : autoPublishStatus ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <p>
+                  <span className="font-medium">Auto-publish:</span>{' '}
+                  <span className={autoPublishStatus.enabled ? 'text-green-700 font-medium' : 'text-gray-600 font-medium'}>
+                    {autoPublishStatus.enabled ? 'ACTIVÉ' : 'DÉSACTIVÉ'}
+                  </span>
+                </p>
+                <p>
+                  <span className="font-medium">Mode:</span>{' '}
+                  {autoPublishStatus.dryRun ? 'Dry run' : 'Publication réelle'}
+                </p>
+                <p>
+                  <span className="font-medium">Fenêtre drafts:</span> {autoPublishStatus.lookbackHours}h
+                </p>
+                <p>
+                  <span className="font-medium">Cadence:</span> {autoPublishStatus.intervalMinMinutes}-{autoPublishStatus.intervalMaxMinutes} min
+                </p>
+                <p>
+                  <span className="font-medium">Mistral:</span>{' '}
+                  <span className={autoPublishStatus.mistralConfigured ? 'text-green-700' : 'text-red-700'}>
+                    {autoPublishStatus.mistralConfigured ? 'configuré' : 'non configuré'}
+                  </span>
+                </p>
+                <p>
+                  <span className="font-medium">Prochaine exécution autorisée:</span>{' '}
+                  {autoPublishStatus.cooldownUntil
+                    ? formatDate(autoPublishStatus.cooldownUntil, { hour: '2-digit', minute: '2-digit' })
+                    : 'immédiate'}
+                </p>
+              </div>
+            ) : (
+              <p>Configuration auto-publish indisponible.</p>
+            )}
+          </div>
+
+          {autoPublishMutation.isSuccess && (
+            <p className="text-green-700">Run auto-publish exécuté avec succès.</p>
+          )}
+          {autoPublishMutation.isError && (
+            <p className="text-red-700">Échec du run auto-publish.</p>
+          )}
+          {latestAutoPublishLog ? (
+            <p className="text-gray-600">
+              Dernier run: <span className="font-medium">{latestAutoPublishLog.jobName}</span> •{' '}
+              <span
+                className={cn(
+                  'font-medium',
+                  latestAutoPublishLog.status === 'SUCCESS' && 'text-green-700',
+                  latestAutoPublishLog.status === 'FAILED' && 'text-red-700',
+                  latestAutoPublishLog.status === 'RUNNING' && 'text-amber-700'
+                )}
+              >
+                {latestAutoPublishLog.status}
+              </span>{' '}
+              • {formatDate(latestAutoPublishLog.startedAt, { hour: '2-digit', minute: '2-digit' })}
+            </p>
+          ) : (
+            <p className="text-gray-500">Aucun run auto-publish détecté pour le moment.</p>
+          )}
         </div>
       </div>
 

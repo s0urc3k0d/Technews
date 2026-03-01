@@ -70,6 +70,7 @@ interface GeneratedImageResult {
 const ARTICLE_PROMPT_PATH = path.join(process.cwd(), 'assets', 'prompt-article.txt');
 const IMAGE_PROMPT_PATH = path.join(process.cwd(), 'assets', 'prompt-image.txt');
 const REDIS_COOLDOWN_KEY = 'autopublish:next_allowed_at';
+const MIN_ARTICLE_TEXT_LENGTH = 1400;
 
 const generatedPayloadSchema = z.object({
   title: z.string().min(8).max(255),
@@ -81,6 +82,8 @@ const generatedPayloadSchema = z.object({
   category: z.string().min(1),
   tags: z.array(z.string()).max(8).optional().default([]),
 });
+
+type GeneratedPayloadRaw = z.infer<typeof generatedPayloadSchema>;
 
 const stripHtml = (value: string): string => value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
@@ -313,11 +316,14 @@ export class AutoPublishService {
 Contraintes de sortie strictes:
 - Réponds UNIQUEMENT en JSON strict sans markdown
 - Champs JSON attendus: title, slug, excerpt, content, metaTitle, metaDescription, category, tags
+  - Tous les champs textuels DOIVENT être en français (aucun titre en anglais)
 - slug < 30 caractères
 - excerpt <= 300 caractères
 - metaTitle <= 60 caractères
 - metaDescription <= 160 caractères
-- content doit contenir des intertitres H2 en HTML (<h2>)
+  - content doit contenir des intertitres H2 en HTML (<h2>)
+  - content doit contenir au moins 1400 caractères de texte utile (hors balises)
+  - content doit proposer au minimum 4 sections H2
 
 Catégories disponibles:
 ${categoryList}
@@ -329,36 +335,153 @@ Extrait source: ${candidate.excerpt || ''}
 Contenu source (HTML):
 ${candidate.content}`;
 
-    const response = await this.callMistralChat(prompt, 3500, 0.4);
+    const response = await this.callMistralChat(prompt, 5200, 0.35);
+    const validated = this.parseGeneratedPayload(response);
+    const refined = await this.refineGeneratedPayload(candidate, validated);
+
+    let targetSlug = slugify(refined.slug || refined.title, 30);
+    if (!targetSlug) {
+      targetSlug = slugify(refined.title, 30);
+    }
+
+    targetSlug = await this.ensureUniqueSlug(targetSlug, candidate.id);
+
+    const selectedCategory = this.resolveCategory(categories, refined.category, candidate);
+
+    const tagIds = this.resolveTagIds(existingTags, refined.tags || []);
+
+    return {
+      title: refined.title.trim(),
+      slug: targetSlug,
+      excerpt: refined.excerpt.trim().slice(0, 300),
+      content: refined.content.trim(),
+      metaTitle: refined.metaTitle.trim().slice(0, 60),
+      metaDescription: refined.metaDescription.trim().slice(0, 160),
+      categoryId: selectedCategory.id,
+      tagIds,
+    };
+  }
+
+  private parseGeneratedPayload(response: string): GeneratedPayloadRaw {
     const parsed = extractJsonObject(response);
 
     if (!parsed) {
       throw new Error('Invalid AI response: JSON object not found');
     }
 
-    const validated = generatedPayloadSchema.parse(parsed);
+    return generatedPayloadSchema.parse(parsed);
+  }
 
-    let targetSlug = slugify(validated.slug || validated.title, 30);
-    if (!targetSlug) {
-      targetSlug = slugify(validated.title, 30);
+  private async refineGeneratedPayload(
+    candidate: CandidateArticle,
+    draft: GeneratedPayloadRaw
+  ): Promise<GeneratedPayloadRaw> {
+    let refined = { ...draft };
+
+    const contentLength = stripHtml(refined.content).length;
+    if (contentLength < MIN_ARTICLE_TEXT_LENGTH) {
+      const expanded = await this.expandArticleInFrench(candidate, refined);
+      if (expanded) {
+        refined = expanded;
+      }
     }
 
-    targetSlug = await this.ensureUniqueSlug(targetSlug, candidate.id);
+    if (!this.isLikelyFrench(refined.title)) {
+      const translated = await this.translateTitleToFrench(candidate, refined);
+      if (translated) {
+        refined = translated;
+      }
+    }
 
-    const selectedCategory = this.resolveCategory(categories, validated.category, candidate);
+    return refined;
+  }
 
-    const tagIds = this.resolveTagIds(existingTags, validated.tags || []);
+  private async expandArticleInFrench(
+    candidate: CandidateArticle,
+    current: GeneratedPayloadRaw
+  ): Promise<GeneratedPayloadRaw | null> {
+    const prompt = `Tu es un éditeur web francophone. Tu dois enrichir l'article suivant en français.
 
-    return {
-      title: validated.title.trim(),
-      slug: targetSlug,
-      excerpt: validated.excerpt.trim().slice(0, 300),
-      content: validated.content.trim(),
-      metaTitle: validated.metaTitle.trim().slice(0, 60),
-      metaDescription: validated.metaDescription.trim().slice(0, 160),
-      categoryId: selectedCategory.id,
-      tagIds,
-    };
+Contraintes:
+- Réponds UNIQUEMENT en JSON strict
+- Conserve la même thématique et les mêmes faits
+- Garde les champs: title, slug, excerpt, content, metaTitle, metaDescription, category, tags
+- content en HTML avec au moins 4 sections <h2>
+- content doit contenir au minimum ${MIN_ARTICLE_TEXT_LENGTH} caractères de texte utile (hors balises)
+- title, excerpt, content, metaTitle, metaDescription en français
+
+Article source (JSON):
+${JSON.stringify(current)}
+
+Contexte source:
+- Titre original: ${candidate.title}
+- URL originale: ${candidate.sourceUrl || 'inconnue'}`;
+
+    try {
+      const response = await this.callMistralChat(prompt, 5200, 0.35);
+      const expanded = this.parseGeneratedPayload(response);
+      if (stripHtml(expanded.content).length >= MIN_ARTICLE_TEXT_LENGTH) {
+        return expanded;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  private async translateTitleToFrench(
+    candidate: CandidateArticle,
+    current: GeneratedPayloadRaw
+  ): Promise<GeneratedPayloadRaw | null> {
+    const prompt = `Traduis et adapte ce titre en français naturel (style presse tech), puis renvoie UNIQUEMENT un JSON strict avec les champs title et metaTitle.
+
+Contrainte:
+- français uniquement
+- garder le sens de l'article
+
+Titre actuel: ${current.title}
+Meta title actuel: ${current.metaTitle}
+Titre source original: ${candidate.title}`;
+
+    try {
+      const response = await this.callMistralChat(prompt, 300, 0.2);
+      const parsed = extractJsonObject(response);
+      if (!parsed) return null;
+
+      const translated = z.object({
+        title: z.string().min(8).max(255),
+        metaTitle: z.string().min(10).max(60),
+      }).parse(parsed);
+
+      return {
+        ...current,
+        title: translated.title.trim(),
+        metaTitle: translated.metaTitle.trim(),
+        slug: slugify(translated.title, 30) || current.slug,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  private isLikelyFrench(value: string): boolean {
+    const normalized = ` ${value.toLowerCase()} `;
+
+    const frenchTokens = [
+      ' le ', ' la ', ' les ', ' des ', ' une ', ' un ', ' pour ', ' avec ', ' sur ', ' dans ', ' grâce ', ' français '
+    ];
+    const englishTokens = [
+      ' the ', ' and ', ' with ', ' for ', ' from ', ' how ', ' why ', ' best ', ' update ', ' release '
+    ];
+
+    const frenchHits = frenchTokens.reduce((count, token) => count + (normalized.includes(token) ? 1 : 0), 0);
+    const englishHits = englishTokens.reduce((count, token) => count + (normalized.includes(token) ? 1 : 0), 0);
+
+    if (/[éèêàùçôîï]/i.test(value)) {
+      return true;
+    }
+
+    return frenchHits >= englishHits;
   }
 
   private resolveCategory(

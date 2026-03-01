@@ -4,14 +4,26 @@
 
 'use client';
 
+import { useState } from 'react';
 import { useAdminStats, useAutoPublishStatus, useCronLogs, useRunAutoPublish } from '@/hooks';
 import { formatDate, formatNumber, cn } from '@/lib/utils';
+
+interface AutoPublishRunData {
+  success: boolean;
+  status: 'published' | 'dry-run' | 'skipped' | 'failed';
+  reason?: string;
+  articleId?: string;
+  articleTitle?: string;
+  cooldownUntil?: string;
+  details?: Record<string, unknown>;
+}
 
 export default function AdminDashboardPage() {
   const { data: stats, isLoading: statsLoading } = useAdminStats();
   const { data: cronLogs, isLoading: logsLoading } = useCronLogs({ limit: 10 });
   const { data: autoPublishStatusData, isLoading: autoPublishStatusLoading } = useAutoPublishStatus();
   const autoPublishMutation = useRunAutoPublish();
+  const [lastAutoPublishRun, setLastAutoPublishRun] = useState<AutoPublishRunData | null>(null);
 
   const articleStats = typeof stats?.articles === 'number'
     ? { total: stats.articles }
@@ -32,7 +44,8 @@ export default function AdminDashboardPage() {
 
   const handleRunAutoPublish = async (dryRun: boolean) => {
     try {
-      await autoPublishMutation.mutateAsync({ dryRun });
+      const response = await autoPublishMutation.mutateAsync({ dryRun });
+      setLastAutoPublishRun(response.data || null);
     } catch {
       // handled by mutation state in UI
     }
@@ -157,6 +170,36 @@ export default function AdminDashboardPage() {
           )}
           {autoPublishMutation.isError && (
             <p className="text-red-700">Échec du run auto-publish.</p>
+          )}
+          {lastAutoPublishRun && (
+            <div className="mt-2 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+              <p>
+                <span className="font-medium">Résultat:</span> {lastAutoPublishRun.status}
+                {lastAutoPublishRun.reason ? ` (${lastAutoPublishRun.reason})` : ''}
+              </p>
+              {lastAutoPublishRun.articleTitle && (
+                <p>
+                  <span className="font-medium">Article traité:</span> {lastAutoPublishRun.articleTitle}
+                  {lastAutoPublishRun.articleId ? ` (${lastAutoPublishRun.articleId})` : ''}
+                </p>
+              )}
+              {lastAutoPublishRun.articleId && (
+                <p>
+                  <a
+                    href={`/admin/articles/new?id=${lastAutoPublishRun.articleId}`}
+                    className="font-medium text-blue-700 underline hover:text-blue-800"
+                  >
+                    Ouvrir l’article dans l’éditeur
+                  </a>
+                </p>
+              )}
+              {lastAutoPublishRun.cooldownUntil && (
+                <p>
+                  <span className="font-medium">Prochaine fenêtre:</span>{' '}
+                  {formatDate(lastAutoPublishRun.cooldownUntil, { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              )}
+            </div>
           )}
           {latestAutoPublishLog ? (
             <p className="text-gray-600">

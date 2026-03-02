@@ -768,7 +768,7 @@ Titre source original: ${candidate.title}`;
           metaDescription: generated.metaDescription,
           featuredImage: featuredImage || undefined,
           status: 'PRE_PUBLISHED' as any,
-          publishedAt: null,
+          publishedAt: candidate.publishedAt ?? candidate.createdAt,
           source: 'RSS',
           shareOnPublish: false,
         },

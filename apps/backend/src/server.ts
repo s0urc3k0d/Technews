@@ -221,6 +221,8 @@ async function start() {
         autoPublishLookbackHours: parseInt(server.config.AUTO_PUBLISH_LOOKBACK_HOURS, 10) || 3,
         autoPublishIntervalMinMinutes: parseInt(server.config.AUTO_PUBLISH_INTERVAL_MIN_MINUTES, 10) || 90,
         autoPublishIntervalMaxMinutes: parseInt(server.config.AUTO_PUBLISH_INTERVAL_MAX_MINUTES, 10) || 120,
+        draftPurgeEnabled: server.config.DRAFT_PURGE_ENABLED,
+        draftPurgeDays: parseInt(server.config.DRAFT_PURGE_DAYS, 10) || 3,
       });
       server.log.info('✅ Cron jobs enabled');
     } else {

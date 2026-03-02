@@ -44,7 +44,7 @@ export interface Article {
 }
 
 export type ArticleType = 'STANDARD' | 'PODCAST';
-export type ArticleStatus = 'DRAFT' | 'PUBLISHED' | 'SCHEDULED' | 'REJECTED' | 'ARCHIVED';
+export type ArticleStatus = 'DRAFT' | 'PRE_PUBLISHED' | 'PUBLISHED' | 'SCHEDULED' | 'REJECTED' | 'ARCHIVED';
 export type ArticleSource = 'MANUAL' | 'RSS';
 
 export interface ArticleImage {

@@ -43,7 +43,7 @@ export default function AdminArticlesPage() {
   };
 
   const handleToggleStatus = (article: Article) => {
-    const newStatus = article.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED';
+    const newStatus = article.status === 'PUBLISHED' ? 'PRE_PUBLISHED' : 'PUBLISHED';
     updateArticle({ id: article.id, data: { status: newStatus } });
   };
 
@@ -156,6 +156,7 @@ export default function AdminArticlesPage() {
           >
             <option value="">Tous les statuts</option>
             <option value="PUBLISHED">Publié</option>
+            <option value="PRE_PUBLISHED">Pré-publié</option>
             <option value="DRAFT">Brouillon</option>
             <option value="ARCHIVED">Archivé</option>
           </select>

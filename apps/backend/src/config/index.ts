@@ -71,6 +71,10 @@ const envSchema = z.object({
   AUTO_PUBLISH_INTERVAL_MIN_MINUTES: z.string().default('90'),
   AUTO_PUBLISH_INTERVAL_MAX_MINUTES: z.string().default('120'),
 
+  // Draft purge
+  DRAFT_PURGE_ENABLED: z.string().default('true'),
+  DRAFT_PURGE_DAYS: z.string().default('3'),
+
   // Frontend URL (for CORS & emails)
   NEXT_PUBLIC_SITE_URL: z.string().url().default('http://localhost:3000'),
 });

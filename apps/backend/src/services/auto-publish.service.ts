@@ -27,7 +27,7 @@ interface CandidateArticle {
   featuredImage: string | null;
   sourceUrl: string | null;
   sourceName: string | null;
-  status: 'DRAFT' | 'PUBLISHED' | 'SCHEDULED' | 'REJECTED' | 'ARCHIVED';
+  status: 'DRAFT' | 'PRE_PUBLISHED' | 'PUBLISHED' | 'SCHEDULED' | 'REJECTED' | 'ARCHIVED';
   type: 'STANDARD' | 'PODCAST';
   createdAt: Date;
   updatedAt: Date;
@@ -49,7 +49,7 @@ interface GeneratedArticlePayload {
 
 interface AutoPublishResult {
   success: boolean;
-  status: 'published' | 'dry-run' | 'skipped' | 'failed';
+  status: 'pre-published' | 'dry-run' | 'skipped' | 'failed';
   reason?: string;
   articleId?: string;
   articleTitle?: string;
@@ -120,6 +120,27 @@ const extractJsonObject = (value: string): Record<string, unknown> | null => {
     return null;
   }
 };
+
+const PROMOTIONAL_PATTERNS: RegExp[] = [
+  /\bpromo(?:tion)?\b/i,
+  /\bbon\s*plan\b/i,
+  /\bdeal\b/i,
+  /\bcode\s*promo\b/i,
+  /\bblack\s*friday\b/i,
+  /\bprime\s*day\b/i,
+  /\bmeilleur(?:s)?\b/i,
+  /\btop\s*\d+\b/i,
+  /\bcomparatif\b/i,
+  /\bvs\b/i,
+  /\bface\s*[àa]\s*face\b/i,
+  /\bbest\b/i,
+  /\bprice\b/i,
+  /\bdiscount\b/i,
+  /\bbuy\b/i,
+  /\baffiliate\b/i,
+  /\bsponsoris[ée]\b/i,
+  /\bpartenariat\b/i,
+];
 
 export class AutoPublishService {
   private readonly prisma: PrismaClient;
@@ -224,7 +245,7 @@ export class AutoPublishService {
 
     return {
       success: true,
-      status: 'published',
+      status: 'pre-published',
       articleId: publishedArticle.id,
       articleTitle: publishedArticle.title,
       cooldownUntil: setCooldown ? (await this.getCooldownUntil()) || undefined : undefined,
@@ -261,7 +282,11 @@ export class AutoPublishService {
 
     if (drafts.length === 0) return null;
 
-    const scored = drafts.map((article: CandidateArticle) => {
+    const eligibleDrafts = drafts.filter((article: CandidateArticle) => !this.isPromotionalArticle(article));
+
+    if (eligibleDrafts.length === 0) return null;
+
+    const scored = eligibleDrafts.map((article: CandidateArticle) => {
       const ageHours = Math.max(0, (now - article.createdAt.getTime()) / (60 * 60 * 1000));
       const freshnessScore = Math.max(0, 40 - ageHours * 8);
       const contentLengthScore = Math.min(30, stripHtml(article.content || '').length / 120);
@@ -285,7 +310,7 @@ export class AutoPublishService {
       const sameSource = await this.prisma.article.findFirst({
         where: {
           id: { not: candidate.id },
-          status: 'PUBLISHED',
+          status: { in: ['PUBLISHED', 'PRE_PUBLISHED'] as any },
           sourceUrl: candidate.sourceUrl,
         },
         select: { id: true, slug: true },
@@ -298,7 +323,7 @@ export class AutoPublishService {
     const sameTitle = await this.prisma.article.findFirst({
       where: {
         id: { not: candidate.id },
-        status: 'PUBLISHED',
+        status: { in: ['PUBLISHED', 'PRE_PUBLISHED'] as any },
         title,
         sourceName: candidate.sourceName || undefined,
         createdAt: { gte: recentThreshold },
@@ -663,6 +688,17 @@ Titre source original: ${candidate.title}`;
     return `${this.siteUrl.replace(/\/$/, '')}/${featuredImage.replace(/^\/+/, '')}`;
   }
 
+  private isPromotionalArticle(article: CandidateArticle): boolean {
+    const haystack = [
+      article.title,
+      article.excerpt || '',
+      stripHtml(article.content || ''),
+      article.sourceUrl || '',
+    ].join(' \n ');
+
+    return PROMOTIONAL_PATTERNS.some((pattern) => pattern.test(haystack));
+  }
+
   private async applyPublication(
     candidate: CandidateArticle,
     generated: GeneratedArticlePayload,
@@ -731,8 +767,8 @@ Titre source original: ${candidate.title}`;
           metaTitle: generated.metaTitle,
           metaDescription: generated.metaDescription,
           featuredImage: featuredImage || undefined,
-          status: 'PUBLISHED',
-          publishedAt: new Date(),
+          status: 'PRE_PUBLISHED' as any,
+          publishedAt: null,
           source: 'RSS',
           shareOnPublish: false,
         },

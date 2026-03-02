@@ -31,6 +31,8 @@ interface CronConfig {
   autoPublishLookbackHours?: number;
   autoPublishIntervalMinMinutes?: number;
   autoPublishIntervalMaxMinutes?: number;
+  draftPurgeEnabled?: string;
+  draftPurgeDays?: number;
 }
 
 export const setupCronJobs = (config: CronConfig) => {
@@ -165,19 +167,8 @@ export const setupCronJobs = (config: CronConfig) => {
           },
         });
 
-        if (result.status === 'published' && result.articleTitle) {
-          await sendDiscordWebhookEvent(
-            redis,
-            discordWebhookUrl,
-            'article_published',
-            'Article publié',
-            result.articleTitle,
-            0x22c55e,
-            {
-              articleId: result.articleId,
-              cooldownUntil: result.cooldownUntil?.toISOString() || null,
-            }
-          );
+        if (result.status === 'pre-published' && result.articleTitle) {
+          console.log(`[CRON] Auto-publish prepared article in PRE_PUBLISHED: ${result.articleTitle}`);
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
@@ -208,6 +199,66 @@ export const setupCronJobs = (config: CronConfig) => {
     console.log('🤖 Auto-publish cron job scheduled (every 15 minutes, cooldown 90-120m)');
   } else {
     console.log('ℹ️ Auto-publish cron job disabled (AUTO_PUBLISH_ENABLED=false)');
+  }
+
+  const draftPurgeEnabled = String(config.draftPurgeEnabled || '').toLowerCase() === 'true';
+  if (draftPurgeEnabled) {
+    cron.schedule('15 3 * * *', async () => {
+      const days = Math.max(1, config.draftPurgeDays ?? 3);
+      const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+      const log = await prisma.cronJobLog.create({
+        data: {
+          jobName: 'draft-purge',
+          status: 'RUNNING',
+          startedAt: new Date(),
+        },
+      });
+
+      try {
+        const result = await prisma.article.deleteMany({
+          where: {
+            status: 'DRAFT',
+            createdAt: { lt: cutoff },
+          },
+        });
+
+        await prisma.cronJobLog.update({
+          where: { id: log.id },
+          data: {
+            status: 'SUCCESS',
+            completedAt: new Date(),
+            duration: Date.now() - log.startedAt.getTime(),
+            message: `Deleted ${result.count} draft(s) older than ${days} day(s)`,
+            details: {
+              deletedCount: result.count,
+              cutoff: cutoff.toISOString(),
+              days,
+            } as object,
+          },
+        });
+
+        console.log(`[CRON] Draft purge completed: ${result.count} deleted (>${days} days)`);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+
+        await prisma.cronJobLog.update({
+          where: { id: log.id },
+          data: {
+            status: 'FAILED',
+            completedAt: new Date(),
+            duration: Date.now() - log.startedAt.getTime(),
+            message,
+          },
+        });
+
+        console.error('[CRON] Draft purge failed:', err);
+      }
+    });
+
+    console.log(`🧹 Draft purge cron job scheduled (daily 03:15, keep <= ${Math.max(1, config.draftPurgeDays ?? 3)} days)`);
+  } else {
+    console.log('ℹ️ Draft purge cron job disabled (DRAFT_PURGE_ENABLED=false)');
   }
 
   // Newsletter Generation - Daily at 5:30 PM

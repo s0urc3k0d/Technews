@@ -10,7 +10,7 @@ import { formatDate, formatNumber, cn } from '@/lib/utils';
 
 interface AutoPublishRunData {
   success: boolean;
-  status: 'published' | 'dry-run' | 'skipped' | 'failed';
+  status: 'pre-published' | 'dry-run' | 'skipped' | 'failed';
   reason?: string;
   articleId?: string;
   articleTitle?: string;

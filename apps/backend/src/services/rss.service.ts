@@ -168,6 +168,9 @@ export class RSSParserService {
         await this.updateExistingArticle(existing.id, item, normalizedSourceUrl, sourceName);
         return 'updated';
       }
+      if (existing.status === 'PRE_PUBLISHED') {
+        return 'skipped';
+      }
       return 'skipped'; // Skip published/archived articles
     }
 

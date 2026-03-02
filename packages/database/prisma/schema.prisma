@@ -107,6 +107,7 @@ enum ArticleType {
 
 enum ArticleStatus {
   DRAFT       // Brouillon (articles importés RSS ou en cours de rédaction)
+  PRE_PUBLISHED // Pré-publié (visible uniquement en admin, validation manuelle)
   PUBLISHED   // Publié et visible
   SCHEDULED   // Publication programmée
   REJECTED    // Rejeté (articles RSS non publiés)

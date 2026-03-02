@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 // Enums
 export const ArticleType = z.enum(['STANDARD', 'PODCAST']);
-export const ArticleStatus = z.enum(['DRAFT', 'PUBLISHED', 'SCHEDULED', 'REJECTED', 'ARCHIVED']);
+export const ArticleStatus = z.enum(['DRAFT', 'PRE_PUBLISHED', 'PUBLISHED', 'SCHEDULED', 'REJECTED', 'ARCHIVED']);
 export const ArticleSource = z.enum(['MANUAL', 'RSS']);
 
 // Base article schema

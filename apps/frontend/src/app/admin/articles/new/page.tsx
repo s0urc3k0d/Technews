@@ -43,7 +43,7 @@ interface ArticleFormData {
   coverImage: string;
   categoryId: string;
   tagIds: string[];
-  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+  status: 'DRAFT' | 'PRE_PUBLISHED' | 'PUBLISHED' | 'ARCHIVED';
   publishedAt: string;
   youtubeUrl: string;
   spotifyUrl: string;
@@ -204,7 +204,7 @@ export default function ArticleEditorPage() {
     setFormData(prev => ({ ...prev, content }));
   };
 
-  const handleSubmit = async (e: React.FormEvent, status?: 'DRAFT' | 'PUBLISHED') => {
+  const handleSubmit = async (e: React.FormEvent, status?: 'DRAFT' | 'PRE_PUBLISHED' | 'PUBLISHED') => {
     e.preventDefault();
     setIsSaving(true);
     setError(null);
@@ -460,6 +460,7 @@ export default function ArticleEditorPage() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="DRAFT">Brouillon</option>
+                      <option value="PRE_PUBLISHED">Pré-publié</option>
                       <option value="PUBLISHED">Publié</option>
                       <option value="ARCHIVED">Archivé</option>
                     </select>
@@ -486,6 +487,14 @@ export default function ArticleEditorPage() {
                       className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
                     >
                       {isSaving ? '...' : 'Brouillon'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => handleSubmit(e, 'PRE_PUBLISHED')}
+                      disabled={isSaving}
+                      className="flex-1 px-4 py-2 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 disabled:opacity-50"
+                    >
+                      {isSaving ? '...' : 'Pré-publier'}
                     </button>
                     <button
                       type="button"

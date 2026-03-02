@@ -345,7 +345,11 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
         data: {
           ...data,
           featuredAt: data.isFeatured ? new Date() : null,
-          publishedAt: data.status === 'PUBLISHED' ? new Date() : data.publishedAt ? new Date(data.publishedAt) : null,
+          publishedAt: data.status === 'PUBLISHED'
+            ? new Date()
+            : data.status === 'SCHEDULED' && data.publishedAt
+              ? new Date(data.publishedAt)
+              : null,
           categories: resolvedCategoryIds.length > 0 ? {
             create: resolvedCategoryIds.map(categoryId => ({ categoryId })),
           } : undefined,
@@ -463,9 +467,15 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
         data: {
           ...data,
           featuredAt: data.isFeatured ? new Date() : existing.isFeatured ? existing.featuredAt : null,
-          publishedAt: data.status === 'PUBLISHED' && !existing.publishedAt 
-            ? new Date() 
-            : data.publishedAt ? new Date(data.publishedAt) : undefined,
+          publishedAt: data.status === 'PUBLISHED'
+            ? (existing.publishedAt || new Date())
+            : data.status === 'SCHEDULED' && data.publishedAt
+              ? new Date(data.publishedAt)
+              : data.status && data.status !== 'PUBLISHED'
+                ? null
+                : data.publishedAt
+                  ? new Date(data.publishedAt)
+                  : undefined,
           categories: resolvedCategoryIds ? {
             create: resolvedCategoryIds.map(categoryId => ({ categoryId })),
           } : undefined,

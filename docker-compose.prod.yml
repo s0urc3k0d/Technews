@@ -70,6 +70,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
+      - API_BODY_LIMIT_MB=${API_BODY_LIMIT_MB:-25}
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=${JWT_SECRET}

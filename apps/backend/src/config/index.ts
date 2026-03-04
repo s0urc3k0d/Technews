@@ -9,6 +9,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.string().default('3001'),
   HOST: z.string().default('0.0.0.0'),
+  API_BODY_LIMIT_MB: z.string().default('25'),
 
   // Database
   DATABASE_URL: z.string(),

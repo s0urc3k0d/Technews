@@ -4,6 +4,8 @@
 
 import { z } from 'zod';
 
+const MAX_ARTICLE_CONTENT_CHARS = 500_000;
+
 // Enums
 export const ArticleType = z.enum(['STANDARD', 'PODCAST']);
 export const ArticleStatus = z.enum(['DRAFT', 'PRE_PUBLISHED', 'PUBLISHED', 'SCHEDULED', 'REJECTED', 'ARCHIVED']);
@@ -14,7 +16,7 @@ export const articleBaseSchema = z.object({
   title: z.string().min(1).max(255),
   slug: z.string().min(1).max(255).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   excerpt: z.string().max(500).optional(),
-  content: z.string().min(1),
+  content: z.string().min(1).max(MAX_ARTICLE_CONTENT_CHARS),
   featuredImage: z.string().max(2048).optional().nullable(),
   metaTitle: z.string().max(70).optional(),
   metaDescription: z.string().max(160).optional(),

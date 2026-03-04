@@ -46,10 +46,17 @@ const envToLogger = {
 
 const environment = (process.env.NODE_ENV || 'development') as keyof typeof envToLogger;
 
+const parseBodyLimitBytes = (): number => {
+  const rawValue = Number(process.env.API_BODY_LIMIT_MB ?? '25');
+  const safeMb = Number.isFinite(rawValue) && rawValue > 0 ? rawValue : 25;
+  return Math.floor(safeMb * 1024 * 1024);
+};
+
 const fastify = Fastify({
   logger: envToLogger[environment] ?? true,
   pluginTimeout: 60000,
   trustProxy: true,
+  bodyLimit: parseBodyLimitBytes(),
 });
 
 async function buildServer() {

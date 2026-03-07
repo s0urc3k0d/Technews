@@ -18,6 +18,7 @@ export default function AdminArticlesPage() {
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [generatingArticleId, setGeneratingArticleId] = useState<string | null>(null);
   const { status, type, search, setFilter, clearFilters } = useFiltersStore();
   
   const { data, isLoading, refetch } = useArticles({
@@ -103,6 +104,35 @@ export default function AdminArticlesPage() {
         alert(`Échec de l'import RSS : ${message}`);
       },
     });
+  };
+
+  const handleGenerateAi = async (article: Article) => {
+    if (article.status !== 'DRAFT') return;
+
+    setGeneratingArticleId(article.id);
+    try {
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.articleGenerateAi(article.id)}`, {
+        method: 'POST',
+        headers: await buildAuthHeaders({
+          'Content-Type': 'application/json',
+        }),
+        credentials: 'include',
+        body: JSON.stringify({ dryRun: false }),
+      });
+
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(payload?.error || payload?.message || 'Génération IA impossible');
+      }
+
+      await refetch();
+      const resultStatus = payload?.data?.result?.status;
+      alert(`Génération IA terminée${resultStatus ? ` : ${resultStatus}` : ''}.`);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erreur génération IA');
+    } finally {
+      setGeneratingArticleId(null);
+    }
   };
 
   return (
@@ -271,6 +301,14 @@ export default function AdminArticlesPage() {
                         onClick={() => handleToggleStatus(article)}
                       >
                         {article.status === 'PUBLISHED' ? '📤' : '📥'}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleGenerateAi(article)}
+                        disabled={article.status !== 'DRAFT' || generatingArticleId === article.id}
+                      >
+                        {generatingArticleId === article.id ? '⏳' : '✨'}
                       </Button>
                       <Button 
                         variant="ghost" 

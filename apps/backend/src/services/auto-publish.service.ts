@@ -28,6 +28,7 @@ interface CandidateArticle {
   sourceUrl: string | null;
   sourceName: string | null;
   status: 'DRAFT' | 'PRE_PUBLISHED' | 'PUBLISHED' | 'SCHEDULED' | 'REJECTED' | 'ARCHIVED';
+  source: 'MANUAL' | 'RSS';
   type: 'STANDARD' | 'PODCAST';
   createdAt: Date;
   updatedAt: Date;
@@ -190,6 +191,38 @@ export class AutoPublishService {
       };
     }
 
+    return this.processCandidate(candidate, setCooldown);
+  }
+
+  async runForArticleId(articleId: string, options: AutoPublishRunOptions = {}): Promise<AutoPublishResult> {
+    const ignoreCooldown = options.ignoreCooldown ?? false;
+    const setCooldown = options.setCooldown ?? false;
+
+    const cooldownUntil = await this.getCooldownUntil();
+    if (!ignoreCooldown && cooldownUntil && cooldownUntil.getTime() > Date.now()) {
+      return {
+        success: true,
+        status: 'skipped',
+        reason: 'cooldown_active',
+        cooldownUntil,
+      };
+    }
+
+    const candidate = await this.getDraftCandidateById(articleId);
+    if (!candidate) {
+      return {
+        success: true,
+        status: 'skipped',
+        reason: 'article_not_found_or_not_draft',
+        articleId,
+      };
+    }
+
+    return this.processCandidate(candidate, setCooldown);
+  }
+
+  private async processCandidate(candidate: CandidateArticle, setCooldown: boolean): Promise<AutoPublishResult> {
+
     const duplicate = await this.detectDuplicate(candidate);
     if (duplicate) {
       if (setCooldown) {
@@ -257,6 +290,22 @@ export class AutoPublishService {
         imageFailureReason: generatedImage.failureReason,
       },
     };
+  }
+
+  private async getDraftCandidateById(articleId: string): Promise<CandidateArticle | null> {
+    return this.prisma.article.findFirst({
+      where: {
+        id: articleId,
+        status: 'DRAFT',
+      },
+      include: {
+        categories: {
+          include: {
+            category: true,
+          },
+        },
+      },
+    }) as Promise<CandidateArticle | null>;
   }
 
   private async selectCandidate(): Promise<CandidateArticle | null> {
@@ -769,7 +818,7 @@ Titre source original: ${candidate.title}`;
           featuredImage: featuredImage || undefined,
           status: 'PRE_PUBLISHED' as any,
           publishedAt: candidate.publishedAt ?? candidate.createdAt,
-          source: 'RSS',
+          source: candidate.source,
           shareOnPublish: false,
         },
       });

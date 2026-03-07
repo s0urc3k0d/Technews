@@ -24,6 +24,7 @@ export const API_ENDPOINTS = {
   articlesBulkDelete: '/api/v1/articles/bulk-delete',
   articleBySlug: (slug: string) => `/api/v1/articles/${slug}`,
   articleFeatured: '/api/v1/articles/featured',
+  articleGenerateAi: (id: string) => `/api/v1/articles/${id}/generate-ai`,
   articlePublish: (id: string) => `/api/v1/articles/${id}/publish`,
   articleReject: (id: string) => `/api/v1/articles/${id}/reject`,
   

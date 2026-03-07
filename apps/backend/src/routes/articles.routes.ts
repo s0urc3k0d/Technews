@@ -15,6 +15,7 @@ import {
 import { ArticleStatus, ArticleType } from '@prisma/client';
 import { createSocialService } from '../services/social.service.js';
 import { sendDiscordWebhookEvent } from '../services/webhook.service.js';
+import { createAutoPublishService } from '../services/auto-publish.service.js';
 
 const articlesRoutes: FastifyPluginAsync = async (fastify) => {
   const { prisma } = fastify;
@@ -309,6 +310,76 @@ const articlesRoutes: FastifyPluginAsync = async (fastify) => {
           ...article,
           categories: article.categories.map(c => c.category),
           tags: article.tags.map(t => t.tag),
+        },
+      });
+    }
+  );
+
+  // POST /articles/:id/generate-ai - Générer contenu IA ciblé pour un draft (admin)
+  fastify.post<{ Params: { id: string }; Body: { dryRun?: boolean } }>(
+    '/:id/generate-ai',
+    { preHandler: [fastify.requireAdmin] },
+    async (request, reply) => {
+      const { id } = request.params;
+      const parseResult = z.object({
+        dryRun: z.boolean().optional(),
+      }).safeParse(request.body || {});
+
+      if (!parseResult.success) {
+        return reply.status(400).send({ error: 'Invalid body', details: parseResult.error.issues });
+      }
+
+      const article = await prisma.article.findUnique({ where: { id } });
+      if (!article) {
+        return reply.code(404).send({ error: 'Article not found' });
+      }
+
+      if (article.status !== ArticleStatus.DRAFT) {
+        return reply.code(400).send({ error: 'Only draft articles can be AI-generated' });
+      }
+
+      const autoPublishService = createAutoPublishService({
+        prisma,
+        redis: fastify.redis,
+        mistralApiKey: fastify.config.MISTRAL_API_KEY,
+        mistralImageEndpoint: fastify.config.MISTRAL_IMAGE_ENDPOINT,
+        uploadPath: fastify.config.UPLOAD_PATH,
+        siteUrl: fastify.config.NEXT_PUBLIC_SITE_URL,
+        lookbackHours: parseInt(fastify.config.AUTO_PUBLISH_LOOKBACK_HOURS, 10) || 3,
+        intervalMinMinutes: parseInt(fastify.config.AUTO_PUBLISH_INTERVAL_MIN_MINUTES, 10) || 90,
+        intervalMaxMinutes: parseInt(fastify.config.AUTO_PUBLISH_INTERVAL_MAX_MINUTES, 10) || 120,
+        dryRun: parseResult.data.dryRun ?? false,
+      });
+
+      const result = await autoPublishService.runForArticleId(id, {
+        ignoreCooldown: true,
+        setCooldown: false,
+      });
+
+      const refreshedArticle = await prisma.article.findUnique({
+        where: { id },
+        include: {
+          categories: { include: { category: true } },
+          tags: { include: { tag: true } },
+          images: {
+            where: { isPrimary: true },
+            take: 1,
+          },
+        },
+      });
+
+      return reply.send({
+        data: {
+          result,
+          article: refreshedArticle
+            ? {
+                ...refreshedArticle,
+                categories: refreshedArticle.categories.map((c) => c.category),
+                tags: refreshedArticle.tags.map((t) => t.tag),
+                featuredImage: refreshedArticle.images[0]?.url || refreshedArticle.featuredImage,
+                images: undefined,
+              }
+            : null,
         },
       });
     }

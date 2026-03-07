@@ -34,6 +34,29 @@ interface Tag {
   slug: string;
 }
 
+interface ArticlePayload {
+  id?: string;
+  title?: string;
+  slug?: string;
+  excerpt?: string;
+  content?: string;
+  type?: 'STANDARD' | 'PODCAST';
+  featuredImage?: string;
+  coverImage?: string;
+  categories?: Category[];
+  tags?: Tag[];
+  status?: 'DRAFT' | 'PRE_PUBLISHED' | 'PUBLISHED' | 'ARCHIVED';
+  publishedAt?: string | null;
+  youtubeUrl?: string;
+  spotifyUrl?: string;
+  applePodcastUrl?: string;
+  deezerUrl?: string;
+  podcastSummary?: string;
+  timestamps?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+}
+
 interface ArticleFormData {
   title: string;
   slug: string;
@@ -92,7 +115,42 @@ export default function ArticleEditorPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [isGeneratingWithAi, setIsGeneratingWithAi] = useState(false);
   const [coverFormat, setCoverFormat] = useState<CoverFormat>('webp');
+
+  const applyArticleToForm = (article: ArticlePayload) => {
+    setFormData({
+      title: article.title || '',
+      slug: article.slug || '',
+      excerpt: article.excerpt || '',
+      content: article.content || '',
+      type: article.type || 'STANDARD',
+      coverImage: article.featuredImage || article.coverImage || '',
+      categoryId: article.categories?.[0]?.id || '',
+      tagIds: article.tags?.map((tag) => tag.id) || [],
+      status: article.status || 'DRAFT',
+      publishedAt: article.publishedAt ? new Date(article.publishedAt).toISOString().slice(0, 16) : '',
+      youtubeUrl: article.youtubeUrl || '',
+      spotifyUrl: article.spotifyUrl || '',
+      applePodcastUrl: article.applePodcastUrl || '',
+      deezerUrl: article.deezerUrl || '',
+      podcastSummary: article.podcastSummary || '',
+      timestamps: article.timestamps || '',
+      metaTitle: article.metaTitle || '',
+      metaDescription: article.metaDescription || '',
+    });
+  };
+
+  const fetchArticleById = async (id: string) => {
+    const res = await authFetch(`${API_BASE_URL}${API_ENDPOINTS.articles}/id/${id}`);
+    if (!res.ok) {
+      throw new Error('Article non trouvé');
+    }
+
+    const payload = await res.json();
+    const article = (payload.data || payload) as ArticlePayload;
+    applyArticleToForm(article);
+  };
 
   // Charger les catégories et tags au montage
   useEffect(() => {
@@ -126,33 +184,7 @@ export default function ArticleEditorPage() {
       const fetchArticle = async () => {
         setIsLoading(true);
         try {
-          const res = await authFetch(`${API_BASE_URL}${API_ENDPOINTS.articles}/id/${editId}`);
-          if (res.ok) {
-            const payload = await res.json();
-            const article = payload.data || payload;
-            setFormData({
-              title: article.title || '',
-              slug: article.slug || '',
-              excerpt: article.excerpt || '',
-              content: article.content || '',
-              type: article.type || 'STANDARD',
-              coverImage: article.featuredImage || article.coverImage || '',
-              categoryId: article.categories?.[0]?.id || '',
-              tagIds: article.tags?.map((t: Tag) => t.id) || [],
-              status: article.status || 'DRAFT',
-              publishedAt: article.publishedAt ? new Date(article.publishedAt).toISOString().slice(0, 16) : '',
-              youtubeUrl: article.youtubeUrl || '',
-              spotifyUrl: article.spotifyUrl || '',
-              applePodcastUrl: article.applePodcastUrl || '',
-              deezerUrl: article.deezerUrl || '',
-              podcastSummary: article.podcastSummary || '',
-              timestamps: article.timestamps || '',
-              metaTitle: article.metaTitle || '',
-              metaDescription: article.metaDescription || '',
-            });
-          } else {
-            setError('Article non trouvé');
-          }
+          await fetchArticleById(editId);
         } catch (err) {
           setError('Erreur lors du chargement de l\'article');
           console.error(err);
@@ -164,6 +196,49 @@ export default function ArticleEditorPage() {
       fetchArticle();
     }
   }, [editId]);
+
+  const handleGenerateWithAi = async () => {
+    if (!editId) return;
+
+    setIsGeneratingWithAi(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.articleGenerateAi(editId)}`, {
+        method: 'POST',
+        headers: await buildAuthHeaders({
+          'Content-Type': 'application/json',
+        }),
+        credentials: 'include',
+        body: JSON.stringify({ dryRun: false }),
+      });
+
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(payload?.error || payload?.message || 'Génération IA impossible');
+      }
+
+      const generatedArticle = payload?.data?.article as ArticlePayload | null | undefined;
+      const resultStatus = payload?.data?.result?.status as string | undefined;
+
+      if (generatedArticle) {
+        applyArticleToForm(generatedArticle);
+      } else {
+        await fetchArticleById(editId);
+      }
+
+      setSuccessMessage(
+        resultStatus
+          ? `Génération IA terminée (${resultStatus}).`
+          : 'Génération IA terminée.'
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la génération IA');
+    } finally {
+      setIsGeneratingWithAi(false);
+    }
+  };
 
   // Générer le slug à partir du titre
   const generateSlug = (title: string) => {
@@ -505,6 +580,22 @@ export default function ArticleEditorPage() {
                       {isSaving ? '...' : 'Publier'}
                     </button>
                   </div>
+
+                  {isEditing && (
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={handleGenerateWithAi}
+                        disabled={isGeneratingWithAi || isSaving || formData.status !== 'DRAFT'}
+                        className="w-full px-4 py-2 border border-purple-300 text-purple-700 rounded-lg hover:bg-purple-50 disabled:opacity-50"
+                      >
+                        {isGeneratingWithAi ? 'Génération…' : '✨ Générer ce draft avec IA'}
+                      </button>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Applique le pipeline auto-publish sur cet article précis et remplit les champs automatiquement (uniquement en statut brouillon).
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
